@@ -21,8 +21,7 @@ AI Teacher powered by the MiniMax AI suite.
 ### 1.2 Scope (in)
 
 - Single-learner accounts, browser-delivered, responsive web app.
-- Two dialects at launch: **Brazilian Portuguese (pt-BR)** and **European
-  Portuguese (pt-PT)**.
+- One dialect at launch: **European Portuguese (pt-PT)** only.
 - AI Teacher powered by MiniMax models: foundation LLM for NLU/NLG, ASR for
   speech-to-text, TTS for speech synthesis.
 - Curriculum covering CEFR **A0 → B1**, with milestone assessments at each
