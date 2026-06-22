@@ -1,6 +1,6 @@
 # Issue tracker
 
-Issues for this repo live in **GitHub Issues** for [`shadowdog-dev/portuguese-teacher`](https://github.com/shadowdog-dev/portuguese-teacher).
+Issues for this repo live in **GitHub Issues** for [`shadowdoguk/portuguese-teacher`](https://github.com/shadowdoguk/portuguese-teacher).
 
 Skills that read or write this tracker: `to-issues`, `triage`, `to-prd`, `qa`.
 
@@ -10,19 +10,19 @@ Uses the [`gh`](https://cli.github.com/) CLI. Authenticate once with `gh auth lo
 
 ```bash
 # Create an issue
-gh issue create --repo shadowdog-dev/portuguese-teacher \
+gh issue create --repo shadowdoguk/portuguese-teacher \
   --title "..." --body "..." --label "needs-triage"
 
 # List issues by label
-gh issue list --repo shadowdog-dev/portuguese-teacher \
+gh issue list --repo shadowdoguk/portuguese-teacher \
   --label "ready-for-agent" --state open
 
 # Apply a label
-gh issue edit <number> --repo shadowdog-dev/portuguese-teacher \
+gh issue edit <number> --repo shadowdoguk/portuguese-teacher \
   --add-label "ready-for-agent"
 
 # View an issue
-gh issue view <number> --repo shadowdog-dev/portuguese-teacher
+gh issue view <number> --repo shadowdoguk/portuguese-teacher
 ```
 
 ## Default repo

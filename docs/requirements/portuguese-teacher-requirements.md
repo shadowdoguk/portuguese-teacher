@@ -3,7 +3,7 @@
 **Status:** Draft v1.0
 **Author:** platform team
 **Date:** 2026-06-22
-**Repo:** `shadowdog-dev/portuguese-teacher`
+**Repo:** `shadowdoguk/portuguese-teacher`
 **AI provider:** MiniMax AI Suite
 
 ---
