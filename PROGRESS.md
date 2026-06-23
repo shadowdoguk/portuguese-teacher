@@ -6,11 +6,11 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Current focus
 
-**Next dep-ordered item:** #5 (Voice Loop Tier 1/2/3 end-to-end) — depends on #3 (in review) and #4 (just landed).
+**Next dep-ordered item:** #6 (LLM difficulty control pipeline) — depends on #5 (just landed).
 
 ## In progress
 
-- **#4 — HLR Spaced Repetition scheduler + review queue** — PR #27 open (against `feat/issue-2-curriculum-model`); minimum-viable slice shipped on `feat/issue-4-srs-scheduler` (commit `38fc076`). 50/50 tests pass; typecheck/lint/build green. Follow-up issues filed: #28 (DB persistence), #29 (telemetry backend), #30 (SRS injection into Lessons), #31 (audio/image on review card). Awaiting human review.
+- **#5 — Voice Loop (Tier 1/2/3) end-to-end** — PR #32 open (against `feat/issue-4-srs-scheduler`); minimum-viable slice shipped on `feat/issue-5-voice-loop` (commits `56d1ad6` cherry-pick of #3, `ae53cd6` voice loop). 82/82 tests pass; typecheck/lint/build green. Follow-up issues filed: #33 (real audio capture), #34 (Playwright E2E), #35 (SC-5 sampling), #36 (latency SLI dashboards), #37 (Pronunciation Score wiring), #38 (ASR LM biasing), #39 (real TTS playback). Awaiting human review.
 
 ## Recently completed
 
@@ -30,7 +30,7 @@ A living document. Read this at the start of every session to pick up where the 
 
 - **#2** Curriculum data model + seed A0 content (pt-PT only) — **PR #22 open (in review)**
 - **#4** HLR Spaced Repetition scheduler + review queue — **PR #27 open (in review)**
-- **#5** Voice Loop (Tier 1/2/3) end-to-end
+- **#5** Voice Loop (Tier 1/2/3) end-to-end — **PR #32 open (in review)**
 - **#6** LLM difficulty control pipeline (generate → re-rank)
 - **#7** Conversational Practice UI + scenario library (≥ 30 scenarios)
 - **#8** Proficiency assessments + Milestone gating
@@ -66,11 +66,22 @@ A living document. Read this at the start of every session to pick up where the 
 - **#30** SRS injection into Unit's Practice Exercise order (FR-LP-2) — depends on #4, #17
 - **#31** Audio + image rendering on the review card — depends on #4, #26
 
+### Open — follow-ups from #5 (minimum-viable slice)
+
+- **#33** Tier 1 (Web Speech API) + Tier 2 (MediaRecorder) audio capture — depends on #5, #3
+- **#34** Playwright E2E tests across Chromium + Safari + Firefox tiers — depends on #5, #33
+- **#35** SC-5 Sampling Buffer 1% audio capture (production WER) — depends on #33, #16
+- **#36** Per-stage Voice Loop latency SLI dashboards (observability) — depends on #5, #12
+- **#37** Pronunciation Score wiring to phoneme-distance endpoint — depends on #5, #19, #38
+- **#38** ASR language-model biasing per current Unit vocabulary — depends on #33, #2
+- **#39** Real MiniMax TTS playback in the browser (audio out) — depends on #5, #3
+
 ## PRs
 
 - **#20** MiniMax AI client wrappers (LLM/ASR/TTS) — open, awaiting human review. Merge does not block #2.
 - **#22** Curriculum data model + A0 fixture (minimum-viable slice, closes #2) — open, awaiting human review. Brings in `chore/progress-tracker` (commit `c23be34`) so PROGRESS.md is on `main`.
 - **#27** HLR Spaced Repetition scheduler + review queue (minimum-viable slice, closes #4) — open against `feat/issue-2-curriculum-model`; retarget to `main` after #22 merges. 50/50 tests pass.
+- **#32** Voice Loop (Tier 1/2/3) end-to-end (minimum-viable slice, closes #5) — open against `feat/issue-4-srs-scheduler`; brings in the #3 MiniMax wrappers from PR #20 via a cherry-pick commit. 82/82 tests pass.
 
 ## Decisions log
 
