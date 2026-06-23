@@ -6,10 +6,11 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Current focus
 
-**Next dep-ordered item:** #6 (LLM difficulty control pipeline) — depends on #5 (just landed).
+**Next dep-ordered item:** #7 (Conversational Practice UI + scenario library) — depends on #6 (this branch).
 
 ## In progress
 
+- **#6 — LLM difficulty control pipeline (generate → re-rank)** — branch `feat/issue-6-llm-difficulty-pipeline` (off `feat/issue-5-voice-loop`). Minimum-viable slice: `src/lib/voice-loop/{difficulty-estimator,level-vocabulary,system-prompt,rerank,ab-corpus,ab-mocks,ab-harness}.ts`; A/B harness writes `tmp/difficulty-ab-report.md`. 128/128 tests pass; typecheck/lint/build green. ADR-0004 ships. Follow-up issues filed: #40 (re-rank orchestrator wiring), #41 (expanded vocab fixture), #42 (live LLM harness acceptance). PR pending push.
 - **#5 — Voice Loop (Tier 1/2/3) end-to-end** — PR #32 open (against `feat/issue-4-srs-scheduler`); minimum-viable slice shipped on `feat/issue-5-voice-loop` (commits `56d1ad6` cherry-pick of #3, `ae53cd6` voice loop). 82/82 tests pass; typecheck/lint/build green. Follow-up issues filed: #33 (real audio capture), #34 (Playwright E2E), #35 (SC-5 sampling), #36 (latency SLI dashboards), #37 (Pronunciation Score wiring), #38 (ASR LM biasing), #39 (real TTS playback). Awaiting human review.
 
 ## Recently completed
@@ -76,6 +77,12 @@ A living document. Read this at the start of every session to pick up where the 
 - **#38** ASR language-model biasing per current Unit vocabulary — depends on #33, #2
 - **#39** Real MiniMax TTS playback in the browser (audio out) — depends on #5, #3
 
+### Open — follow-ups from #6 (minimum-viable slice)
+
+- **#40** Wire `generateAndRerankTurn` into the voice-loop API route (Tier 1 + Tier 2) — depends on #6, #42
+- **#41** Expand CEFR level vocabulary fixture (A2/B1 granularity + sub-levels) — depends on #6
+- **#42** Wire live MiniMax LLM into A/B harness (issue #6 acceptance ≥75% in-band) — depends on #6, #3
+
 ## PRs
 
 - **#20** MiniMax AI client wrappers (LLM/ASR/TTS) — open, awaiting human review. Merge does not block #2.
@@ -85,6 +92,7 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Decisions log
 
+- **2026-06-23 — ADR-0004 LLM difficulty-control pipeline.** The NLG pipeline runs **generate → re-rank** (per FR-AI-4 / Jin et al. 2026). LLM emits **N=4** candidates in a single structured-output call. A pure-functional lexical-coverage estimator scores each candidate against the Learner's CEFR-level vocabulary and selects the one closest to the i+1 target. **pt-BR dialect defects are a hard filter** (candidates dropped before scoring). A/B harness ships in mock mode for CI regression coverage; live mode lands in #42. See `docs/adr/0004-difficulty-control-pipeline.md`.
 - **2026-06-23 — ADR-0003 v1 scope amendment.** v1 is **pt-PT only** (pt-BR deferred to v1.1). v1 ladder is **five stages** (A0 → A1 → A2 → B1) with **three Milestones** at level boundaries. Remediation is via **Remedial Anchors** (pointers, not back-edges in the DAG). Above-A0 self-assessments route through a **Placement Lesson**. Production WER sampling uses a separate **SC-5 Sampling Buffer** (ephemeral, opt-in-agnostic). **OAuth sign-in** deferred to v1.1. See `docs/adr/0003-v1-scope-amendment.md`.
 - **2026-06-23 — AGENTS.md consolidation.** Three `docs/agents/*.md` files (issue-tracker, triage-labels, domain) folded into `AGENTS.md`.
 - **2026-06-23 — MiniMax wrapper contract.** All three wrappers emit a structured latency log (`{type:'minimax_latency', endpoint, durationMs, ok}`) and the contract-smoke test runs them against a local `node:http` server, providing CI coverage until real creds land.
