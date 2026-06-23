@@ -68,3 +68,34 @@ export class MiniMaxError extends Error {
     this.name = "MiniMaxError";
   }
 }
+
+export type LatencyLog = {
+  type: "minimax_latency";
+  endpoint: "llm" | "asr" | "tts";
+  durationMs: number;
+  ok: boolean;
+};
+
+export type LatencySink = (entry: LatencyLog) => void;
+
+const defaultLatencySink: LatencySink = (entry) => {
+  console.log(JSON.stringify(entry));
+};
+
+export async function withLatencyMetric<T>(
+  endpoint: "llm" | "asr" | "tts",
+  fn: () => Promise<T>,
+  sink: LatencySink = defaultLatencySink,
+): Promise<T> {
+  const start = performance.now();
+  let ok = true;
+  try {
+    return await fn();
+  } catch (error) {
+    ok = false;
+    throw error;
+  } finally {
+    const durationMs = Math.round(performance.now() - start);
+    sink({ type: "minimax_latency", endpoint, durationMs, ok });
+  }
+}

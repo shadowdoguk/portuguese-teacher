@@ -1,5 +1,6 @@
 import {
   MiniMaxError,
+  withLatencyMetric,
   type AsrTranscribeOptions,
   type AsrTranscribeResult,
   type AsrWord,
@@ -22,35 +23,39 @@ export class MiniMaxASR {
     audio: Blob,
     options: AsrTranscribeOptions,
   ): Promise<AsrTranscribeResult> {
-    const form = new FormData();
-    form.append("audio", audio, "utterance.webm");
-    form.append("lang", options.lang);
-    const response = await this.fetchImpl(`${this.config.baseUrl}/v1/asr/transcriptions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.config.apiKey}`,
-      },
-      body: form,
-      signal: options.signal,
+    return withLatencyMetric("asr", async () => {
+      const form = new FormData();
+      form.append("audio", audio, "utterance.webm");
+      form.append("lang", options.lang);
+      const response = await this.fetchImpl(`${this.config.baseUrl}/v1/asr/transcriptions`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.config.apiKey}`,
+        },
+        body: form,
+        signal: options.signal,
+      });
+      if (!response.ok) {
+        throw new MiniMaxError(
+          `ASR request failed: ${response.status} ${response.statusText}`,
+          response.status,
+          "asr",
+        );
+      }
+      const data = (await response.json().catch(() => {
+        throw new MiniMaxError("ASR response was not valid JSON", response.status, "asr");
+      })) as {
+        text: string;
+        words: AsrWord[];
+        confidence: number;
+        language_detected: AsrTranscribeOptions["lang"];
+      };
+      return {
+        text: data.text,
+        words: data.words,
+        confidence: data.confidence,
+        languageDetected: data.language_detected,
+      };
     });
-    if (!response.ok) {
-      throw new MiniMaxError(
-        `ASR request failed: ${response.status} ${response.statusText}`,
-        response.status,
-        "asr",
-      );
-    }
-    const data = (await response.json()) as {
-      text: string;
-      words: AsrWord[];
-      confidence: number;
-      language_detected: AsrTranscribeOptions["lang"];
-    };
-    return {
-      text: data.text,
-      words: data.words,
-      confidence: data.confidence,
-      languageDetected: data.language_detected,
-    };
   }
 }
