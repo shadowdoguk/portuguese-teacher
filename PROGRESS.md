@@ -6,11 +6,11 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Current focus
 
-**Next dep-ordered item:** #4 (HLR Spaced Repetition scheduler + review queue) — depends on #2, which just landed.
+**Next dep-ordered item:** #5 (Voice Loop Tier 1/2/3 end-to-end) — depends on #3 (in review) and #4 (just landed).
 
 ## In progress
 
-- **#2 — Curriculum data model + seed A0 content (pt-PT only)** — PR #22 open; minimum-viable slice shipped on `feat/issue-2-curriculum-model` (commits `89eb605`, merge of `c23be34`). 27/27 tests pass; typecheck/lint/build green. Follow-up issues filed: #23 (full A0 seed), #24 (Prisma schema), #25 (`pnpm seed:a0` script), #26 (build-time TTS asset pipeline). Awaiting human review.
+- **#4 — HLR Spaced Repetition scheduler + review queue** — PR #27 open (against `feat/issue-2-curriculum-model`); minimum-viable slice shipped on `feat/issue-4-srs-scheduler` (commit `38fc076`). 50/50 tests pass; typecheck/lint/build green. Follow-up issues filed: #28 (DB persistence), #29 (telemetry backend), #30 (SRS injection into Lessons), #31 (audio/image on review card). Awaiting human review.
 
 ## Recently completed
 
@@ -29,7 +29,7 @@ A living document. Read this at the start of every session to pick up where the 
 ### Open — implementation queue (dep-ordered)
 
 - **#2** Curriculum data model + seed A0 content (pt-PT only) — **PR #22 open (in review)**
-- **#4** HLR Spaced Repetition scheduler + review queue
+- **#4** HLR Spaced Repetition scheduler + review queue — **PR #27 open (in review)**
 - **#5** Voice Loop (Tier 1/2/3) end-to-end
 - **#6** LLM difficulty control pipeline (generate → re-rank)
 - **#7** Conversational Practice UI + scenario library (≥ 30 scenarios)
@@ -59,10 +59,18 @@ A living document. Read this at the start of every session to pick up where the 
 - **#25** Admin script `pnpm seed:a0` — depends on #2, #23, #24
 - **#26** Build-time TTS asset pipeline using MiniMax TTS mocks — depends on #2, #3
 
+### Open — follow-ups from #4 (minimum-viable slice)
+
+- **#28** DB persistence for SRS state (replace localStorage) — depends on #24, #9
+- **#29** Per-recall telemetry backend hookup (srs_recall events) — depends on #12, #28
+- **#30** SRS injection into Unit's Practice Exercise order (FR-LP-2) — depends on #4, #17
+- **#31** Audio + image rendering on the review card — depends on #4, #26
+
 ## PRs
 
 - **#20** MiniMax AI client wrappers (LLM/ASR/TTS) — open, awaiting human review. Merge does not block #2.
 - **#22** Curriculum data model + A0 fixture (minimum-viable slice, closes #2) — open, awaiting human review. Brings in `chore/progress-tracker` (commit `c23be34`) so PROGRESS.md is on `main`.
+- **#27** HLR Spaced Repetition scheduler + review queue (minimum-viable slice, closes #4) — open against `feat/issue-2-curriculum-model`; retarget to `main` after #22 merges. 50/50 tests pass.
 
 ## Decisions log
 
