@@ -25,7 +25,8 @@ export default function ProfilePage() {
         </Card>
 
         <Card eyebrow="Self-assessment" title="Where you think you are">
-          The placement test will confirm. For now, this is your best guess.
+          If you&apos;re above A0, a single Placement Lesson will confirm or
+          revise your starting Unit before the regular sequence begins.
         </Card>
 
         <Card eyebrow="Goals" title="Why are you learning?">

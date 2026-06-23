@@ -41,7 +41,7 @@ export function Footer() {
       <div className="container-edge flex flex-col items-start justify-between gap-3 border-t border-ink/10 py-6 text-xs text-ink-mute md:flex-row md:items-center">
         <span>© {new Date().getFullYear()} Português · Built with MiniMax.</span>
         <span className="font-mono uppercase tracking-[0.2em]">
-          pt-BR · pt-PT · A0 → B1
+          pt-PT · A0 → B1
         </span>
       </div>
     </footer>

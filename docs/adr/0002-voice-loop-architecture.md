@@ -1,9 +1,9 @@
 # ADR 0002 — Voice Loop Architecture
 
-**Status:** Accepted
-**Date:** 2026-06-22
+**Status:** Accepted (amended by ADR-0003)
+**Date:** 2026-06-22 (amended 2026-06-23)
 **Deciders:** Engineering lead, Product, Pedagogy lead
-**Related:** [`CONTEXT.md`](../../CONTEXT.md), [`docs/research/language-acquisition-findings.md`](../research/language-acquisition-findings.md), [`docs/requirements/portuguese-teacher-requirements.md`](../requirements/portuguese-teacher-requirements.md) §3.3, §3.4
+**Related:** [`CONTEXT.md`](../../CONTEXT.md), [`docs/research/language-acquisition-findings.md`](../research/language-acquisition-findings.md), [`docs/requirements/portuguese-teacher-requirements.md`](../requirements/portuguese-teacher-requirements.md) §3.3, §3.4, [`ADR-0003`](0003-v1-scope-amendment.md)
 
 ## Context
 
@@ -41,11 +41,36 @@ mic ──► Web Speech API (live interim transcript, low latency)
         MediaRecorder audio blob ──► MiniMax ASR (canonical, high accuracy)
             │
             ▼
-        MiniMax LLM (with difficulty-controlled re-rank)
+        MiniMax LLM (single structured-output call producing
+                     { nlu, utterance } — see "NLU + NLG" below)
             │
             ├──► teacher utterance ──► MiniMax TTS ──► speaker
             └──► feedback overlay ──► UI
 ```
+
+### NLU + NLG
+
+The platform does **not** run a separate NLU module. The MiniMax LLM emits a
+single structured-output payload per turn:
+
+```jsonc
+{
+  "nlu": {
+    "intent": "answer.greeting",
+    "slots": { "addressee": "teacher" },
+    "grammar_features": ["present.indicative.1sg"],
+    "error_categories": []
+  },
+  "utterance": "Bom dia! Como estás hoje?",
+  "feedback": [],
+  "difficulty_estimate": 1.4
+}
+```
+
+NLG (the `utterance` field) and NLU (the `nlu` field) are produced in the
+same round-trip; the difficulty-controlled re-rank (per ADR-0001) then
+selects among *N* candidate payloads for the candidate closest to the
+Learner's i+1 target.
 
 ### Browser Tier 2 — Safari (degraded live mode)
 
@@ -89,6 +114,20 @@ keyboard input ──► MiniMax LLM ──► text + (optional MiniMax TTS)
   vocabulary and grammar to lift WER on common patterns.
 - Reject utterances whose confidence < 0.6 and prompt the Learner to
   retry, or fall through to text input.
+
+### Pronunciation Score
+
+The per-utterance **Pronunciation Score** (FR-CP-2) is **not** the ASR WER.
+Two signals are combined server-side per utterance:
+
+1. **ASR word-level confidence** — a poor confidence on a target-word
+   phoneme (relative to the language-model biasing vocabulary) is a
+   strong pronunciation signal even when WER is technically low.
+2. **MiniMax phoneme-distance endpoint** — a dedicated phoneme-level
+   comparison against the expected target utterance for the current
+   Lesson. Used in **Drill mode** and Pronunciation Score surfaces; in
+   free-form Conversational Practice, ASR confidence is the dominant
+   signal because there is no single target utterance.
 
 ### Graceful degradation
 

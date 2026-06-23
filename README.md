@@ -47,7 +47,30 @@ See [docs/adr/0001-pedagogical-model.md](./docs/adr/0001-pedagogical-model.md) f
 
 ## Status
 
-Issue [\#1](https://github.com/shadowdoguk/portuguese-teacher/issues/1) — bootstrap app shell. Issues [\#2–#14](https://github.com/shadowdoguk/portuguese-teacher/issues) queue the implementation phases.
+**v1 scope** (per [ADR-0003](docs/adr/0003-v1-scope-amendment.md), 2026-06-23):
+
+- **pt-PT only** (Brazilian Portuguese deferred to v1.1).
+- **Five-stage CEFR ladder** A0 → A1 → A2 → B1 with **three Milestones**.
+- Curriculum is a DAG; remediation is via **Remedial Anchors**, not back-edges.
+- Above-A0 self-assessments route through a **Placement Lesson** at sign-up.
+- Production ASR-WER sampling uses a separate **SC-5 Sampling Buffer** (≤ 24 h,
+  not part of opt-in recordings).
+- **OAuth sign-in deferred** to v1.1; v1 is email + password only.
+
+**Bootstrap** (issue #1) is complete — `pnpm dev`, `pnpm build`, `pnpm test`,
+`pnpm typecheck`, and `pnpm lint` all pass; all FR-WEB-4 routes exist.
+
+**Implementation backlog**: issues #2–#14, queued in dependency order
+([#3 MiniMax wrappers](https://github.com/shadowdoguk/portuguese-teacher/issues/3)
+→ #2 curriculum model → #4 HLR scheduler → #5 voice loop → #6 LLM re-rank →
+#7 scenario library → #8 milestone gating → #9 UI surfaces → #13 ASR
+regression → #10/#11/#12/#14 non-functional). Some are stale after
+ADR-0003 (see issue bodies: #2 dialect enum, #8 milestone count, #9
+dialect picker, #13 corpus).
+
+**Missing issues** (added by ADR-0003, not yet filed): Placement Lesson at
+sign-up, SC-5 Sampling Buffer infra, Remedial Anchor routing, Affective
+Filter proxy instrumentation, Pronunciation Score phoneme-distance endpoint.
 
 ## Conventions
 

@@ -18,11 +18,6 @@ describe("Card", () => {
 });
 
 describe("DialectChip", () => {
-  it("renders the Brazilian dialect label", () => {
-    render(<DialectChip variant="pt-BR" />);
-    expect(screen.getByText(/Brazilian · pt-BR/)).toBeInTheDocument();
-  });
-
   it("renders the European dialect label", () => {
     render(<DialectChip variant="pt-PT" />);
     expect(screen.getByText(/European · pt-PT/)).toBeInTheDocument();

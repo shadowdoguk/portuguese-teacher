@@ -1,4 +1,4 @@
-export type Dialect = "pt-BR" | "pt-PT";
+export type Dialect = "pt-PT";
 
 export type Learner = {
   id: string;

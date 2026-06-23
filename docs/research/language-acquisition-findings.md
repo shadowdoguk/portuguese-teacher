@@ -197,8 +197,10 @@ speech-recognition constraints.
   and express opinions on familiar topics).
 - Vocabulary targets above are **upper bounds** for completion. The platform
   measures Lexical Coverage against these targets and gates Unit completion.
-- Dialect choice (pt-BR vs pt-PT) is set at sign-up and propagated to lesson
-  content, ASR/TTS voice, and the AI Teacher's lexicon.
+- Dialect choice is fixed at sign-up and propagated to lesson content,
+  ASR/TTS voice, and the AI Teacher's lexicon. **v1 supports pt-PT only**
+  (see ADR-0003); the platform architecture remains dialect-aware so that
+  additional dialects can be added without changing the pipeline.
 
 ---
 

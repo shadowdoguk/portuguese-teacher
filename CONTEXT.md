@@ -7,7 +7,7 @@ consistently and avoid inventing synonyms.
 ## Project in one sentence
 
 A web-based, AI-driven Portuguese language teacher that takes a learner from
-absolute beginner (A0) to conversational fluency (CEFR B1–B2), powered by the
+absolute beginner (CEFR A0) to conversational fluency (CEFR B1), powered by the
 MiniMax AI suite.
 
 ## Glossary
@@ -15,28 +15,33 @@ MiniMax AI suite.
 | Term | Definition |
 | --- | --- |
 | **Learner** | The end user studying Portuguese. The platform serves one learner per account. |
+| **Lead** | A person who has expressed interest in the platform by submitting the public contact form (email + marketing consent) but has not yet created a Learner account. A Lead is converted to a Learner on sign-up. *(Reserved term — no v1 surface; contact-form capture is deferred to v1.1.)* |
 | **AI Teacher** | The pedagogical agent that explains, prompts, corrects, and converses with the Learner. Backed by MiniMax models (LLM, ASR, TTS). |
 | **MiniMax AI Suite** | The suite of MiniMax models used by the platform: foundation LLM for NLU/NLG, speech-to-text (ASR) for capture, and text-to-speech (TTS) for playback. |
-| **Lesson** | A single instructional unit (typically 5–15 min) covering a discrete objective (e.g. "greetings", "present-tense *ser*"). |
+| **Lesson** | A single instructional unit (typically 5–15 min) covering a discrete objective (e.g. "greetings", "present-tense *ser*"). A Lesson is composed of a *Lesson body* (content delivery) plus one or more Practice Exercises. |
+| **Practice Exercise** | A short interactive activity (flashcard, fill-in, listen-and-repeat, role-play, free-response, pronunciation drill, scenario turn) that targets a specific skill or item. Practice Exercises are the interactive components of a Lesson and the units of SRS scheduling. |
 | **Unit** | A thematic cluster of 3–8 Lessons (e.g. "At the café"). |
-| **Level** | A CEFR-aligned proficiency stage: A0 (absolute beginner), A1, A2, B1, B2. |
-| **Curriculum** | The ordered graph of Units mapped to Levels that the platform walks the Learner through. |
-| **Milestone** | A checkpoint within the Curriculum that gates progression and triggers a proficiency assessment. |
+| **Level** | A CEFR-aligned proficiency stage in the v1 ladder: A0 (absolute beginner), A1, A2, B1. v1 ceiling is B1; B2 is out of scope. |
+| **Curriculum** | The ordered graph of Units mapped to Levels that the platform walks the Learner through. The graph is a DAG over the canonical sequence; remediation is via Remedial Anchors, not back-edges. |
+| **Milestone** | A checkpoint within the Curriculum that gates progression and triggers a proficiency assessment. v1 has three Milestones at the A0→A1, A1→A2, and A2→B1 boundaries. |
 | **Proficiency Assessment** | A short adaptive evaluation (multiple formats) that confirms readiness to advance to the next Level. |
-| **SRS (Spaced Repetition System)** | Half-life regression scheduler that surfaces vocabulary and grammar items at optimal review intervals. |
+| **Placement Lesson** | A single adaptive Lesson administered at sign-up when the Learner self-assesses above A0. Confirms or revises the Learner's starting Unit. |
+| **Remedial Anchor** | A pointer from a Unit to a prior Unit whose content the AI Teacher can re-present with scaffolding when the Learner struggles. Anchors make remediation possible without back-edges in the curriculum DAG. |
+| **SRS (Spaced Repetition System)** | Half-life regression scheduler that surfaces vocabulary and grammar items at optimal review intervals. The SRS injects Practice Exercises, not full Lessons, into the active Unit. |
 | **TBLT (Task-Based Language Teaching)** | Pedagogical pattern in which the Learner completes a goal-oriented communicative task in Portuguese. |
 | **Comprehensible Input (CI)** | Krashen's i+1 principle: input slightly above the Learner's current level, ~70–90% comprehensible. |
 | **Affective Filter** | Krashen's construct: anxiety/engagement modulates how much input the Learner actually acquires. |
 | **Conversational Practice** | A free-form voice dialogue between the AI Teacher and the Learner, with real-time feedback. |
-| **Voice Loop** | The end-to-end pipeline: microphone → ASR → NLU/LLM → TTS → speaker, with corrections rendered as UI overlays. |
-| **Dialect** | Either Brazilian Portuguese (pt-BR) or European Portuguese (pt-PT). The Learner picks one at sign-up; the AI Teacher stays consistent. |
+| **Voice Loop** | The end-to-end pipeline: microphone → ASR → LLM (NLU + NLG, structured output) → TTS → speaker, with corrections rendered as UI overlays. |
+| **Dialect** | The Learner's selected Portuguese variant. **v1 supports pt-PT (European Portuguese) only.** Dialect is fixed at sign-up and propagated through all AI Teacher output, vocabulary, and audio. pt-BR is deferred to v1.1. |
 | **i+1 Target** | A user-specific, dynamic target difficulty for LLM-generated teacher utterances and comprehension passages. |
 | **Lesson Material** | Any structured artifact presented to the Learner: text, audio, image, dialogue prompt, exercise, or assessment. |
-| **Practice Exercise** | A short interactive activity (flashcard, fill-in, listen-and-repeat, role-play, free-response) that targets a specific skill or item. |
 | **Feedback** | Output from the AI Teacher addressing a Learner utterance — corrective (errors), confirmatory (correct), or formative (suggestion). |
-| **Pronunciation Score** | A per-utterance metric (0–100) produced by an ASR + phoneme-distance pipeline. |
+| **Pronunciation Score** | A per-utterance metric (0–100) measuring phoneme-level deviation from the target. v1 derives it from ASR word-level confidence plus a MiniMax phoneme-distance score. |
 | **Lesson Material Library** | The curated corpus of Lessons, Units, vocabulary, dialogues, and audio assets that the Curriculum draws from. |
 | **User Data** | Profile, lesson history, mastery state, voice recordings, and assessment results associated with a Learner account. |
+| **SC-5 Sampling Buffer** | An ephemeral audio buffer (≤ 24 h retention, separate from opt-in "stored recordings") used solely to compute SC-5 production-WER on a 1% sample of utterances. |
+| **Stored Recording** | A voice recording the Learner has explicitly opted in to retain. Encrypted at rest, deletable from Settings, default off. |
 
 ## Key concepts
 
@@ -53,29 +58,24 @@ for the full literature review:
 
 ### Proficiency ladder
 
-Curriculum progression follows CEFR can-do statements. "Conversational fluency"
-as the success criterion maps to **CEFR B1** (Independent User) — see
-[`docs/requirements/portuguese-teacher-requirements.md`](docs/requirements/portuguese-teacher-requirements.md)
-§4 for the level definitions.
+Curriculum progression follows CEFR can-do statements across **five stages**:
+**A0 → A1 → A2 → B1**. B1 is the v1 ceiling. Each Level transition is gated
+by a Milestone Assessment at the 75% threshold; failed Milestones route the
+Learner to Remedial Anchors before re-attempt. Total curriculum ≈ 30 Units,
+≈ 150 Lessons, ≈ 250–300 hours of guided practice.
 
 ### Voice architecture
 
-Every conversational interaction runs through the **Voice Loop**:
-
-```
-mic → MediaRecorder/WebM ──► MiniMax ASR ──► MiniMax LLM ──► MiniMax TTS ──► speaker
-                                  │                │
-                                  ▼                ▼
-                            transcript      feedback + corrections
-                                  │                │
-                                  └────► UI overlay ◄┘
-```
+Every conversational interaction runs through the **Voice Loop**. NLU (intent,
+slots, grammar features, error categories) and NLG (teacher utterance) are
+produced in a **single LLM call with structured output** — see
+[`docs/adr/0002-voice-loop-architecture.md`](docs/adr/0002-voice-loop-architecture.md).
 
 ### Variants
 
-Two language variants are first-class: **pt-BR** (Brazilian) and **pt-PT**
-(European). Lessons, audio, and the AI Teacher's voice/lexicon are
-dialect-specific. Cross-dialect contamination is a defect.
+**v1 supports pt-PT (European Portuguese) only.** All Lessons, audio, the AI
+Teacher's voice, vocabulary, and orthography are pt-PT-locked. Cross-dialect
+contamination is a defect. pt-BR is deferred to v1.1.
 
 ## Conventions for contributors
 

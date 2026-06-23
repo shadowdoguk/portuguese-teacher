@@ -36,17 +36,29 @@ AI Teacher powered by the MiniMax AI suite.
 - Teacher / classroom dashboards (single-learner model).
 - Live tutoring marketplace.
 - Curriculum for C1 / C2 mastery.
-- Indigenous or creole variants of Portuguese (focus on standard pt-BR and
-  pt-PT for v1).
+- **Brazilian Portuguese (pt-BR)** — pt-PT (European Portuguese) is the only
+  v1 dialect; pt-BR is deferred to v1.1 (see ADR-0003).
+- Indigenous or creole variants of Portuguese.
 - Offline mode.
+- OAuth sign-in (Google / Apple) — v1 ships email + password only.
 
 ### 1.4 Definitions
 
 See [`CONTEXT.md`](../../CONTEXT.md) for the full domain glossary. Key terms:
-**Learner**, **AI Teacher**, **Lesson**, **Unit**, **Level**, **Milestone**,
-**Proficiency Assessment**, **SRS**, **TBLT**, **Comprehensible Input**,
-**Affective Filter**, **Conversational Practice**, **Voice Loop**, **Dialect**,
-**i+1 Target**, **Pronunciation Score**, **Lesson Material Library**.
+**Learner**, **Lead**, **AI Teacher**, **Lesson**, **Practice Exercise**, **Unit**,
+**Level**, **Curriculum**, **Milestone**, **Proficiency Assessment**,
+**Placement Lesson**, **Remedial Anchor**, **SRS**, **TBLT**,
+**Comprehensible Input**, **Affective Filter**, **Conversational Practice**,
+**Voice Loop**, **Dialect**, **i+1 Target**, **Pronunciation Score**,
+**Lesson Material Library**, **SC-5 Sampling Buffer**, **Stored Recording**,
+**User Data**.
+
+A **Lesson** is composed of a *Lesson body* (content delivery) plus one or
+more **Practice Exercises** (the interactive components). The ten
+Lesson types listed in §3.2 FR-LP-3 split into body types (alphabet,
+vocabulary introduction, grammar explanation, listening comprehension,
+reading comprehension, scenario task) and exercise types (pronunciation drill,
+fill-in / multiple-choice, free production, Conversational Practice).
 
 ---
 
@@ -83,9 +95,9 @@ Cross-cutting non-negotiables from the literature:
 
 #### FR-AI-1. Speech recognition (ASR) for Portuguese
 
-- The platform **shall** capture the Learner's speech in **Brazilian
-  Portuguese (pt-BR)** or **European Portuguese (pt-PT)**, matching the
-  Learner-selected dialect.
+- The platform **shall** capture the Learner's speech in **European
+  Portuguese (pt-PT)**. (v1 supports pt-PT only; pt-BR is deferred to v1.1 —
+  see ADR-0003.)
 - The platform **shall** transcribe speech using the **MiniMax ASR** model.
 - Final transcripts **shall** include word-level timestamps, confidence
   scores, and detected non-target-language switches.
@@ -137,8 +149,9 @@ Cross-cutting non-negotiables from the literature:
 
 - The platform **shall** synthesise the AI Teacher's voice from generated
   text using the **MiniMax TTS** model.
-- Dialect-matched voices **shall** be available for both pt-BR and pt-PT;
-  voice selection is fixed per Learner at sign-up.
+- Dialect-matched pt-PT voices **shall** be available; voice selection is
+  fixed per Learner at sign-up. (v1 ships one dialect; pt-BR voice deferred
+  to v1.1.)
 - The platform **shall** support adjustable playback speed (0.75×–1.25×)
   and a "slow then normal" repeat pattern for difficult utterances.
 
@@ -156,29 +169,33 @@ Cross-cutting non-negotiables from the literature:
 
 #### FR-LP-1. CEFR-aligned ladder
 
-The platform defines a six-stage ladder:
+The platform defines a **five-stage ladder**:
 
 | Stage | CEFR | Description (can-do summary) |
 | --- | --- | --- |
 | A0 | pre-A1 | Recognises the alphabet, can say hello/goodbye, counts to 20. |
 | A1 | A1 | Introduces self, asks/answers basic personal questions, handles routine interactions with rehearsed phrases. |
-| A2 | A2 | Describes daily routine and immediate environment; handles simple transactions (shopping, directions). |
-| A1→A2 | A1.5 | Bridges A1 to A2 with past-tense narration and connected sentences. |
+| A2 | A2 | Describes daily routine and immediate environment; handles simple transactions (shopping, directions); narrates connected past-tense events. |
 | B1 | B1 | Expresses opinions on familiar topics, narrates experiences, deals with most travel situations. *(programme completion target)* |
 
 Each stage contains 4–8 Units. Each Unit contains 3–8 Lessons plus at least
 one TBLT scenario task. Total estimated curriculum: 30 Units, ~150 Lessons,
-~250–300 hours of guided practice (vs. FSI's ~350–400h to B1).
+~250–300 hours of guided practice (vs. FSI's ~350–400h to B1). A **Placement
+Lesson** (§3.4 surface #2) lets Learners who self-assess above A0 skip the
+early alphabet / greeting Units after a single adaptive confirmatory Lesson.
 
 #### FR-LP-2. Curriculum sequencing
 
-- Units are arranged in a **directed acyclic graph** with linear default
-  ordering; alternative paths exist for Learners who struggle with specific
-  grammar topics.
+- Units are arranged in a **directed acyclic graph (DAG)** with linear
+  default ordering. Remediation and alternative grammar paths are modelled
+  as **Remedial Anchors** — pointers from a Unit to a prior Unit whose
+  content the AI Teacher re-presents with scaffolding when the Learner
+  struggles. Anchors are not back-edges; the canonical DAG stays acyclic.
 - A Unit is **unlocked** when the prior Unit is at ≥80% mastery.
-- The Lesson order within a Unit is **adaptive**: the SRS scheduler may
-  inject review Lessons if a Learner's half-life on prior material falls
-  below threshold.
+- The **Practice Exercise order** within a Unit is adaptive: the SRS
+  scheduler may inject review exercises (not full Lessons) drawn from
+  prior Units' vocabulary when a Learner's half-life on that material
+  falls below threshold.
 
 #### FR-LP-3. Lesson types
 
@@ -352,9 +369,13 @@ The AI Teacher **shall** mark each Learner utterance on four dimensions:
 
 The platform **shall** provide the following UI surfaces:
 
-1. **Sign-up / log-in** — email + password (or OAuth: Google, Apple).
+1. **Sign-up / log-in** — email + password. (OAuth: Google / Apple is
+   deferred to v1.1; see §1.3.)
 2. **Learner profile** — name, native language (default English), dialect
-   (pt-BR / pt-PT), proficiency self-assessment.
+   (*pt-PT — fixed at sign-up in v1*), proficiency self-assessment.
+   - When the self-assessment is above A0, the Learner is routed to a
+     **Placement Lesson** — a single adaptive Lesson that confirms or
+     revises the starting Unit before the regular sequence begins.
 3. **Dashboard** — current Unit, streak, weekly goal, recommended next
    action, recent mistakes.
 4. **Lesson player** — Lesson content + exercises + SRS review.
@@ -390,11 +411,16 @@ The platform **shall** provide the following UI surfaces:
 
 #### FR-DATA-2. Voice recordings
 
-- Voice recordings are **opt-in**: default is **do not store**; if the
+- **Stored Recordings** are **opt-in**: default is **do not store**; if the
   Learner enables storage, recordings are encrypted at rest and retained
   for 30 days unless the Learner extends or deletes sooner.
-- The Learner **shall** be able to delete all stored recordings from
+- The Learner **shall** be able to delete all Stored Recordings from
   Settings at any time.
+- The platform maintains a separate **SC-5 Sampling Buffer** — an ephemeral
+  audio buffer (≤ 24 h retention, no learner-identifying metadata persisted
+  alongside) used solely to compute SC-5 production-WER on a 1% sample of
+  utterances. The SC-5 Sampling Buffer is *not* a Stored Recording and is
+  not subject to opt-in.
 
 #### FR-DATA-3. Compliance
 
@@ -485,6 +511,9 @@ The platform **shall** provide the following UI surfaces:
   measured by an independent CEFR-aligned speaking assessment.
 - *Measurement:* post-curriculum assessment administered to a sample of
   completers every quarter; rolling 12-month average must hit 90%.
+- v1 uses **CAPLE** (Centro de Avaliação e Certificação de Português Língua
+  Estrangeira) as the external B1 assessment; CELPE-Bras is not used
+  because pt-BR is out of scope for v1 (see ADR-0003).
 
 ### SC-2. Platform uptime
 
@@ -536,8 +565,9 @@ The platform **shall** provide the following UI surfaces:
 ### 6.2 Speech recognition accuracy test (NFR-1)
 
 - **Corpus**: 500 clean (SNR ≥ 20 dB) + 500 noisy (SNR 10–20 dB)
-  utterances per dialect (pt-BR, pt-PT), balanced across phonemes,
-  sentence lengths, and speaker demographics.
+  utterances of pt-PT, balanced across phonemes, sentence lengths, and
+  speaker demographics. (v1 is pt-PT only; pt-BR test corpus deferred to
+  v1.1.)
 - **Speakers**: ≥ 50 speakers per dialect, balanced for gender and age.
 - **Metric**: Word Error Rate (WER); pass criterion ≤ 5% clean, ≤ 10%
   noisy.
@@ -572,8 +602,8 @@ The platform **shall** provide the following UI surfaces:
 ### 6.5 Learner outcome test (SC-1)
 
 - **Procedure**: every quarter, recruit a sample of ≥ 50 Learners who
-  have completed the curriculum and administer an independent CEFR B1
-  speaking assessment (CAPLE or CELPE-Bras depending on dialect).
+  have completed the curriculum and administer the **CAPLE** B1 speaking
+  assessment. (CELPE-Bras was the pt-BR path and is not used in v1.)
 - **Pass criterion**: ≥ 90% score at or above B1.
 - **Cadence**: quarterly, with rolling 12-month average reported in the
   product analytics dashboard.
@@ -610,8 +640,9 @@ The platform **shall** provide the following UI surfaces:
 - AI services are **MiniMax-only** for v1; no multi-provider abstraction.
 - v1 web-only — no native iOS/Android apps.
 - Single-learner accounts; no classroom / teacher dashboards.
-- pt-BR and pt-PT dialects; no African or Asian variants of Portuguese in
-  v1.
+- **pt-PT only** in v1; pt-BR and all other Portuguese variants
+  (African, Asian, indigenous, creole) are out of scope for v1 (see
+  ADR-0003).
 
 ### 7.2 Assumptions
 
@@ -620,8 +651,10 @@ The platform **shall** provide the following UI surfaces:
 - Learners have ≥ 5 Mbps internet for Conversational Practice.
 - The MiniMax AI suite is available with at least 99.5% monthly uptime
   and supports the languages listed in FR-AI-1 / FR-AI-2.
-- The platform is operated from a single initial region (Brazil for
-  pt-BR, EU for pt-PT) with global CDN distribution for static assets.
+- The platform is operated from a single initial region (EU — Lisbon /
+  Frankfurt) with global CDN distribution for static assets. (v1 is
+  pt-PT-only, so there is no Brazil region in v1; a Brazil region is
+  expected to land alongside pt-BR in v1.1.)
 
 ### 7.3 Out-of-scope explicit list (v1)
 
@@ -640,15 +673,21 @@ The platform **shall** provide the following UI surfaces:
 | Requirement | Research source | Design source |
 | --- | --- | --- |
 | FR-AI-1 / NFR-1 (ASR ≥ 95%) | ElevenLabs Scribe 2.3% WER; Whisper 4.1% | ADR-0002 |
+| FR-AI-1 (pt-PT only in v1) | — | ADR-0003 |
 | FR-AI-4 (modular difficulty control) | Jin et al. 2026 | ADR-0001 |
 | FR-AI-4 (immediate CF) | Kamelabad et al. 2026 | ADR-0001 |
+| FR-DATA-2 (SC-5 Sampling Buffer) | — | ADR-0003 |
 | FR-LP-1 (CEFR B1 target) | Loci 2026; FSI; CEFR | ADR-0001 |
+| FR-LP-1 (five-stage ladder, 3 Milestones) | — | ADR-0003 |
+| FR-LP-2 (Remedial Anchors in DAG) | — | ADR-0003 |
 | FR-LP-4 (HLR scheduler) | Settles & Meeder 2016 | ADR-0001 |
 | FR-LP-5 (Milestone Assessments) | Harris & Leeming 2021 | ADR-0001 |
 | FR-LP-6 (Affective Filter monitoring) | Krashen 1982; Nguyen & Doan 2025 | ADR-0001 |
 | FR-CP-1 (Voice Loop latency < 1.5s) | TBLT literature; Kamelabad et al. 2026 | ADR-0002 |
+| FR-CP-2 (Pronunciation Score source) | Phoneme-distance literature | ADR-0002 |
 | FR-CP-3 (ICF default) | Kamelabad et al. 2026 | ADR-0001 |
 | FR-WEB-2 (browser matrix) | AssemblyAI 2025; VoiceToTextOnline 2025 | ADR-0002 |
+| Sign-up OAuth deferral | — | ADR-0003 |
 
 ---
 
@@ -662,7 +701,21 @@ The following require decisions before kickoff:
 3. **C1/C2 curriculum** — content team staffing plan.
 4. **Pricing & subscription model** — owned by product, not engineering.
 5. **Human handoff** — design of the referral flow when AI Teacher
-   cannot make progress.
+   cannot make progress. Trigger: three failed Milestone attempts on the
+   same Level boundary despite Remedial Anchor exhaustion (see FR-LP-5 and
+   ADR-0003). The data model must track the referral row even though the
+   marketplace integration is out of scope for v1.
+
+The following were open at v1.0 draft and are now resolved (captured in
+ADR-0003):
+
+- ✅ pt-BR dialect — **deferred to v1.1**.
+- ✅ Six-stage ladder with an "A1→A2" bridge — **collapsed to five stages
+  (A0 → A1 → A2 → B1) with three Milestones**.
+- ✅ OAuth sign-in (Google / Apple) — **deferred to v1.1**.
+- ✅ Placement Lesson for above-A0 self-assessments — **added at sign-up**.
+- ✅ SC-5 audio sampling without opt-in — **solved by SC-5 Sampling
+  Buffer** (FR-DATA-2).
 
 ---
 

@@ -55,7 +55,6 @@ function Hero() {
               <span className="h-1.5 w-1.5 rounded-full bg-terracotta" />
               Powered by MiniMax
             </span>
-            <DialectChip variant="pt-BR" />
             <DialectChip variant="pt-PT" />
           </div>
 
@@ -68,7 +67,7 @@ function Hero() {
           </h1>
 
           <p className="max-w-xl text-pretty text-lg leading-relaxed text-ink-soft">
-            An AI teacher who listens, corrects, and chats — in Brazilian or European Portuguese.
+            An AI teacher who listens, corrects, and chats — in European Portuguese.
             From the alphabet to a held opinion at dinner, in the time you actually have.
           </p>
 
@@ -92,8 +91,8 @@ function Hero() {
               <dd className="font-display text-2xl text-ink">15 min / day</dd>
             </div>
             <div>
-              <dt className="stage-stamp">Dialects</dt>
-              <dd className="font-display text-2xl text-ink">pt-BR · pt-PT</dd>
+              <dt className="stage-stamp">Dialect</dt>
+              <dd className="font-display text-2xl text-ink">pt-PT</dd>
             </div>
           </dl>
         </div>

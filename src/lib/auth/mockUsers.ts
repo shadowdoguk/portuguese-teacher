@@ -4,7 +4,7 @@ const DEMO_USER: Learner = {
   id: "demo-learner-001",
   name: "Demo Learner",
   email: "demo@portugues.app",
-  dialect: "pt-BR",
+  dialect: "pt-PT",
   level: "A0",
   streakDays: 4,
   weeklyMinutes: 95,

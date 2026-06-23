@@ -1,9 +1,9 @@
 # ADR 0001 — Pedagogical Model
 
-**Status:** Accepted
-**Date:** 2026-06-22
+**Status:** Accepted (amended by ADR-0003)
+**Date:** 2026-06-22 (amended 2026-06-23)
 **Deciders:** Product, Pedagogy lead, Engineering lead
-**Related:** [`CONTEXT.md`](../../CONTEXT.md), [`docs/research/language-acquisition-findings.md`](../research/language-acquisition-findings.md), [`docs/requirements/portuguese-teacher-requirements.md`](../requirements/portuguese-teacher-requirements.md)
+**Related:** [`CONTEXT.md`](../../CONTEXT.md), [`docs/research/language-acquisition-findings.md`](../research/language-acquisition-findings.md), [`docs/requirements/portuguese-teacher-requirements.md`](../requirements/portuguese-teacher-requirements.md), [`ADR-0003`](0003-v1-scope-amendment.md)
 
 ## Context
 
@@ -60,8 +60,8 @@ Cross-cutting principles:
   Teacher's warmth and difficulty in response.
 - **CEFR-aligned ladder** with Milestone Assessments at each level
   boundary; ≥ 75% to advance.
-- **Dialect-locked**: pt-BR or pt-PT is set at sign-up and propagated
-  throughout.
+- **Dialect-locked** (per ADR-0003): pt-PT only in v1; the dialect is
+  fixed at sign-up and propagated throughout. pt-BR is deferred to v1.1.
 
 ## Consequences
 
@@ -83,7 +83,8 @@ Cross-cutting principles:
 - The difficulty-control pipeline adds latency (~100–300 ms) on top of
   base LLM latency. Voice Loop latency budget must accommodate this.
 - Maintaining two dialect tracks doubles Lesson Material Library
-  production cost.
+  production cost. **Superseded by ADR-0003**: v1 ships pt-PT only,
+  halving content production cost; pt-BR cost deferred to v1.1.
 - Pedagogical claims about efficacy must be validated empirically
   (SC-1); first measurement at end of cohort 1.
 
