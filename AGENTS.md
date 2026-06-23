@@ -1,5 +1,9 @@
 ## Agent skills
 
+### Session start
+
+Before doing any other work in this repo, read [`PROGRESS.md`](PROGRESS.md) for the current focus, recently completed work, the open issue queue, and any blockers. Update it when you transition work, file issues, or make decisions.
+
 ### Issue tracker
 
 Issues for this repo live in **GitHub Issues** for
