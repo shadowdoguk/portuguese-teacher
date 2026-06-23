@@ -6,16 +6,11 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Current focus
 
-**#2 — Curriculum data model + seed A0 content (pt-PT only)** *(next up; not yet started)*
-
-- **Branch:** `feat/issue-2-curriculum-model` (not yet created)
-- **Scope:** minimum-viable slice — TypeScript types, in-memory curriculum graph, `resolveAnchors()` runtime, A0 fixture Units, graph-reachability + anchor-acyclicity tests. Skip Prisma/DB and full A0 seed content (file as follow-up issues).
-- **Unblocks:** #4, #5, #7, #8, #15, #17.
-- **Independent of:** PR #20 review (proceed in parallel; no dep).
+**Next dep-ordered item:** #4 (HLR Spaced Repetition scheduler + review queue) — depends on #2, which just landed.
 
 ## In progress
 
-_(none — #2 is the next thing)_
+- **#2 — Curriculum data model + seed A0 content (pt-PT only)** — PR #22 open; minimum-viable slice shipped on `feat/issue-2-curriculum-model` (commits `89eb605`, merge of `c23be34`). 27/27 tests pass; typecheck/lint/build green. Follow-up issues filed: #23 (full A0 seed), #24 (Prisma schema), #25 (`pnpm seed:a0` script), #26 (build-time TTS asset pipeline). Awaiting human review.
 
 ## Recently completed
 
@@ -23,6 +18,7 @@ _(none — #2 is the next thing)_
 | --- | --- | --- |
 | 2026-06-23 | #1 Bootstrap Next.js + TypeScript app shell | closed; commits `fa53545`, `399a766` |
 | 2026-06-23 | #3 MiniMax AI client wrappers (LLM/ASR/TTS) | PR #20 open; branch `feat/issue-3-minimax-wrappers` (commits `fee6798`, `0a96d60`); 22/22 tests pass |
+| 2026-06-23 | PROGRESS tracker + HANDOFF + CI drift check | PR #21 (chore/progress-tracker) — folded into PR #22 so PROGRESS.md lands on `main` |
 
 ## Issue status
 
@@ -32,7 +28,7 @@ _(none — #2 is the next thing)_
 
 ### Open — implementation queue (dep-ordered)
 
-- **#2** Curriculum data model + seed A0 content (pt-PT only) — **next**
+- **#2** Curriculum data model + seed A0 content (pt-PT only) — **PR #22 open (in review)**
 - **#4** HLR Spaced Repetition scheduler + review queue
 - **#5** Voice Loop (Tier 1/2/3) end-to-end
 - **#6** LLM difficulty control pipeline (generate → re-rank)
@@ -56,9 +52,17 @@ _(none — #2 is the next thing)_
 - **#18** Affective Filter proxy instrumentation — no strong deps
 - **#19** Pronunciation Score phoneme-distance endpoint — depends on #3, #5
 
+### Open — follow-ups from #2 (minimum-viable slice)
+
+- **#23** Author full A0 seed content (≥ 4 Units, ≥ 3 Lessons/Unit, ≥ 1 scenario/Unit) — depends on #2
+- **#24** Prisma schema + migration for the curriculum entities — depends on #2
+- **#25** Admin script `pnpm seed:a0` — depends on #2, #23, #24
+- **#26** Build-time TTS asset pipeline using MiniMax TTS mocks — depends on #2, #3
+
 ## PRs
 
 - **#20** MiniMax AI client wrappers (LLM/ASR/TTS) — open, awaiting human review. Merge does not block #2.
+- **#22** Curriculum data model + A0 fixture (minimum-viable slice, closes #2) — open, awaiting human review. Brings in `chore/progress-tracker` (commit `c23be34`) so PROGRESS.md is on `main`.
 
 ## Decisions log
 
