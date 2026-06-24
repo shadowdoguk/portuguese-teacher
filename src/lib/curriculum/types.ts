@@ -71,13 +71,35 @@ export type GrammarPattern = {
   examples: ReadonlyArray<{ pt: string; gloss: string }>;
 };
 
+export type ScenarioCategory =
+  | "greetings-introductions"
+  | "cafe-restaurant"
+  | "shopping-bargaining"
+  | "directions"
+  | "doctor"
+  | "bank-post-office"
+  | "job-interview"
+  | "travelling"
+  | "social-plans"
+  | "cultural-norms";
+
+export type ScenarioStage = "pre-task" | "during-task" | "post-task";
+
 export type Scenario = {
   id: string;
   unitId: string;
+  category: ScenarioCategory;
+  targetLevel: Level;
   goal: string;
   setting: string;
   roles: { learner: string; teacher: string };
+  preTask: string;
+  expectedTurns: number;
+  vocabularyRefs: ReadonlyArray<string>;
+  grammarRefs: ReadonlyArray<string>;
+  remedialAnchorRefs: ReadonlyArray<{ toUnitId: string; reason: RemedialAnchorReason; note: string }>;
   successCriteria: ReadonlyArray<string>;
+  passingScore: number;
 };
 
 export type PracticeExercise = {

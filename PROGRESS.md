@@ -2,16 +2,17 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-23
+**Last updated:** 2026-06-24
 
 ## Current focus
 
-**Next dep-ordered item:** #7 (Conversational Practice UI + scenario library) — depends on #6 (this branch).
+**Next dep-ordered item:** #40 (Wire `generateAndRerankTurn` into the voice-loop API route) — depends on #6.
 
 ## In progress
 
-- **#6 — LLM difficulty control pipeline (generate → re-rank)** — branch `feat/issue-6-llm-difficulty-pipeline` (off `feat/issue-5-voice-loop`). Minimum-viable slice: `src/lib/voice-loop/{difficulty-estimator,level-vocabulary,system-prompt,rerank,ab-corpus,ab-mocks,ab-harness}.ts`; A/B harness writes `tmp/difficulty-ab-report.md`. 128/128 tests pass; typecheck/lint/build green. ADR-0004 ships. Follow-up issues filed: #40 (re-rank orchestrator wiring), #41 (expanded vocab fixture), #42 (live LLM harness acceptance). PR pending push.
-- **#5 — Voice Loop (Tier 1/2/3) end-to-end** — PR #32 open (against `feat/issue-4-srs-scheduler`); minimum-viable slice shipped on `feat/issue-5-voice-loop` (commits `56d1ad6` cherry-pick of #3, `ae53cd6` voice loop). 82/82 tests pass; typecheck/lint/build green. Follow-up issues filed: #33 (real audio capture), #34 (Playwright E2E), #35 (SC-5 sampling), #36 (latency SLI dashboards), #37 (Pronunciation Score wiring), #38 (ASR LM biasing), #39 (real TTS playback). Awaiting human review.
+- **#7 — Conversational Practice UI + scenario library** — branch `feat/issue-7-conversational-practice` (off `feat/issue-6-llm-difficulty-pipeline`). Minimum-viable slice: `src/lib/scenarios/{types,library,runner,store,index}.ts`, `src/components/practice/{ScenarioLibrary,ScenarioPlayer,ScenarioWorkspace}.tsx`, plus `Scenario` type extension in `src/lib/curriculum/types.ts` and 3 existing seed scenarios updated. 167/167 tests pass; typecheck/lint/build green. 30 pt-PT scenarios (FR-CP-4 floor) across all 10 `ScenarioCategory` values, with pt-BR contamination test (Unicode-aware tokenisation). Pre-task / during-task / post-task state machine; star rating + localStorage persistence; i+1 difficulty state reuse from #5. Follow-ups filed: #44 (DB persistence), #45 (TTS audio for briefings), #46 (SRS injection), #47 (library expansion ≥ 100), #48 (adaptive scenario difficulty). PR pending commit.
+- **#6 — LLM difficulty control pipeline (generate → re-rank)** — PR #43 open (against `feat/issue-5-voice-loop`). 128/128 tests pass; typecheck/lint/build green. ADR-0004 ships. Follow-ups filed: #40, #41, #42.
+- **#5 — Voice Loop (Tier 1/2/3) end-to-end** — PR #32 open (against `feat/issue-4-srs-scheduler`). 82/82 tests pass; typecheck/lint/build green. Follow-ups filed: #33-#39.
 
 ## Recently completed
 
@@ -32,7 +33,7 @@ A living document. Read this at the start of every session to pick up where the 
 - **#2** Curriculum data model + seed A0 content (pt-PT only) — **PR #22 open (in review)**
 - **#4** HLR Spaced Repetition scheduler + review queue — **PR #27 open (in review)**
 - **#5** Voice Loop (Tier 1/2/3) end-to-end — **PR #32 open (in review)**
-- **#6** LLM difficulty control pipeline (generate → re-rank)
+- **#6** LLM difficulty control pipeline (generate → re-rank) — **PR #43 open (in review)**
 - **#7** Conversational Practice UI + scenario library (≥ 30 scenarios)
 - **#8** Proficiency assessments + Milestone gating
 - **#9** Learner profile, dashboard, progress, settings UI
@@ -83,12 +84,21 @@ A living document. Read this at the start of every session to pick up where the 
 - **#41** Expand CEFR level vocabulary fixture (A2/B1 granularity + sub-levels) — depends on #6
 - **#42** Wire live MiniMax LLM into A/B harness (issue #6 acceptance ≥75% in-band) — depends on #6, #3
 
+### Open — follow-ups from #7 (minimum-viable slice)
+
+- **#44** Persist scenario completions + stars to Prisma DB (replaces localStorage) — depends on #7, #24, #9
+- **#45** Real MiniMax TTS audio for scenario briefings (preTask, goal, setting) — depends on #7, #26, #39
+- **#46** SRS injection of scenario vocabulary into review queue — depends on #7, #4, #28, #30
+- **#47** Expand scenario library to ≥ 100 scenarios across full curriculum — depends on #7, #23, #41
+- **#48** Adaptive scenario difficulty from Learner profile (stretch / review badges) — depends on #7, #9
+
 ## PRs
 
 - **#20** MiniMax AI client wrappers (LLM/ASR/TTS) — open, awaiting human review. Merge does not block #2.
 - **#22** Curriculum data model + A0 fixture (minimum-viable slice, closes #2) — open, awaiting human review. Brings in `chore/progress-tracker` (commit `c23be34`) so PROGRESS.md is on `main`.
 - **#27** HLR Spaced Repetition scheduler + review queue (minimum-viable slice, closes #4) — open against `feat/issue-2-curriculum-model`; retarget to `main` after #22 merges. 50/50 tests pass.
 - **#32** Voice Loop (Tier 1/2/3) end-to-end (minimum-viable slice, closes #5) — open against `feat/issue-4-srs-scheduler`; brings in the #3 MiniMax wrappers from PR #20 via a cherry-pick commit. 82/82 tests pass.
+- **#43** FR-AI-4 LLM difficulty-control pipeline (generate → re-rank) — minimum-viable slice, closes #6. Open against `feat/issue-5-voice-loop`. 128/128 tests pass.
 
 ## Decisions log
 
@@ -114,7 +124,6 @@ A living document. Read this at the start of every session to pick up where the 
 ## Update discipline
 
 Update this file when:
-
 - An issue moves into or out of **In progress** / **Next** / **Recently completed**
 - A new issue is filed
 - A decision is captured (add a line to **Decisions log**)
@@ -125,7 +134,6 @@ Update this file when:
 ## Drift check
 
 `pnpm progress:check` (a small Node script at `scripts/progress-check.mjs`) compares PROGRESS.md against the live issue tracker and fails if:
-
 - Any open issue is missing from PROGRESS.md's queue
 - `**Last updated:**` is more than 14 days old
 
