@@ -65,6 +65,11 @@ const A0_WORDS: readonly string[] = [
   "hoje",
   "ontem",
   "amanhã",
+  "praça",
+  "banco",
+  "loja",
+  "correio",
+  "praia",
 ];
 
 const A1_WORDS: readonly string[] = [
@@ -98,6 +103,10 @@ const A1_WORDS: readonly string[] = [
   "Portugal",
   "Lisboa",
   "Porto",
+  "Coimbra",
+  "Faro",
+  "Sintra",
+  "Cascais",
   "querer",
   "poder",
   "queres",
@@ -130,7 +139,6 @@ const A1_WORDS: readonly string[] = [
   "está bem",
   "muito bem",
   "tens de",
-  "queres",
   "um bocado",
   "talvez",
   "aqui",
@@ -153,6 +161,34 @@ const A1_WORDS: readonly string[] = [
   "manhã",
   "tarde",
   "noite",
+  "receita",
+  "médico",
+  "doente",
+  "febre",
+  "tosse",
+  "dor",
+  "cabeça",
+  "barriga",
+  "remédio",
+  "comprimido",
+  "táxi",
+  "autocarro",
+  "comboio",
+  "metro",
+  "bilhete",
+  "passaporte",
+  "mala",
+  "voo",
+  "aeroporto",
+  "hotel",
+  "quarto",
+  "reserva",
+  "pequeno-almoço",
+  "almoço",
+  "jantar",
+  "ementa",
+  "conta",
+  "gorjeta",
 ];
 
 const A2_WORDS: readonly string[] = [
@@ -187,7 +223,6 @@ const A2_WORDS: readonly string[] = [
   "viram",
   "disse",
   "disseste",
-  "disse",
   "disseram",
   "saí",
   "saíste",
@@ -196,7 +231,6 @@ const A2_WORDS: readonly string[] = [
   "saíram",
   "viagem",
   "férias",
-  "praia",
   "campo",
   "montanha",
   "jornal",
@@ -222,7 +256,7 @@ const A2_WORDS: readonly string[] = [
   "procurou",
   "lembrei",
   "lembrou",
-  "esquecí",
+  "esqueci",
   "esqueceu",
   "conheço",
   "conheces",
@@ -258,7 +292,26 @@ const A2_WORDS: readonly string[] = [
   "antes",
   "depois",
   "cedo",
-  "tarde",
+  "atrasado",
+  "chovia",
+  "choveu",
+  "fazia sol",
+  "estava nublado",
+  "transferi",
+  "levantou",
+  "levantámos",
+  "saquei",
+  "depositei",
+  "carreguei",
+  "paguei",
+  "recebi",
+  "abri",
+  "fechei",
+  "alugámos",
+  "arrendámos",
+  "matriculei-me",
+  "inscrevi-me",
+  "candidatei-me",
 ];
 
 const B1_WORDS: readonly string[] = [
@@ -321,7 +374,6 @@ const B1_WORDS: readonly string[] = [
   "comunicação",
   "relação",
   "influência",
-  "consequência",
   "objectivo",
   "objectivos",
   "propósito",
@@ -354,7 +406,6 @@ const B1_WORDS: readonly string[] = [
   "improvável",
   "provavelmente",
   "certamente",
-  "talvez",
   "possivelmente",
   "felizmente",
   "infelizmente",
@@ -370,6 +421,30 @@ const B1_WORDS: readonly string[] = [
   "interesso-me",
   "interessas-te",
   "interessa-se",
+  "estágio",
+  "entrevista",
+  "currículo",
+  "salário",
+  "ordenado",
+  "benefícios",
+  "horário",
+  "férias",
+  "baixa",
+  "despedimento",
+  "reforma",
+  "segurança social",
+  "impostos",
+  "recibo",
+  "factura",
+  "contrato",
+  "multibanco",
+  "balcão",
+  "caixa",
+  "agência",
+  "cartão",
+  "crédito",
+  "débito",
+  "transferência",
 ];
 
 const VOCABULARY_BY_LEVEL: Record<Level, ReadonlySet<string>> = {
@@ -381,4 +456,190 @@ const VOCABULARY_BY_LEVEL: Record<Level, ReadonlySet<string>> = {
 
 export function vocabularyFor(level: Level): ReadonlySet<string> {
   return VOCABULARY_BY_LEVEL[level];
+}
+
+export const SUB_LEVELS = ["A2.1", "A2.2", "B1.1", "B1.2"] as const;
+export type SubLevel = (typeof SUB_LEVELS)[number];
+
+const A2_1_WORDS: readonly string[] = [
+  "estabeleci",
+  "estabeleceu",
+  "comprometi-me",
+  "comprometeu-se",
+  "aconselhei",
+  "aconselhámos",
+  "recusei",
+  "recusou",
+  "aceitei",
+  "aceitou",
+  "desisti",
+  "desistiu",
+  "convenci",
+  "convenceu",
+  "convenceram",
+  "insisti",
+  "insistiu",
+  "sugeri",
+  "sugeriu",
+  "sugeriram",
+  "recomendei",
+  "recomendou",
+];
+
+const A2_2_WORDS: readonly string[] = [
+  "emprego",
+  "desemprego",
+  "estagiário",
+  "formação",
+  "qualificação",
+  "experiência profissional",
+  "candidatura",
+  "anúncio",
+  "entrevistador",
+  "recrutador",
+  "salário mínimo",
+  "subsídio",
+  "férias remuneradas",
+  "horário flexível",
+  "teletrabalho",
+  "presencial",
+  "reuniões",
+  "relatório",
+  "apresentação",
+  "prazo",
+  "objectivo profissional",
+];
+
+const B1_1_WORDS: readonly string[] = [
+  "narrativa",
+  "contexto",
+  "perspectiva",
+  "premissa",
+  "tese",
+  "argumento",
+  "contra-argumento",
+  "refutação",
+  "evidência",
+  "fonte",
+  "fiável",
+  "credível",
+  "parcial",
+  "imparcial",
+  "subjetivo",
+  "objectivo",
+  "ambíguo",
+  "preciso",
+  "rigoroso",
+  "aprofundar",
+  "aprofundei",
+  "aprofundámos",
+  "elaborei",
+  "elaborámos",
+  "desenvolvi",
+  "desenvolveu",
+];
+
+const B1_2_WORDS: readonly string[] = [
+  "poliglota",
+  "multilingue",
+  "língua materna",
+  "língua estrangeira",
+  "aquisição",
+  "imergir",
+  "imersão",
+  "fluência",
+  "proficiência",
+  "competência",
+  "desempenho",
+  "avaliação",
+  "auto-avaliação",
+  "feedback",
+  "progresso",
+  "regressão",
+  "plateau",
+  "avanço",
+  "recuo",
+  "consolidação",
+  "generalização",
+  "transferência",
+  "metalinguagem",
+  "metacognição",
+];
+
+export function isSubLevel(value: string): value is SubLevel {
+  return (SUB_LEVELS as readonly string[]).includes(value);
+}
+
+export function subLevelParent(sub: SubLevel): Level {
+  if (sub === "A2.1" || sub === "A2.2") return "A2";
+  return "B1";
+}
+
+export function vocabularyForSubLevel(sub: SubLevel): ReadonlySet<string> {
+  const parent = subLevelParent(sub);
+  const parentWords = VOCABULARY_BY_LEVEL[parent];
+  const additions =
+    sub === "A2.1"
+      ? A2_1_WORDS
+      : sub === "A2.2"
+        ? A2_2_WORDS
+        : sub === "B1.1"
+          ? B1_1_WORDS
+          : B1_2_WORDS;
+  return new Set([...parentWords, ...additions]);
+}
+
+export function assertMonotonicVocabulary(): void {
+  const sets: Record<Level, ReadonlySet<string>> = VOCABULARY_BY_LEVEL;
+  const order: Level[] = ["A0", "A1", "A2", "B1"];
+  for (let i = 1; i < order.length; i += 1) {
+    const prev = sets[order[i - 1]!]!;
+    const curr = sets[order[i]!]!;
+    for (const word of prev) {
+      if (!curr.has(word)) {
+        throw new Error(
+          `Vocabulary monotonicity violated: '${word}' present at ${order[i - 1]} but missing at ${order[i]}`,
+        );
+      }
+    }
+  }
+
+  for (const sub of SUB_LEVELS) {
+    const parentWords = VOCABULARY_BY_LEVEL[subLevelParent(sub)];
+    const subWords = vocabularyForSubLevel(sub);
+    for (const word of parentWords) {
+      if (!subWords.has(word)) {
+        throw new Error(
+          `Sub-level monotonicity violated: '${word}' present at parent of ${sub} but missing in sub-level vocab`,
+        );
+      }
+    }
+  }
+}
+
+export function vocabularyStats(): {
+  byLevel: Record<Level, number>;
+  bySubLevel: Record<SubLevel, number>;
+  totalUnique: number;
+} {
+  const byLevel: Record<Level, number> = {
+    A0: VOCABULARY_BY_LEVEL.A0.size,
+    A1: VOCABULARY_BY_LEVEL.A1.size,
+    A2: VOCABULARY_BY_LEVEL.A2.size,
+    B1: VOCABULARY_BY_LEVEL.B1.size,
+  };
+  const bySubLevel: Record<SubLevel, number> = {
+    "A2.1": vocabularyForSubLevel("A2.1").size,
+    "A2.2": vocabularyForSubLevel("A2.2").size,
+    "B1.1": vocabularyForSubLevel("B1.1").size,
+    "B1.2": vocabularyForSubLevel("B1.2").size,
+  };
+  const all = new Set<string>();
+  for (const set of Object.values(VOCABULARY_BY_LEVEL)) {
+    for (const word of set) all.add(word);
+  }
+  for (const set of Object.values(bySubLevel)) {
+    for (const word of vocabularyForSubLevel("A2.1")) all.add(word);
+  }
+  return { byLevel, bySubLevel, totalUnique: all.size };
 }
