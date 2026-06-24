@@ -54,6 +54,8 @@ export type AbHarnessOptions = {
   vocabByLevel: VocabularyByLevel;
   dialect: "pt-PT";
   mode?: "mock" | "live";
+  livePromptOnlyLlm?: LivePromptOnlyLlm;
+  liveRerankLlm?: (messages: LlmMessage[]) => Promise<LlmCompleteResult>;
   now?: () => number;
   generateId?: () => string;
 };
@@ -63,8 +65,14 @@ export async function runAbHarness(options: AbHarnessOptions): Promise<AbHarness
   const now = options.now ?? (() => Date.now());
   const generateId = options.generateId ?? (() => `turn-${Math.random().toString(36).slice(2, 8)}`);
 
-  const promptOnlyLlm = mode === "mock" ? buildMockPromptOnlyLlm() : null;
-  const rerankLlm = mode === "mock" ? buildMockRerankLlm() : null;
+  const promptOnlyLlm: PromptOnlyLlm | LivePromptOnlyLlm =
+    mode === "mock"
+      ? buildMockPromptOnlyLlm()
+      : options.livePromptOnlyLlm ?? defaultLivePromptOnlyLlm();
+  const rerankLlm: (messages: LlmMessage[]) => Promise<LlmCompleteResult> =
+    mode === "mock"
+      ? buildMockRerankLlm()
+      : options.liveRerankLlm ?? defaultLiveRerankLlm();
 
   const rows: AbHarnessRow[] = [];
   for (const entry of options.corpus.entries) {
@@ -77,7 +85,7 @@ export async function runAbHarness(options: AbHarnessOptions): Promise<AbHarness
 
     const promptOnlyText = await runPromptOnlyOnce({
       input,
-      llm: promptOnlyLlm ?? defaultLivePromptOnlyLlm(),
+      llm: promptOnlyLlm,
       entryId: entry.id,
     });
     const promptOnlyPayload = parseStructuredOutput(promptOnlyText);
@@ -89,7 +97,7 @@ export async function runAbHarness(options: AbHarnessOptions): Promise<AbHarness
     const promptOnlyDefects = detectDialectDefects(promptOnlyPayload.utterance);
 
     const rerankResult = await generateAndRerankTurn(input, {
-      llm: rerankLlm ?? defaultLiveRerankLlm(),
+      llm: rerankLlm,
       generateId,
       now,
       vocabByLevel: options.vocabByLevel,
