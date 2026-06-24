@@ -21,12 +21,13 @@
     "progress:check": "node scripts/progress-check.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,md}\"",
-    "progress:check": "node scripts/progress-check.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
-    "seed:a0": "tsx prisma/seed.ts --dialect pt-PT --level A0"
+    "seed:a0": "tsx prisma/seed.ts --dialect pt-PT --level A0",
+    "harness:live": "node scripts/run-ab-harness-live.mjs",
+    "harness:mock": "vitest run -- ab-harness"
   },
   "dependencies": {
     "next": "14.2.18",
