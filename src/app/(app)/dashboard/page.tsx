@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { A0_CURRICULUM, type Level, type LevelBoundary } from "@/lib/curriculum";
 import { Card } from "@/components/ui/Card";
+import { useAuth } from "@/lib/auth/useAuth";
 
 const nextLesson = {
   unit: "Unit 2 · Greetings & first conversations",
@@ -13,7 +17,21 @@ const queue = {
   estMinutes: 7,
 };
 
+function boundaryForLevel(level: Level): LevelBoundary | undefined {
+  if (level === "A0") return "A0-A1";
+  if (level === "A1") return "A1-A2";
+  if (level === "A2") return "A2-B1";
+  return undefined;
+}
+
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const learnerLevel = user?.level;
+  const boundary = learnerLevel ? boundaryForLevel(learnerLevel) : undefined;
+  const milestone = boundary
+    ? A0_CURRICULUM.milestones.find((m) => m.boundary === boundary)
+    : undefined;
+
   return (
     <div className="space-y-10">
       <header className="space-y-3">
@@ -26,6 +44,27 @@ export default function DashboardPage() {
           should take about fifteen minutes — including two turns with the AI teacher.
         </p>
       </header>
+
+      {milestone ? (
+        <section
+          aria-label="Milestone available"
+          className="card-surface flex flex-wrap items-center justify-between gap-3"
+        >
+          <div>
+            <span className="stage-stamp">Milestone ready</span>
+            <h2 className="mt-1 text-display-sm font-display font-light text-pretty">
+              {boundary} — pass at {Math.round(milestone.passingScore * 100)}%
+            </h2>
+            <p className="text-sm text-ink-soft">
+              {milestone.itemCount.min}–{milestone.itemCount.max} items; re-attempts allowed
+              after {milestone.cooldownHours}h cooldown.
+            </p>
+          </div>
+          <Link href={`/assess/${boundary}`} className="btn-primary inline-flex">
+            Take {boundary} Milestone →
+          </Link>
+        </section>
+      ) : null}
 
       <section className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Card
