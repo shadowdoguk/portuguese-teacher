@@ -1,3 +1,4 @@
+import type { Level } from "@/lib/curriculum";
 import type { Learner } from "./types";
 
 const DEMO_USER: Learner = {
@@ -22,16 +23,27 @@ export async function mockSignIn(email: string, _password: string): Promise<Lear
   });
 }
 
-export async function mockSignUp(input: {
+export type SignUpInput = {
   name: string;
   email: string;
   password: string;
-}): Promise<Learner> {
+  selfAssessedLevel?: Level;
+  entryUnitId?: string;
+  level?: Level;
+};
+
+export async function mockSignUp(input: SignUpInput): Promise<Learner> {
+  const id = `learner-${Date.now()}`;
+  const selfAssessedLevel =
+    input.selfAssessedLevel && input.selfAssessedLevel !== "A0" ? input.selfAssessedLevel : undefined;
   return delay<Learner>({
     ...DEMO_USER,
     name: input.name.trim() || DEMO_USER.name,
     email: input.email.trim() || DEMO_USER.email,
-    id: `learner-${Date.now()}`,
+    id,
+    selfAssessedLevel,
+    level: input.level ?? "A0",
+    currentUnitId: input.entryUnitId,
     createdAt: new Date().toISOString(),
   });
 }

@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { A0_CURRICULUM } from "@/lib/curriculum";
 import { Card } from "@/components/ui/Card";
+import { useAuth } from "@/lib/auth/useAuth";
 
 const nextLesson = {
   unit: "Unit 2 · Greetings & first conversations",
@@ -14,6 +18,11 @@ const queue = {
 };
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const currentUnit = user?.currentUnitId
+    ? A0_CURRICULUM.units.find((u) => u.id === user.currentUnitId)
+    : undefined;
+
   return (
     <div className="space-y-10">
       <header className="space-y-3">
@@ -26,6 +35,32 @@ export default function DashboardPage() {
           should take about fifteen minutes — including two turns with the AI teacher.
         </p>
       </header>
+
+      {currentUnit ? (
+        <section aria-label="Current Unit" className="card-surface space-y-2">
+          <span className="stage-stamp">Starting from</span>
+          <h2 className="text-display-sm font-display font-light text-pretty">
+            {currentUnit.title}
+          </h2>
+          <p className="text-sm text-ink-soft">{currentUnit.description}</p>
+          <p className="text-xs text-ink-mute">
+            Set by {user?.selfAssessedLevel ? `your Placement Lesson (you chose ${user.selfAssessedLevel})` : "your entry point"}.
+          </p>
+        </section>
+      ) : user?.selfAssessedLevel ? (
+        <section aria-label="Placement pending" className="card-surface space-y-3">
+          <span className="stage-stamp">Placement pending</span>
+          <h2 className="text-display-sm font-display font-light text-pretty">
+            We haven&apos;t placed you yet.
+          </h2>
+          <p className="text-sm text-ink-soft">
+            Take a quick Placement Lesson so we can pick the right starting Unit.
+          </p>
+          <Link href="/placement" className="btn-primary inline-flex">
+            Start placement →
+          </Link>
+        </section>
+      ) : null}
 
       <section className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Card

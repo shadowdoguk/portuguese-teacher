@@ -3,13 +3,25 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
+import { LEVELS, type Level } from "@/lib/curriculum";
+import { entryUnit, indexCurriculum } from "@/lib/curriculum";
+import { A0_CURRICULUM } from "@/lib/curriculum";
+import { requiresPlacement } from "@/lib/placement";
 import { useAuth } from "@/lib/auth/useAuth";
+
+const SELF_ASSESS_LABELS: Record<Level, string> = {
+  A0: "A0 · Absolute beginner — start with the alphabet",
+  A1: "A1 · I can handle greetings and simple questions",
+  A2: "A2 · I can manage everyday situations",
+  B1: "B1 · I can hold a conversation but want to refine it",
+};
 
 export default function SignUpPage() {
   const router = useRouter();
   const { signUp } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selfAssessment, setSelfAssessment] = useState<Level>("A0");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -26,8 +38,15 @@ export default function SignUpPage() {
     setSubmitting(true);
     setError(null);
     try {
-      await signUp({ name, email, password });
-      router.push("/dashboard");
+      const index = indexCurriculum(A0_CURRICULUM);
+      const entry = entryUnit(index);
+      const user = await signUp(
+        { name, email, password },
+        requiresPlacement(selfAssessment)
+          ? { selfAssessedLevel: selfAssessment }
+          : { selfAssessedLevel: undefined, entryUnitId: entry.id, level: "A0" },
+      );
+      router.push(user.currentUnitId ? "/dashboard" : "/placement");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Something went wrong.");
     } finally {
@@ -56,6 +75,32 @@ export default function SignUpPage() {
           required
           hint="Six characters or more."
         />
+
+        <fieldset className="space-y-2">
+          <legend className="stage-stamp block pb-1.5">Where are you in Portuguese?</legend>
+          <p className="text-xs text-ink-mute">
+            Above A0 starts with a single Placement Lesson that confirms or revises your
+            starting Unit. A0 skips it and goes straight to Unit 1.
+          </p>
+          <div className="space-y-2">
+            {LEVELS.map((level) => (
+              <label
+                key={level}
+                className="flex cursor-pointer items-start gap-3 rounded-lg border border-ink/15 bg-paper px-3 py-2.5 text-sm hover:border-terracotta"
+              >
+                <input
+                  type="radio"
+                  name="selfAssessedLevel"
+                  value={level}
+                  checked={selfAssessment === level}
+                  onChange={() => setSelfAssessment(level)}
+                  className="mt-1 accent-terracotta"
+                />
+                <span className="text-ink">{SELF_ASSESS_LABELS[level]}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
 
         {error ? (
           <p role="alert" className="text-sm text-terracotta-deep">

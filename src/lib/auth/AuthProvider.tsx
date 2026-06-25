@@ -8,7 +8,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { mockSignIn, mockSignOut, mockSignUp } from "./mockUsers";
+import type { Level } from "@/lib/curriculum";
+import { mockSignIn, mockSignOut, mockSignUp, type SignUpInput } from "./mockUsers";
 import type { Learner } from "./types";
 
 type AuthState =
@@ -16,13 +17,21 @@ type AuthState =
   | { status: "anonymous"; user: null }
   | { status: "authenticated"; user: Learner };
 
+export type SignUpOptions = Omit<SignUpInput, "name" | "email" | "password" | "level"> & {
+  level?: Level;
+};
+
 export type AuthContextValue = {
   state: AuthState;
   user: Learner | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (input: { name: string; email: string; password: string }) => Promise<void>;
+  signUp: (
+    input: { name: string; email: string; password: string },
+    options?: SignUpOptions,
+  ) => Promise<Learner>;
   signOut: () => Promise<void>;
   setDialect: (dialect: Learner["dialect"]) => void;
+  setCurrentUnit: (unitId: string, level: Level) => void;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -67,10 +76,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signUp = useCallback(
-    async (input: { name: string; email: string; password: string }) => {
-      const user = await mockSignUp(input);
+    async (
+      input: { name: string; email: string; password: string },
+      options: SignUpOptions = {},
+    ) => {
+      const user = await mockSignUp({ ...input, ...options });
       persist(user);
       setState({ status: "authenticated", user });
+      return user;
     },
     [persist],
   );
@@ -93,6 +106,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [persist],
   );
 
+  const setCurrentUnit = useCallback(
+    (unitId: string, level: Level) => {
+      setState((current) => {
+        if (current.status !== "authenticated") return current;
+        const updated: Learner = { ...current.user, currentUnitId: unitId, level };
+        persist(updated);
+        return { status: "authenticated", user: updated };
+      });
+    },
+    [persist],
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       state,
@@ -101,8 +126,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signOut,
       setDialect,
+      setCurrentUnit,
     }),
-    [state, signIn, signUp, signOut, setDialect],
+    [state, signIn, signUp, signOut, setDialect, setCurrentUnit],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
