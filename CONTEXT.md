@@ -27,6 +27,9 @@ MiniMax AI suite.
 | **Proficiency Assessment** | A short adaptive evaluation (multiple formats) that confirms readiness to advance to the next Level. |
 | **Placement Lesson** | A single adaptive Lesson administered at sign-up when the Learner self-assesses above A0. Confirms or revises the Learner's starting Unit. |
 | **Remedial Anchor** | A pointer from a Unit to a prior Unit whose content the AI Teacher can re-present with scaffolding when the Learner struggles. Anchors make remediation possible without back-edges in the curriculum DAG. |
+| **Assessment Item** | A single adaptive question/prompt presented to the Learner during a Proficiency Assessment. Skill ∈ {listening, reading, writing, speaking}; one of 15–25 per Milestone. |
+| **Proficiency Assessment Attempt** | The persisted record of one Proficiency Assessment run: `id`, `learnerId`, `boundary`, `attemptedAt`, `score`, `passed`, `recommendedAnchorUnitIds`, `perSkillScores`, optional `notes`. |
+| **Tutor Referral** | The persisted record of a human-tutor referral triggered by three failed Proficiency Assessment Attempts at the same boundary after Remedial Anchor exhaustion: `id`, `learnerId`, `boundary`, `triggeredAt`, `attemptCount`, `reason`. v1 ships the data row and a placeholder UI; the marketplace integration is out of scope per the requirements §9 open-questions list. |
 | **SRS (Spaced Repetition System)** | Half-life regression scheduler that surfaces vocabulary and grammar items at optimal review intervals. The SRS injects Practice Exercises, not full Lessons, into the active Unit. |
 | **TBLT (Task-Based Language Teaching)** | Pedagogical pattern in which the Learner completes a goal-oriented communicative task in Portuguese. |
 | **Comprehensible Input (CI)** | Krashen's i+1 principle: input slightly above the Learner's current level, ~70–90% comprehensible. |
