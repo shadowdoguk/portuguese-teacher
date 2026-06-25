@@ -35,10 +35,13 @@ export default function ProfilePage() {
         <Card eyebrow="Self-assessment" title="Where you think you are">
           {user?.selfAssessedLevel ? (
             <p>
-              You chose <strong>{user.selfAssessedLevel}</strong> at sign-up.
-              {aboveA0
-                ? " Your Placement Lesson confirmed or revised your starting Unit."
-                : " A0 skips the Placement Lesson — you started at the entry Unit."}
+              You chose <strong>{user.selfAssessedLevel}</strong> at sign-up. Your
+              Placement Lesson confirmed or revised your starting Unit.
+            </p>
+          ) : hasCurrentUnit ? (
+            <p>
+              You chose <strong>A0</strong> at sign-up. A0 skips the Placement Lesson
+              — you started at the entry Unit.
             </p>
           ) : (
             <p>

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { A0_CURRICULUM, indexCurriculum, type Level } from "@/lib/curriculum";
 import {
   PLACEMENT_LIMITS,
@@ -13,6 +13,7 @@ import {
   getPlacementStore,
   newPlacementAttemptId,
   overallScore,
+  PlacementError,
   requiresPlacement,
   shouldTerminate,
   startPlacementSession,
@@ -22,7 +23,7 @@ import {
 } from "@/lib/placement";
 import { useAuth } from "@/lib/auth/useAuth";
 
-type Phase = "loading" | "missing" | "running" | "outcome";
+type Phase = "loading" | "missing" | "running" | "outcome" | "error";
 
 const SKILL_LABEL: Record<"listening" | "reading" | "speaking", string> = {
   listening: "Listening",
@@ -37,6 +38,7 @@ export default function PlacementPage() {
   const [items, setItems] = useState<PlacementItem[]>([]);
   const [answers, setAnswers] = useState<PlacementAnswer[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   useEffect(() => {
     if (user === undefined) return;
@@ -48,12 +50,27 @@ export default function PlacementPage() {
       router.replace("/dashboard");
       return;
     }
-    const session = startPlacementSession(A0_CURRICULUM, user.selfAssessedLevel);
-    setItems(session);
-    setCurrentIndex(0);
-    setAnswers([]);
-    setPhase("running");
+    try {
+      const session = startPlacementSession(A0_CURRICULUM, user.selfAssessedLevel);
+      setItems(session);
+      setCurrentIndex(0);
+      setAnswers([]);
+      setPhase("running");
+    } catch (cause) {
+      setErrorMessage(
+        cause instanceof PlacementError
+          ? cause.message
+          : "Placement Lesson is unavailable right now.",
+      );
+      setPhase("error");
+    }
   }, [user, router]);
+
+  useEffect(() => {
+    if (phase === "running" && items.length > 0 && !items[currentIndex]) {
+      setPhase("outcome");
+    }
+  }, [phase, items, currentIndex]);
 
   const poolSize = useMemo(() => collectPlacementPool(A0_CURRICULUM).length, []);
 
@@ -83,6 +100,23 @@ export default function PlacementPage() {
     );
   }
 
+  if (phase === "error") {
+    return (
+      <div className="space-y-6">
+        <span className="stage-stamp">Placement</span>
+        <h1 className="text-display-lg font-display font-light text-pretty">
+          Placement Lesson is unavailable.
+        </h1>
+        <p role="alert" className="text-pretty text-terracotta-deep">
+          {errorMessage}
+        </p>
+        <Link href="/dashboard" className="btn-ghost inline-flex">
+          Back to dashboard
+        </Link>
+      </div>
+    );
+  }
+
   if (phase === "outcome") {
     return (
       <OutcomeScreen
@@ -101,7 +135,6 @@ export default function PlacementPage() {
 
   const currentItem = items[currentIndex];
   if (!currentItem) {
-    setPhase("outcome");
     return null;
   }
 
@@ -240,9 +273,13 @@ function OutcomeScreen({
   const perSkill = computeSkillScores(items, answers);
   const overall = overallScore(perSkill);
   const recommendedUnit = A0_CURRICULUM.units.find((u) => u.id === outcome.recommendedStartUnitId);
+  const acceptButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    acceptButtonRef.current?.focus();
+  }, []);
 
   function recordAttempt(confirmedStartUnitId: string, learnerAccepted: boolean) {
-    if (!learnerId) return;
     const store = getPlacementStore();
     store.record({
       id: newPlacementAttemptId(),
@@ -290,6 +327,7 @@ function OutcomeScreen({
 
         <div className="flex flex-wrap items-center gap-3">
           <button
+            ref={acceptButtonRef}
             type="button"
             className="btn-primary"
             onClick={() => {
@@ -351,34 +389,82 @@ function UnitOverridePicker({
   onPick: (unitId: string, level: Level) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
   const units = A0_CURRICULUM.units;
+
+  useEffect(() => {
+    if (!open) return;
+
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+
+    function handleClick(event: MouseEvent) {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (menuRef.current?.contains(target)) return;
+      if (triggerRef.current?.contains(target)) return;
+      setOpen(false);
+    }
+
+    document.addEventListener("keydown", handleKey);
+    document.addEventListener("mousedown", handleClick);
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+      document.removeEventListener("mousedown", handleClick);
+    };
+  }, [open]);
+
   return (
     <div className="relative">
-      <button type="button" className="btn-ghost" onClick={() => setOpen((value) => !value)}>
+      <button
+        ref={triggerRef}
+        type="button"
+        className="btn-ghost"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
         Pick a different Unit
       </button>
       {open ? (
         <ul
+          ref={menuRef}
           role="menu"
+          aria-label="Choose a different starting Unit"
           className="card-surface absolute z-10 mt-2 max-h-64 w-72 space-y-1 overflow-auto p-3 text-sm"
         >
-          {units.map((unit) => (
-            <li key={unit.id}>
-              <button
-                type="button"
-                role="menuitem"
-                className="w-full rounded-md px-2 py-2 text-left hover:bg-ink/5 disabled:opacity-50"
-                disabled={unit.id === recommendedUnitId}
-                onClick={() => {
-                  setOpen(false);
-                  onPick(unit.id, unit.level);
-                }}
-              >
-                <span className="stage-stamp">{unit.level}</span>
-                <span className="mt-1 block text-ink">{unit.title}</span>
-              </button>
-            </li>
-          ))}
+          {units.map((unit) => {
+            const isCurrent = unit.id === recommendedUnitId;
+            return (
+              <li key={unit.id}>
+                <button
+                  type="button"
+                  role="menuitem"
+                  aria-disabled={isCurrent}
+                  className="w-full rounded-md px-2 py-2 text-left hover:bg-ink/5 disabled:opacity-50"
+                  disabled={isCurrent}
+                  onClick={() => {
+                    setOpen(false);
+                    onPick(unit.id, unit.level);
+                  }}
+                >
+                  <span className="stage-stamp">{unit.level}</span>
+                  <span className="mt-1 block text-ink">{unit.title}</span>
+                  {isCurrent ? (
+                    <span className="mt-1 block text-xs text-ink-mute">
+                      Already recommended
+                    </span>
+                  ) : null}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       ) : null}
     </div>

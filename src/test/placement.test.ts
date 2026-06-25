@@ -94,6 +94,45 @@ describe("Placement pool and item selection", () => {
     const seen = new Set(extended.map((item) => item.sourceExerciseId));
     expect(seen.size).toBe(extended.length);
   });
+
+  it("preserves decorated ids of previously-shown items across extension", () => {
+    const initial = startPlacementSession(A0_CURRICULUM, "A1");
+    const answers = initial.map((item, i) => ({
+      itemId: item.id,
+      score: ((i % 2 === 0 ? 1 : 0.5) as 0 | 0.5 | 1),
+      answeredAt: new Date().toISOString(),
+    }));
+    const extended = extendPlacementItems(A0_CURRICULUM, initial, answers);
+    const initialIds = initial.map((i) => i.id);
+    const extendedFirstN = extended.slice(0, initial.length).map((i) => i.id);
+    expect(extendedFirstN).toEqual(initialIds);
+  });
+
+  it("terminates gracefully when the pool is exhausted before min items", () => {
+    const tiny = {
+      ...A0_CURRICULUM,
+      units: A0_CURRICULUM.units.slice(0, 1).map((u) => ({
+        ...u,
+        lessons: u.lessons.slice(0, 1).map((lesson) => ({
+          ...lesson,
+          exercises: lesson.exercises.slice(0, 1),
+        })),
+      })),
+    };
+    const session = startPlacementSession(tiny, "A1");
+    expect(session.length).toBeGreaterThan(0);
+    expect(session.length).toBeLessThanOrEqual(PLACEMENT_LIMITS.max);
+
+    const allAnswers = session.map((item) => ({
+      itemId: item.id,
+      score: 0.5 as 0 | 0.5 | 1,
+      answeredAt: new Date().toISOString(),
+    }));
+    expect(shouldTerminate(session, allAnswers)).toBe(false);
+
+    const extended = extendPlacementItems(tiny, session, allAnswers);
+    expect(extended.length).toBe(session.length);
+  });
 });
 
 describe("Placement branching on answers", () => {
@@ -350,10 +389,86 @@ describe("Placement store", () => {
     expect(store.forLearner("unknown")).toHaveLength(0);
   });
 
-  it("does not record an attempt when the learner self-assesses A0 (no row written)", () => {
+  it("does not record an attempt when the learner self-assesses A0 (no row written)", async () => {
+    const { mockSignUp } = await import("@/lib/auth/mockUsers");
     const store = getPlacementStore();
     expect(store.count()).toBe(0);
     expect(requiresPlacement("A0")).toBe(false);
+
+    const index = indexCurriculum(A0_CURRICULUM);
+    const entry = index.unitsById.get(index.entryUnitId)!;
+    const learner = await mockSignUp({
+      name: "A0 Learner",
+      email: "a0@example.com",
+      password: "secret1",
+      selfAssessedLevel: "A0",
+      entryUnitId: entry.id,
+      level: "A0",
+    });
+
+    expect(learner.currentUnitId).toBe(entry.id);
+    expect(learner.level).toBe("A0");
+    expect(learner.selfAssessedLevel).toBeUndefined();
+    expect(store.count()).toBe(0);
+  });
+
+  it("an A1 self-assessment that completes placement creates one PlacementLessonAttempt", () => {
+    const store = getPlacementStore();
+    const session = startPlacementSession(A0_CURRICULUM, "A1");
+    const answers = session.map((item, i) => ({
+      itemId: item.id,
+      score: (i % 2 === 0 ? 1 : 0.5) as 0 | 0.5 | 1,
+      answeredAt: new Date().toISOString(),
+    }));
+    const outcome = buildPlacementOutcome(A0_CURRICULUM, index, "A1", session, answers);
+
+    const attemptId = newPlacementAttemptId();
+    store.record({
+      id: attemptId,
+      learnerId: "learner-a1",
+      attemptedAt: new Date().toISOString(),
+      selfAssessedLevel: "A1",
+      score: outcome.overallScore,
+      recommendedStartUnitId: outcome.recommendedStartUnitId,
+      confirmedStartUnitId: outcome.recommendedStartUnitId,
+      notes: "accepted=true",
+    });
+
+    expect(store.forLearner("learner-a1")).toHaveLength(1);
+    expect(store.get(attemptId)?.confirmedStartUnitId).toBe(outcome.recommendedStartUnitId);
+  });
+
+  it("logs the overridden Unit as confirmedStartUnitId when the learner disagrees", () => {
+    const store = new PlacementStore();
+    const session = startPlacementSession(A0_CURRICULUM, "A1");
+    const answers = session.map((item) => ({
+      itemId: item.id,
+      score: 1 as const,
+      answeredAt: new Date().toISOString(),
+    }));
+    const outcome = buildPlacementOutcome(A0_CURRICULUM, index, "A1", session, answers);
+
+    const confirmed = buildConfirmOutcome(outcome, {
+      learnerAccepted: false,
+      overrideUnitId: "a0-3-numeros",
+    });
+
+    store.record({
+      id: newPlacementAttemptId(),
+      learnerId: "learner-override",
+      attemptedAt: new Date().toISOString(),
+      selfAssessedLevel: "A1",
+      score: confirmed.overallScore,
+      recommendedStartUnitId: confirmed.recommendedStartUnitId,
+      confirmedStartUnitId: confirmed.confirmedStartUnitId,
+      notes: `accepted=${confirmed.learnerAccepted}`,
+    });
+
+    const attempts = store.forLearner("learner-override");
+    expect(attempts).toHaveLength(1);
+    expect(attempts[0]!.confirmedStartUnitId).toBe("a0-3-numeros");
+    expect(attempts[0]!.recommendedStartUnitId).toBe(confirmed.recommendedStartUnitId);
+    expect(attempts[0]!.notes).toContain("accepted=false");
   });
 
   it("tracks multiple attempts per learner in insertion order", () => {

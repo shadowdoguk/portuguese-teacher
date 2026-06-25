@@ -151,8 +151,6 @@ export type PlacementLessonAttempt = {
   notes?: string;
 };
 
-export type PlacementSkill = "listening" | "reading" | "speaking";
-
 export type Curriculum = {
   dialect: Dialect;
   units: ReadonlyArray<Unit>;

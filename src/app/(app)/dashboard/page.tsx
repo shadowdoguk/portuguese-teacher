@@ -44,7 +44,11 @@ export default function DashboardPage() {
           </h2>
           <p className="text-sm text-ink-soft">{currentUnit.description}</p>
           <p className="text-xs text-ink-mute">
-            Set by {user?.selfAssessedLevel ? `your Placement Lesson (you chose ${user.selfAssessedLevel})` : "your entry point"}.
+            {user?.selfAssessedLevel && user.selfAssessedLevel !== currentUnit.level
+              ? `You self-assessed as ${user.selfAssessedLevel}; we placed you at ${currentUnit.level} based on your answers.`
+              : user?.selfAssessedLevel
+                ? `Set by your Placement Lesson (you chose ${user.selfAssessedLevel}).`
+                : "Set by your entry point."}
           </p>
         </section>
       ) : user?.selfAssessedLevel ? (

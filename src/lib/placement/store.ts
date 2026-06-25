@@ -12,6 +12,10 @@ export class PlacementStore {
     return attempt;
   }
 
+  // TODO(#24): replace in-memory Map with Prisma PlacementLessonAttempt writes.
+  // The store shape (record/get/forLearner) is the surface the server action will
+  // need to expose. Until then, attempts reset on every page reload.
+
   get(attemptId: string): PlacementLessonAttempt | undefined {
     return this.attempts.get(attemptId);
   }
