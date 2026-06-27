@@ -32,7 +32,12 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma client
-        run: pnpm exec prisma generate
+        run: |
+          if [ -f prisma/schema.prisma ]; then
+            pnpm exec prisma generate
+          else
+            echo "No prisma/schema.prisma; skipping prisma generate"
+          fi
 
       - name: Progress tracker drift check
         run: pnpm progress:check
