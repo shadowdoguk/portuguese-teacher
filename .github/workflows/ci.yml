@@ -29,6 +29,8 @@ jobs:
           cache: pnpm
 
       - name: Install
+      - name: Generate Prisma client
+        run: pnpm exec prisma generate
         run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma client (if schema present)
