@@ -29,9 +29,10 @@ jobs:
           cache: pnpm
 
       - name: Install
+        run: pnpm install --frozen-lockfile
+
       - name: Generate Prisma client
         run: pnpm exec prisma generate
-        run: pnpm install --frozen-lockfile
 
       - name: Progress tracker drift check
         run: pnpm progress:check
