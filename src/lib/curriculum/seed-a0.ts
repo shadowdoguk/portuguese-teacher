@@ -598,16 +598,343 @@ const A0_3_CAFE: Unit = {
   ],
 };
 
+const A0_4_ROTINA: Unit = {
+  id: "a0-4-rotina-e-horas",
+  level: "A0",
+  order: 4,
+  title: "Rotina diária e horas",
+  description:
+    "Dizer as horas em português europeu, descrever a rotina de um dia de trabalho, e usar o verbo ‘estar’ em presente simples para localizar e descrever estados.",
+  prerequisiteUnitIds: ["a0-3-cafe-pedidos"],
+  remedialAnchors: [
+    {
+      fromUnitId: "a0-4-rotina-e-horas",
+      toUnitId: "a0-2-numeros-apresentacoes",
+      reason: "vocabulary-decay",
+      note:
+        "Rever os números 1–30 quando o Learner hesitar nas horas compostas (ex.: ‘vinte e uma’).",
+    },
+  ],
+  lessons: [
+    {
+      id: "a0-4-l1-horas",
+      unitId: "a0-4-rotina-e-horas",
+      order: 1,
+      kind: "vocabulary",
+      title: "Que horas são?",
+      estimatedMinutes: 9,
+      body: {
+        introduction:
+          "Em Portugal pergunta-se ‘que horas são?’ e responde-se com o verbo ‘ser’ + numeral; ‘e meia’, ‘e um quarto’ e ‘menos um quarto’ cobrem os quartos de hora.",
+        blocks: [
+          {
+            kind: "rule",
+            text: "É uma hora. São duas horas. A partir do número dois, o verbo é ‘são’. A expressão ‘da manhã / da tarde / da noite’ esclarece o período.",
+          },
+          {
+            kind: "example",
+            pt: "São nove e meia da manhã.",
+            gloss: "It is 9:30 in the morning.",
+          },
+          {
+            kind: "example",
+            pt: "É uma e um quarto da tarde.",
+            gloss: "It is 1:15 in the afternoon.",
+          },
+          {
+            kind: "example",
+            pt: "São sete menos um quarto.",
+            gloss: "It is a quarter to seven.",
+          },
+        ],
+      },
+      exercises: [
+        {
+          id: "a0-4-l1-e1",
+          lessonId: "a0-4-l1-horas",
+          kind: "flashcard",
+          prompt: "meia",
+          expectedAnswer: "half (hour)",
+          difficulty: "easy",
+          vocabularyRefs: ["a0-4-v-meia"],
+          grammarRefs: ["a0-4-g-hora"],
+        },
+        {
+          id: "a0-4-l1-e2",
+          lessonId: "a0-4-l1-horas",
+          kind: "fill-in",
+          prompt: "São três ______ da tarde. (15:00)",
+          expectedAnswer: "horas",
+          difficulty: "easy",
+          vocabularyRefs: [],
+          grammarRefs: ["a0-4-g-hora"],
+        },
+        {
+          id: "a0-4-l1-e3",
+          lessonId: "a0-4-l1-horas",
+          kind: "pronunciation-drill",
+          prompt: "Diz: ‘São dez e um quarto da noite.’",
+          difficulty: "core",
+          vocabularyRefs: [],
+          grammarRefs: ["a0-4-g-hora"],
+        },
+      ],
+    },
+    {
+      id: "a0-4-l2-rotina",
+      unitId: "a0-4-rotina-e-horas",
+      order: 2,
+      kind: "vocabulary",
+      title: "A minha rotina",
+      estimatedMinutes: 8,
+      body: {
+        introduction:
+          "As três refeições portuguesas têm nomes próprios — pequeno-almoço, almoço e jantar — e cada uma tem o seu lugar no relógio do dia.",
+        blocks: [
+          {
+            kind: "rule",
+            text: "Acordo às sete. Tomo o pequeno-almoço às oito. Almoço ao meio-dia. Janto às oito. A forma padrão é verbo na 1.ª pessoa + preposição ‘a’ + hora.",
+          },
+          {
+            kind: "example",
+            pt: "Acordo às sete e tomo o pequeno-almoço às oito.",
+            gloss: "I wake up at seven and have breakfast at eight.",
+          },
+          {
+            kind: "example",
+            pt: "Janto tarde, por volta das nove.",
+            gloss: "I eat dinner late, around nine.",
+          },
+        ],
+      },
+      exercises: [
+        {
+          id: "a0-4-l2-e1",
+          lessonId: "a0-4-l2-rotina",
+          kind: "flashcard",
+          prompt: "pequeno-almoço",
+          expectedAnswer: "breakfast",
+          difficulty: "easy",
+          vocabularyRefs: ["a0-4-v-pequeno-almoco"],
+          grammarRefs: [],
+        },
+        {
+          id: "a0-4-l2-e2",
+          lessonId: "a0-4-l2-rotina",
+          kind: "free-response",
+          prompt: "A que horas tomas o pequeno-almoço? Responde com uma frase completa.",
+          difficulty: "core",
+          vocabularyRefs: ["a0-4-v-pequeno-almoco"],
+          grammarRefs: [],
+        },
+      ],
+    },
+    {
+      id: "a0-4-l3-estar",
+      unitId: "a0-4-rotina-e-horas",
+      order: 3,
+      kind: "grammar",
+      title: "Onde estou? O que estou a fazer?",
+      estimatedMinutes: 7,
+      body: {
+        introduction:
+          "O verbo ‘estar’ serve para duas coisas: dizer onde estamos (localização) e descrever uma acção em curso (estar a + infinitivo).",
+        blocks: [
+          {
+            kind: "rule",
+            text: "Estou em casa. Estou no escritório. Estou a trabalhar. Estou a estudar. A construção ‘estar a + infinitivo’ indica acção em curso no momento presente.",
+          },
+          {
+            kind: "example",
+            pt: "Estou a trabalhar em Lisboa, mas agora estou em casa.",
+            gloss: "I work in Lisbon, but right now I'm at home.",
+          },
+          {
+            kind: "example",
+            pt: "A que horas estás a sair?",
+            gloss: "What time are you leaving?",
+          },
+        ],
+      },
+      exercises: [
+        {
+          id: "a0-4-l3-e1",
+          lessonId: "a0-4-l3-estar",
+          kind: "fill-in",
+          prompt: "Agora ______ a trabalhar. (estar, 1.ª pessoa)",
+          expectedAnswer: "estou",
+          difficulty: "easy",
+          vocabularyRefs: [],
+          grammarRefs: ["a0-4-g-estar"],
+        },
+        {
+          id: "a0-4-l3-e2",
+          lessonId: "a0-4-l3-estar",
+          kind: "role-play",
+          prompt: "Um amigo telefona. Diz onde estás e o que estás a fazer.",
+          difficulty: "core",
+          vocabularyRefs: ["a0-4-v-casa", "a0-4-v-escritorio"],
+          grammarRefs: ["a0-4-g-estar"],
+        },
+      ],
+    },
+  ],
+  vocabulary: [
+    {
+      id: "a0-4-v-meia",
+      unitId: "a0-4-rotina-e-horas",
+      pt: "meia",
+      gloss: "half (hour)",
+      partOfSpeech: "noun",
+      examplePt: "São cinco e meia.",
+      exampleGloss: "It is 5:30.",
+    },
+    {
+      id: "a0-4-v-quarto",
+      unitId: "a0-4-rotina-e-horas",
+      pt: "quarto",
+      gloss: "quarter (hour)",
+      partOfSpeech: "noun",
+      examplePt: "São dez e um quarto.",
+      exampleGloss: "It is 10:15.",
+    },
+    {
+      id: "a0-4-v-pequeno-almoco",
+      unitId: "a0-4-rotina-e-horas",
+      pt: "pequeno-almoço",
+      gloss: "breakfast (Portuguese main morning meal)",
+      partOfSpeech: "noun",
+      examplePt: "Tomo o pequeno-almoço às oito.",
+      exampleGloss: "I have breakfast at eight.",
+    },
+    {
+      id: "a0-4-v-almoco",
+      unitId: "a0-4-rotina-e-horas",
+      pt: "almoço",
+      gloss: "lunch",
+      partOfSpeech: "noun",
+    },
+    {
+      id: "a0-4-v-jantar",
+      unitId: "a0-4-rotina-e-horas",
+      pt: "jantar",
+      gloss: "dinner",
+      partOfSpeech: "noun",
+      examplePt: "Janto às oito.",
+      exampleGloss: "I have dinner at eight.",
+    },
+    {
+      id: "a0-4-v-acordar",
+      unitId: "a0-4-rotina-e-horas",
+      pt: "acordar",
+      gloss: "to wake up",
+      partOfSpeech: "verb",
+      examplePt: "Acordo às sete.",
+      exampleGloss: "I wake up at seven.",
+    },
+    {
+      id: "a0-4-v-trabalhar",
+      unitId: "a0-4-rotina-e-horas",
+      pt: "trabalhar",
+      gloss: "to work",
+      partOfSpeech: "verb",
+      examplePt: "Estou a trabalhar.",
+      exampleGloss: "I am working.",
+    },
+    {
+      id: "a0-4-v-casa",
+      unitId: "a0-4-rotina-e-horas",
+      pt: "casa",
+      gloss: "home, house",
+      partOfSpeech: "noun",
+      examplePt: "Estou em casa.",
+      exampleGloss: "I am at home.",
+    },
+    {
+      id: "a0-4-v-escritorio",
+      unitId: "a0-4-rotina-e-horas",
+      pt: "escritório",
+      gloss: "office",
+      partOfSpeech: "noun",
+      examplePt: "Estou no escritório.",
+      exampleGloss: "I am at the office.",
+    },
+    {
+      id: "a0-4-v-noite",
+      unitId: "a0-4-rotina-e-horas",
+      pt: "noite",
+      gloss: "night",
+      partOfSpeech: "noun",
+      examplePt: "Boa noite!",
+      exampleGloss: "Good night!",
+    },
+  ],
+  grammar: [
+    {
+      id: "a0-4-g-hora",
+      unitId: "a0-4-rotina-e-horas",
+      name: "Dizer as horas",
+      description:
+        "‘É uma hora’ (singular) e ‘são X horas’ (plural). Os quartos acrescentam ‘e um quarto / e meia / menos um quarto’. ‘Da manhã / da tarde / da noite’ indica o período do dia.",
+      examples: [
+        { pt: "É uma hora.", gloss: "It is one o'clock." },
+        { pt: "São três e meia da tarde.", gloss: "It is 3:30 in the afternoon." },
+        { pt: "São oito menos um quarto da noite.", gloss: "It is a quarter to eight in the evening." },
+      ],
+    },
+    {
+      id: "a0-4-g-estar",
+      unitId: "a0-4-rotina-e-horas",
+      name: "Estar em presente: localização e acção em curso",
+      description:
+        "Estou (1.ª p. sing.), estás, está, estamos, estão. Para localização: ‘estar em / no / na + lugar’. Para acção em curso: ‘estar a + infinitivo’.",
+      examples: [
+        { pt: "Estou em casa.", gloss: "I am at home." },
+        { pt: "Estou a trabalhar.", gloss: "I am working." },
+        { pt: "Onde estás?", gloss: "Where are you?" },
+      ],
+    },
+    {
+      id: "a0-4-g-rotina",
+      unitId: "a0-4-rotina-e-horas",
+      name: "Verbos da rotina na 1.ª pessoa",
+      description:
+        "Acordo (acordar), almoço (almoçar), janto (jantar). A preposição ‘a’ liga o verbo à hora: ‘almoço ao meio-dia’, ‘janto às oito’.",
+      examples: [
+        { pt: "Acordo às sete.", gloss: "I wake up at seven." },
+        { pt: "Almoço ao meio-dia.", gloss: "I have lunch at noon." },
+      ],
+    },
+  ],
+  scenarios: [
+    {
+      id: "a0-4-s-plano-amanha",
+      unitId: "a0-4-rotina-e-horas",
+      goal: "Combinares com um colega português a hora de um encontro para amanhã e descreve a tua rotina actual.",
+      setting: "Mensagem de telemóvel entre dois colegas que vão ter um café amanhã.",
+      roles: {
+        learner: "Trabalhador estrangeiro a marcar um encontro.",
+        teacher: "Colega português paciente que propõe e confirma horários.",
+      },
+      successCriteria: [
+        "O Learner propõe duas janelas horárias com números e horas correctos (ex.: ‘dez da manhã’).",
+        "O Learner refere pelo menos duas refeições (pequeno-almoço, almoço ou jantar).",
+        "O Learner usa ‘estar a’ + infinitivo para descrever o que está a fazer hoje.",
+      ],
+    },
+  ],
+};
+
 export const A0_CURRICULUM: Curriculum = {
   dialect: "pt-PT",
-  units: [A0_1_ALPHABET, A0_2_NUMEROS, A0_3_CAFE],
+  units: [A0_1_ALPHABET, A0_2_NUMEROS, A0_3_CAFE, A0_4_ROTINA],
   entryUnitId: "a0-1-alfabeto-saudacoes",
   milestones: [
     {
       boundary: "A0-A1",
       fromLevel: "A0",
       toLevel: "A1",
-      unitId: "a0-3-cafe-pedidos",
+      unitId: "a0-4-rotina-e-horas",
       passingScore: 0.75,
       itemCount: { min: 15, max: 25 },
       cooldownHours: 24,

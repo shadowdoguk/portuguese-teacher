@@ -33,6 +33,17 @@ describe("A0 seed fixture", () => {
     expect(a0Units[0]?.id).toBe(A0_CURRICULUM.entryUnitId);
   });
 
+  it("seeds ≥ 4 A0 Units with ≥ 3 Lessons each (issue #24 full acceptance)", () => {
+    const index = indexCurriculum(A0_CURRICULUM);
+    const a0Units = unitsAtLevel(index, "A0");
+    expect(a0Units.length).toBeGreaterThanOrEqual(4);
+    expect(lessonCount(index)).toBeGreaterThanOrEqual(12);
+    for (const unit of a0Units) {
+      expect(unit.lessons.length).toBeGreaterThanOrEqual(3);
+      expect(unit.scenarios.length).toBeGreaterThanOrEqual(1);
+    }
+  });
+
   it("orders units at the same level monotonically", () => {
     const index = indexCurriculum(A0_CURRICULUM);
     for (const level of LEVELS) {
@@ -245,7 +256,7 @@ describe("milestones", () => {
 
   it("registers the A0→A1 milestone on the final A0 unit", () => {
     const milestone = getMilestoneForBoundary(index, "A0-A1");
-    expect(milestone.unitId).toBe("a0-3-cafe-pedidos");
+    expect(milestone.unitId).toBe("a0-4-rotina-e-horas");
     expect(milestone.passingScore).toBe(0.75);
     expect(milestone.cooldownHours).toBe(24);
     expect(milestone.maxAttemptsBeforeReferral).toBe(3);
