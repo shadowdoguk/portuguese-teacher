@@ -1,4 +1,5 @@
 import type { Learner } from "./types";
+import { DEFAULT_NATIVE_LANGUAGE, DEFAULT_SELF_ASSESSMENT } from "./types";
 
 const DEMO_USER: Learner = {
   id: "demo-learner-001",
@@ -9,6 +10,9 @@ const DEMO_USER: Learner = {
   streakDays: 4,
   weeklyMinutes: 95,
   createdAt: "2026-06-01T00:00:00.000Z",
+  nativeLanguage: DEFAULT_NATIVE_LANGUAGE,
+  selfAssessmentLevel: DEFAULT_SELF_ASSESSMENT,
+  goals: ["travel", "heritage"],
 };
 
 function delay<T>(value: T, ms = 240): Promise<T> {
@@ -18,6 +22,9 @@ function delay<T>(value: T, ms = 240): Promise<T> {
 export async function mockSignIn(email: string, _password: string): Promise<Learner> {
   return delay<Learner>({
     ...DEMO_USER,
+    nativeLanguage: DEMO_USER.nativeLanguage ?? DEFAULT_NATIVE_LANGUAGE,
+    selfAssessmentLevel: DEMO_USER.selfAssessmentLevel ?? DEFAULT_SELF_ASSESSMENT,
+    goals: DEMO_USER.goals ?? [],
     email: email.trim() || DEMO_USER.email,
   });
 }
@@ -33,6 +40,9 @@ export async function mockSignUp(input: {
     email: input.email.trim() || DEMO_USER.email,
     id: `learner-${Date.now()}`,
     createdAt: new Date().toISOString(),
+    nativeLanguage: DEFAULT_NATIVE_LANGUAGE,
+    selfAssessmentLevel: DEFAULT_SELF_ASSESSMENT,
+    goals: [],
   });
 }
 

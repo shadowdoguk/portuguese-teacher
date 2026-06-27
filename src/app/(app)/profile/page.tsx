@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/Card";
 import { DialectPicker } from "@/components/ui/DialectPicker";
+import { ProfileForm } from "@/components/profile/ProfileForm";
 
 export default function ProfilePage() {
   return (
@@ -19,20 +20,19 @@ export default function ProfilePage() {
         <Card eyebrow="Dialect" title="Which Portuguese?">
           <DialectPicker />
         </Card>
-
-        <Card eyebrow="Native language" title="English">
-          We’ll explain tricky grammar points in your native language when asked.
-        </Card>
-
-        <Card eyebrow="Self-assessment" title="Where you think you are">
-          If you&apos;re above A0, a single Placement Lesson will confirm or
-          revise your starting Unit before the regular sequence begins.
-        </Card>
-
-        <Card eyebrow="Goals" title="Why are you learning?">
-          Travel · Heritage · Work · Romance. The teacher tunes scenarios to match.
+        <Card
+          eyebrow="Why a read-only card?"
+          title="v1 ships European Portuguese only"
+        >
+          <p className="text-sm text-ink-soft">
+            Per ADR-0003 the platform locks dialect to <strong>pt-PT</strong> at
+            sign-up. Brazilian Portuguese is on the v1.1 roadmap. Cross-dialect
+            contamination would degrade the AI Teacher&apos;s voice and vocabulary.
+          </p>
         </Card>
       </section>
+
+      <ProfileForm />
     </div>
   );
 }
