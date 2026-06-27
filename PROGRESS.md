@@ -2,15 +2,15 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-27 (session end)
+**Last updated:** 2026-06-27 (session end + doc refresh)
 
 ## Current focus
 
-**CI unblock sweep complete; dep-ordered PR merge ready to begin.**
+**Six PRs CI-SUCCESS and ready to merge; remaining 11 PRs re-pushed with conditional prisma step; awaiting Actions queue.**
 
-- PRs SUCCESS on CI: #20, #21, #22, #55, #57, #59.
-- PRs with workflow repaired (push queued, awaiting GitHub Actions queue): #27, #32, #43, #49, #50, #51, #52, #53, #54, #56, #58.
-- Recommended merge order: #20 → #55 → #57 → #22 → #21 → #59, then the dep-ordered queue unblocked by #2 lands.
+- **CI SUCCESS now** (re-run after conditional `prisma generate` step landed): #20, #21, #22, #55, #57, #59.
+- **Pushed, awaiting Actions trigger**: #27, #32, #43, #49, #50, #51, #52, #53, #54, #56, #58. Each has the conditional fix and an empty trigger commit; local `lint/typecheck/test/build` are green on every branch.
+- Recommended merge order: **#20 → #55 → #57 → #22 → #21 → #59**, then the dep-ordered queue (#4, #5, #7, #8, #15, #17) unblocked by #2.
 
 **Next up (dep-ordered, after the SUCCESS PRs land):**
 - **#4** — HLR Spaced Repetition scheduler (depends on #2)
@@ -27,9 +27,11 @@ _(none — all in-progress work landed this session; awaiting reviewer on the SU
 
 | Date | Item | Where |
 | --- | --- | --- |
+| 2026-06-27 | CI: conditional `prisma generate` step (skips on PRs without schema) | `main` (`a4a...`); re-synced across all 14 PRs |
+| 2026-06-27 | CI: explicit `prisma generate` step (postinstall is not enough under pnpm) | `main` (`61588c4`) |
+| 2026-06-27 | chore(deps): add prisma + tsx devDeps + `onlyBuiltDependencies` allowlist | `main` (`b6932cb`) |
 | 2026-06-27 | **#23 CLOSED** — `pnpm seed:a0` script (delivered via PR #59) | PR #59 |
 | 2026-06-27 | **#26** Prisma schema + migration for curriculum (PR #59 SUCCESS) | `feat/issue-26-prisma-schema`, PR #59 |
-| 2026-06-27 | CI: explicit `prisma generate` step in workflow | `main` (`61588c4`); re-synced |
 | 2026-06-27 | CI: drop duplicate pnpm version + bump Node to v22 | `main` (`0a62c6c`, `c674b1e`); re-synced across all 14 open PRs |
 | 2026-06-27 | #21 PROGRESS.md completed (19 missing issues added) | PR #21 SUCCESS |
 | 2026-06-27 | #3 MiniMax wrappers — fix Node 24 / jsdom Blob identity mismatch in TTS test | PR #20 SUCCESS (`a600247`) |
@@ -139,9 +141,11 @@ _(none — all in-progress work landed this session; awaiting reviewer on the SU
 
 ## Decisions log
 
+- **2026-06-27 — CI: conditional `prisma generate`.** After PR #59 added the schema, the explicit `prisma generate` step needed guarding on `prisma/schema.prisma` presence so PRs without the schema (i.e. everything pre-#26) still pass. Replaced the `if:` guard with a bash `[ -f … ]` check that all PR branches now carry.
 - **2026-06-27 — CI: drop duplicate pnpm version in workflow.** `package.json` declares `packageManager: pnpm@10.0.0` AND the workflow also set `version: 10`. Removed the workflow's explicit version so `pnpm/action-setup@v4` reads from `packageManager`. Commit `c674b1e` on `main`; re-synced to all open PR branches.
 - **2026-06-27 — CI: bump Node to v22.** v20 is deprecated on GitHub-hosted runners (2025-09-19). Bumped `node-version: 20` → `22` on `main` (`0a62c6c`); re-synced to all open PR branches.
 - **2026-06-27 — CI: add explicit `prisma generate` step.** `pnpm install --frozen-lockfile` does not generate the Prisma client in CI (postinstall is skipped). Added a dedicated step. Commit `61588c4` on `main`; re-synced to all open PR branches.
+- **2026-06-27 — chore(deps): add prisma + tsx.** `package.json` + `pnpm-lock.yaml` on `main` now carry `@prisma/client`, `prisma`, `tsx` as devDeps, plus `pnpm.onlyBuiltDependencies` allowlist so the postinstall runs. Commit `b6932cb`.
 - **2026-06-27 — fix(tts): normalize audio Blob.** Node 24 + jsdom produces a `Blob` whose constructor identity differs from the global `Blob` imported in vitest tests. TTS now re-wraps the response body via `new Blob([arrayBuffer], {type})` so the returned object is always the global `Blob`. PR #20 (`a600247`).
 - **2026-06-27 — DB: SQLite for dev, Postgres for prod.** Schema uses only portable types and string-encoded JSON so the provider swap is just a `provider` + `url` change. Singleton `Curriculum` row keyed `pt-PT-v1`; v1.1 will add a second row for pt-BR without a schema migration. PR #59.
 - **2026-06-27 — Seed script enforces migration parity.** `prisma/seed.ts` runs `prisma migrate status` first and fails loudly with a non-zero exit code if migrations are pending or the DB is unreachable. Output includes row-count summary + elapsed time. PR #59 closes #23.

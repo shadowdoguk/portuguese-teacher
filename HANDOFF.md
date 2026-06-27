@@ -1,6 +1,6 @@
 # Session Handoff
 
-**Snapshot date:** 2026-06-27 (end of session)
+**Snapshot date:** 2026-06-27 (end of session + doc refresh)
 **Repo:** `shadowdoguk/portuguese-teacher`
 
 > **This file is a point-in-time snapshot.** For the living, agent-picked-up
@@ -23,8 +23,9 @@ Root cause was a *stack* of issues, not a single bug. All fixed on `main` and re
 2. **Node 20 deprecated** on GitHub-hosted runners (2025-09-19). Bumped `node-version: 22`.
 3. **Workflow action typo** on some PR branches — `pnpm/setup-node@v4` instead of `actions/setup-node@v4`. Fixed on every branch where it appeared.
 4. **Prisma client not generated** under pnpm (postinstall runs but isn't enough for CI). Added explicit `pnpm exec prisma generate` step.
-5. **PROGRESS.md drift** — was 19 issues behind reality, so the drift check failed on every PR. Brought it up to date with all 41 open issues.
-6. **TTS Blob identity** under Node 24 + jsdom — `expect(result.audio).toBeInstanceOf(Blob)` failed because undici's Blob ≠ global Blob. TTS now re-wraps via `new Blob([arrayBuffer], {type})`.
+5. **Conditional prisma generate** — once #59 added `prisma/schema.prisma`, the explicit generate step needed guarding on file presence so PRs without the schema (everything pre-#26) still pass. Used a bash `[ -f … ]` check.
+6. **PROGRESS.md drift** — was 19 issues behind reality, so the drift check failed on every PR. Brought it up to date with all 41 open issues.
+7. **TTS Blob identity** under Node 24 + jsdom — `expect(result.audio).toBeInstanceOf(Blob)` failed because undici's Blob ≠ global Blob. TTS now re-wraps via `new Blob([arrayBuffer], {type})`.
 
 ### Issues delivered
 
@@ -41,7 +42,7 @@ Root cause was a *stack* of issues, not a single bug. All fixed on `main` and re
 
 | Branch | Status |
 | --- | --- |
-| `main` | clean; ahead of `origin/main` by 4 commits (CI fixes) |
+| `main` | clean; ahead of `origin/main` by 6 commits (CI fixes + prisma deps) |
 | `feat/issue-3-minimax-wrappers` | PR #20 SUCCESS |
 | `feat/issue-2-curriculum-model` | PR #22 SUCCESS |
 | `feat/issue-9-learner-ui` | PR #55 SUCCESS |
