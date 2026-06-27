@@ -47,6 +47,9 @@ MiniMax AI suite.
 | **Voice-Recording Opt-In** | Per-Learner toggle (default off) to retain voice recordings for personal review, encrypted at rest. **Independent from the SC-5 Sampling Buffer** — opt-in retention never runs without explicit consent; SC-5 sampling is always on (1% sample, ephemeral). |
 | **Confidence Check-In Opt-In** | Per-Learner toggle (default off) for a 1–5 self-reported confidence rating fed into the Affective Filter proxy (per #18). Never surfaced on the dashboard. |
 | **Account Deletion Request** | Explicit Learner-initiated request recorded in localStorage with a 30-day completion window (FR-DATA-3). The placeholder UI ships in v1; the marketplace / human-tutor integration is out of scope per requirements §9. |
+| **Affective Filter Proxy** | Internal signal (0–100 + trend: `rising`/`flat`/`falling`) computed from a per-Learner event stream of client + server + self-report signals. Drives the AI Teacher's warmth calibration (FR-AI-6) and the difficulty-control drop rule (FR-CP-5). **Internal — never surfaced in the Learner UI in v1** per ADR-0001. |
+| **Affective Filter Signal** | A single event in the per-Learner stream. Kinds: `response-latency`, `silence-gap`, `mic-cancel`, `tab-blur`, `review-skip` (client); `rolling-accuracy`, `srs-half-life-decay`, `milestone-attempt`, `unit-drop-off` (server); `confidence-checkin` (self-report, opt-in only). |
+| **Affective Filter Directive** | The LLM system-prompt fragment injected by the AI Teacher based on the proxy score: *warmer / more scaffolding / drop difficulty by 0.5 sub-level* when score ≤ 30; *terse and efficient* when score ≥ 70. Emitted by `buildAffectiveDirective(score)` (issue #18). |
 
 ## Key concepts
 
