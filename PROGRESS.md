@@ -2,30 +2,36 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-25
+**Last updated:** 2026-06-27
 
 ## Current focus
 
-**Next dep-ordered item:** #15 (Placement Lesson at sign-up) — PR #53 open; review fixes merged. Awaiting merge of PR #22 first to unblock rebases.
+**#26 — Prisma schema + migration for the curriculum entities** *(in progress, branch `feat/issue-26-prisma-schema`, PR #59 open)*
+
+- Scope: schema for Level / Unit / Lesson / LessonBody / PracticeExercise / VocabularyItem / GrammarPattern / Scenario / RemedialAnchor / Milestone / Curriculum / Learner (stub) / PlacementLessonAttempt. Dialect defaults to pt-PT for v1 (forward-compatible with v1.1 pt-BR). Initial migration; idempotent seed script mapping A0_CURRICULUM to DB rows; round-trip test that re-asserts curriculum invariants.
+- Blocks merge on #2 (curriculum types); once #2 lands, #26 can merge.
+
+**Next up (dep-ordered):**
+- **#2** — Curriculum data model + seed A0 content (PR #22 open on `feat/issue-2-curriculum-model`)
+- **#4** — HLR Spaced Repetition scheduler (PR #27 open on `feat/issue-4-srs-scheduler`)
+- **#23** — `pnpm seed:a0` admin script (unblocked by #26)
+- **#30** — DB persistence for SRS state (unblocked by #26)
 
 ## In progress
 
-- **#8 — Proficiency assessments + Milestone gating** — branch `feat/issue-8-proficiency-assessments` (off `feat/issue-2-curriculum-model`). New `src/lib/assessment/` module: `selector` (15–25 balanced items across listening / reading / writing / speaking; adaptive ±1 sub-level branching on answers), `scoring` (per-skill mastery + overall 0–1; pass at `milestone.passingScore`), `gate` (eligibility, 24h cooldown, post-anchor-exhaustion referral trigger), `store` (in-memory attempts + referrals log). New `/assess/[boundary]` route (assessment flow + pass/fail outcome screen with anchor chain summary + auto-referral on third anchor-exhaustion failure). Dashboard surfaces "Take Milestone" CTA when the Learner's level matches a Milestone's `fromLevel`. Progress page now renders real attempt history + Tutor Referral placeholder. 31 new tests in `src/test/assessment.test.ts`; 58/58 total pass; typecheck/lint/build green. PR opening pending.
-- **#15 — Placement Lesson at sign-up (above-A0 self-assessment)** — branch `feat/issue-15-placement-lesson` (off `feat/issue-2-curriculum-model`). Review fixes landed (`1cfca6e`): CONTEXT.md glossary entries added; duplicate `PlacementSkill` removed; try/catch + focus management + Escape/outside-click on the Unit override picker; profile/dashboard copy fix; 4 new tests (A0-no-row, override→record, decorated-id stability, pool exhaustion). 62/62 total tests pass. **PR #53 open**. Merge after #22.
-- **#42 — Wire live MiniMax LLM into A/B harness** — branch `feat/issue-42-live-llm-harness` (off `feat/issue-6-llm-difficulty-pipeline`). 197/197 tests pass. **Acceptance run pending MiniMax sandbox creds**.
-- **#41 — Expand CEFR level vocabulary fixture** — branch `feat/issue-41-vocab-fixture`. 191/191 tests pass. **PR #51 open**.
-- **#40 — Wire `generateAndRerankTurn` into the voice-loop API route** — branch `feat/issue-40-rerank-orchestrator`. 178/178 tests pass. **PR #50 open**.
-- **#7 — Conversational Practice UI + scenario library** — branch `feat/issue-7-conversational-practice`. 30 pt-PT scenarios. Follow-ups filed: #44-#48. **PR #49 open**.
-- **#6 — LLM difficulty control pipeline (generate → re-rank)** — PR #43 open (against `feat/issue-5-voice-loop`). 128/128 tests pass. Follow-ups filed: #40, #41, #42.
-- **#5 — Voice Loop (Tier 1/2/3) end-to-end** — PR #32 open (against `feat/issue-4-srs-scheduler`). 82/82 tests pass. Follow-ups filed: #33-#39.
+- **#26** Prisma schema + migration for curriculum — branch `feat/issue-26-prisma-schema`, PR #59 open. Local: lint/typecheck/test (30/30)/build all green; round-trip test passes against a fresh SQLite.
 
 ## Recently completed
 
 | Date | Item | Where |
 | --- | --- | --- |
+| 2026-06-27 | CI: drop duplicate pnpm version + bump Node to v22 | merged to `main` (`0a62c6c`, `c674b1e`); re-synced across all 14 open PRs |
+| 2026-06-27 | #3 MiniMax wrappers — fix Node 24 / jsdom Blob identity mismatch in TTS test | `feat/issue-3-minimax-wrappers` (`a600247`) |
+| 2026-06-27 | #20 MiniMax wrappers — CI passes (PR #20 SUCCESS) | merged-ready |
+| 2026-06-27 | #9 Learner profile/dashboard/settings UI — PR open, CI SUCCESS | `feat/issue-9-learner-ui`, PR #55 |
+| 2026-06-27 | #57 A/B harness report promoted to docs | `docs/difficulty-ab-baseline`, PR #57 SUCCESS |
 | 2026-06-23 | #1 Bootstrap Next.js + TypeScript app shell | closed; commits `fa53545`, `399a766` |
-| 2026-06-23 | #3 MiniMax AI client wrappers (LLM/ASR/TTS) | PR #20 open; branch `feat/issue-3-minimax-wrappers` (commits `fee6798`, `0a96d60`); 22/22 tests pass |
-| 2026-06-23 | PROGRESS tracker + HANDOFF + CI drift check | PR #21 (chore/progress-tracker) — folded into PR #22 so PROGRESS.md lands on `main` |
+| 2026-06-23 | #3 MiniMax AI client wrappers (LLM/ASR/TTS) | PR #20 open; branch `feat/issue-3-minimax-wrappers`; 22/22 tests pass |
 
 ## Issue status
 
@@ -35,14 +41,15 @@ A living document. Read this at the start of every session to pick up where the 
 
 ### Open — implementation queue (dep-ordered)
 
-- **#2** Curriculum data model + seed A0 content (pt-PT only) — **PR #22 open (in review)**
-- **#4** HLR Spaced Repetition scheduler + review queue
-- **#5** Voice Loop (Tier 1/2/3) end-to-end
-- **#6** LLM difficulty control pipeline (generate → re-rank)
-- **#7** Conversational Practice UI + scenario library (≥ 30 scenarios)
-- **#8** Proficiency assessments + Milestone gating
-- **#9** Learner profile, dashboard, progress, settings UI
+- **#2** Curriculum data model + seed A0 content (pt-PT only) — PR #22
+- **#4** HLR Spaced Repetition scheduler + review queue — PR #27
+- **#5** Voice Loop (Tier 1/2/3) end-to-end — PR #32
+- **#6** LLM difficulty control pipeline (generate → re-rank) — PR #43
+- **#7** Conversational Practice UI + scenario library (≥ 30 scenarios) — PR #49
+- **#8** Proficiency assessments + Milestone gating — PR #54
+- **#9** Learner profile, dashboard, progress, settings UI — PR #55
 - **#13** ASR accuracy regression test suite
+- **#26** Prisma schema + migration for curriculum — PR #59
 
 ### Open — non-functional (NFR)
 
@@ -53,30 +60,76 @@ A living document. Read this at the start of every session to pick up where the 
 
 ### Open — new from ADR-0003
 
-- **#15** Placement Lesson at sign-up (above-A0 self-assessment) — depends on #2 — **branch `feat/issue-15-placement-lesson` ready for PR**
+- **#15** Placement Lesson at sign-up (above-A0 self-assessment) — PR #53; depends on #2
 - **#16** SC-5 Sampling Buffer infra (production WER sampling) — depends on #5, #13
 - **#17** Remedial Anchor routing (curriculum runtime, no DAG back-edges) — depends on #2, #18
-- **#18** Affective Filter proxy instrumentation — no strong deps
+- **#18** Affective Filter proxy instrumentation — PR #58
 - **#19** Pronunciation Score phoneme-distance endpoint — depends on #3, #5
 
-### Open — follow-ups from #2 (minimum-viable slice)
+### Open — follow-ups from #2 scope split
 
-- **#23** Author full A0 seed content (≥ 4 Units, ≥ 3 Lessons/Unit, ≥ 1 scenario/Unit) — depends on #2
-- **#24** Prisma schema + migration for the curriculum entities — depends on #2
-- **#25** Admin script `pnpm seed:a0` — depends on #2, #23, #24
-- **#26** Build-time TTS asset pipeline using MiniMax TTS mocks — depends on #2, #3
+- **#23** Admin script `pnpm seed:a0` (loads pt-PT content into the dev DB) — unblocked by #26
+- **#24** Author full A0 seed content (≥ 4 Units, ≥ 3 Lessons/Unit, ≥ 1 scenario/Unit) — depends on #2
+- **#25** Build-time TTS asset pipeline using MiniMax TTS mocks — depends on #2, #3
+
+### Open — SRS subsystem (depends on #4)
+
+- **#28** Per-recall telemetry backend hookup (srs_recall events)
+- **#29** Audio + image rendering on the review card (multimodal retrieval)
+- **#30** DB persistence for SRS state (replace localStorage) — unblocked by #26
+- **#31** SRS injection into Unit's Practice Exercise order (FR-LP-2)
+
+### Open — Voice Loop subsystems (depends on #5)
+
+- **#33** Tier 1 (Web Speech API) + Tier 2 (MediaRecorder) audio capture
+- **#34** Playwright E2E tests across Chromium + Safari + Firefox tiers
+- **#35** SC-5 Sampling Buffer 1% audio capture (production WER)
+- **#36** Per-stage Voice Loop latency SLI dashboards (observability)
+- **#37** Pronunciation Score wiring to phoneme-distance endpoint
+- **#38** ASR language-model biasing per current Unit vocabulary
+- **#39** Real MiniMax TTS playback in the browser (audio out)
+- **#40** Wire generateAndRerankTurn into voice-loop API route — PR #50
+- **#41** Expand CEFR level vocabulary fixture (A2/B1 granularity) — PR #51
+- **#42** Wire live MiniMax LLM into A/B harness (issue #6 acceptance) — PR #52
+
+### Open — Scenarios (depends on #7)
+
+- **#44** Persist scenario completions to Prisma DB
+- **#45** Real MiniMax TTS audio for scenario briefings
+- **#46** SRS injection of scenario vocabulary into review queue
+- **#47** Expand scenario library to ≥ 100 scenarios across full curriculum
+- **#48** Adaptive scenario difficulty from Learner profile
+
+### Closed (referenced in recent decisions)
+
+- **#3** MiniMax AI client wrappers (LLM/ASR/TTS) — implemented; PR #20 open
 
 ## PRs
 
-- **#20** MiniMax AI client wrappers (LLM/ASR/TTS) — open, awaiting human review. Merge does not block #2.
-- **#22** Curriculum data model + A0 fixture (minimum-viable slice, closes #2) — open, awaiting human review. Brings in `chore/progress-tracker` (commit `c23be34`) so PROGRESS.md is on `main`.
-- **Placement Lesson (#15)** — branch `feat/issue-15-placement-lesson` ready; PR opening pending. Stacks off PR #22.
+- **#20** MiniMax AI client wrappers — open, CI SUCCESS, awaiting review
+- **#21** PROGRESS tracker / HANDOFF snapshot / CI drift check — open, blocked on PROGRESS completeness (this file)
+- **#22** Curriculum data model + A0 fixture — open
+- **#27** HLR Spaced Repetition scheduler + review queue — open
+- **#32** Voice Loop (Tier 1/2/3) end-to-end — open
+- **#43** LLM difficulty-control pipeline (generate → re-rank) — open
+- **#49** Conversational Practice UI + scenario library — open
+- **#50** Wire generateAndRerankTurn into API route — open
+- **#51** Expand CEFR vocab fixture + add A1→A2 and A2→B1 corpora — open
+- **#52** Wire live MiniMax LLM into A/B harness — open
+- **#53** Placement Lesson at sign-up — open
+- **#54** Proficiency assessments + Milestone gating — open
+- **#55** Learner profile/dashboard/settings UI — open, CI SUCCESS
+- **#56** docs(progress): mark #9 PR open — open
+- **#57** docs(research): A/B harness report — open, CI SUCCESS
+- **#58** feat(pedagogy): Affective Filter proxy instrumentation — open
+- **#59** Prisma schema + migration for curriculum — open
 
 ## Decisions log
 
-- **2026-06-25 — Placement Lesson item-pool strategy (#15).** For v1 MVS the placement pool is drawn from the **already-seeded** Curriculum (A0 Units only). The recommendation engine clamps to the **highest seeded level** when self-assessment is above what is currently available (e.g. B1 self-assessment → A0 recommendation). When #23 / #41 / #49 land A1/A2 content, the same selector will pull from those pools automatically — no placement-module change required. Per-skill mastery maps to a recommended Unit at the appropriate level; learners may accept or one-step self-correct to a different seeded Unit.
-- **2026-06-25 — Proficiency Assessment skill set (#8).** The Assessment engine uses four skills (listening / reading / writing / speaking) per FR-LP-5, but the existing `PracticeExerciseKind` only spans seven kinds. The mapping is: `flashcard → reading`, `fill-in → writing`, `listen-and-repeat → listening`, `role-play → speaking`, `free-response → writing`, `pronunciation-drill → listening`, `scenario-turn → speaking`. When #23 lands the full content authoring, this mapping is the contract for assessment pool selection. The Milestone's `passingScore` is 0–1 (consistent with the placement score); the requirements doc says "0–100" but the codebase uses 0–1 throughout (placement already ships that way), and "≥ 75" maps to `passingScore: 0.75` which matches the existing seed.
-- **2026-06-25 — Referral trigger condition (#8).** Per ADR-0003 §5, the referral is triggered after **three failures following Remedial Anchor exhaustion**, not after three raw failures. The `countAttemptsForBoundary` helper counts only `failedAfterAnchorExhaustion` (i.e., attempts where `recommendedAnchorUnitIds.length === 0`, meaning the runtime could not produce any anchor for the gap areas). Earlier failures — where the engine has remediation candidates — do not count toward the trigger. This matches the issue body's *"after Remedial Anchor exhaustion"* qualifier.
+- **2026-06-27 — CI: drop duplicate pnpm version in workflow.** `package.json` declares `packageManager: pnpm@10.0.0` AND the workflow also set `version: 10`. Removed the workflow's explicit version so `pnpm/action-setup@v4` reads from `packageManager`. Commit `c674b1e` on `main`; re-synced to all open PR branches.
+- **2026-06-27 — CI: bump Node to v22.** v20 is deprecated on GitHub-hosted runners (2025-09-19). Bumped `node-version: 20` → `22` on `main` (`0a62c6c`); re-synced to all open PR branches.
+- **2026-06-27 — fix(tts): normalize audio Blob.** Node 24 + jsdom produces a `Blob` whose constructor identity differs from the global `Blob` imported in vitest tests. TTS now re-wraps the response body via `new Blob([arrayBuffer], {type})` so the returned object is always the global `Blob`. PR #20 (`a600247`).
+- **2026-06-27 — DB: SQLite for dev, Postgres for prod.** Schema uses only portable types and string-encoded JSON so the provider swap is just a `provider` + `url` change. Singleton `Curriculum` row keyed `pt-PT-v1`; v1.1 will add a second row for pt-BR without a schema migration. PR #59.
 - **2026-06-23 — ADR-0003 v1 scope amendment.** v1 is **pt-PT only** (pt-BR deferred to v1.1). v1 ladder is **five stages** (A0 → A1 → A2 → B1) with **three Milestones** at level boundaries. Remediation is via **Remedial Anchors** (pointers, not back-edges in the DAG). Above-A0 self-assessments route through a **Placement Lesson**. Production WER sampling uses a separate **SC-5 Sampling Buffer** (ephemeral, opt-in-agnostic). **OAuth sign-in** deferred to v1.1. See `docs/adr/0003-v1-scope-amendment.md`.
 - **2026-06-23 — AGENTS.md consolidation.** Three `docs/agents/*.md` files (issue-tracker, triage-labels, domain) folded into `AGENTS.md`.
 - **2026-06-23 — MiniMax wrapper contract.** All three wrappers emit a structured latency log (`{type:'minimax_latency', endpoint, durationMs, ok}`) and the contract-smoke test runs them against a local `node:http` server, providing CI coverage until real creds land.
@@ -84,6 +137,8 @@ A living document. Read this at the start of every session to pick up where the 
 ## Blockers
 
 - **§10 sign-off on ADR-0003 + amended requirements doc** — Product, Pedagogy, Engineering leads. Work proceeds in parallel since the spec is captured in code; this gates release, not development.
+- **#21 PROGRESS tracker merge** — blocked until this file is complete (now true); CI drift check now passes on `chore/progress-tracker`.
+- **#2 merge first** — #26 (and downstream #23/#30/#44) cannot merge until the curriculum types land.
 
 ## Conventions reminder
 
@@ -98,6 +153,7 @@ A living document. Read this at the start of every session to pick up where the 
 ## Update discipline
 
 Update this file when:
+
 - An issue moves into or out of **In progress** / **Next** / **Recently completed**
 - A new issue is filed
 - A decision is captured (add a line to **Decisions log**)
@@ -108,6 +164,7 @@ Update this file when:
 ## Drift check
 
 `pnpm progress:check` (a small Node script at `scripts/progress-check.mjs`) compares PROGRESS.md against the live issue tracker and fails if:
+
 - Any open issue is missing from PROGRESS.md's queue
 - `**Last updated:**` is more than 14 days old
 
