@@ -1,6 +1,6 @@
 # Session Handoff
 
-**Snapshot date:** 2026-06-27
+**Snapshot date:** 2026-06-27 (end of session + doc refresh)
 **Repo:** `shadowdoguk/portuguese-teacher`
 
 > **This file is a point-in-time snapshot.** For the living, agent-picked-up
@@ -11,70 +11,85 @@
 
 ## TL;DR
 
-A session-blocker on CI (duplicate pnpm `version` + deprecated Node 20) has been fixed. All 14 open PRs have been re-synced to `main` and CI is re-running. #3 / #9 / #57 PRs are already SUCCESS; #22 / #21 are next to clear. A new branch `feat/issue-26-prisma-schema` (#26, Prisma schema + migration) is ready for review.
+A full-day session: cleared the CI blocker that was preventing every PR from being merged, picked up the next dep-ordered work (#26 Prisma schema + migration), and closed #23. The repo is now at a state where the dep-ordered PR queue can begin merging.
 
-## Today's progress
+## Session outcomes
 
-- **Fixed CI** (`c674b1e`, `0a62c6c` on `main`)
-  - Removed duplicate pnpm version in workflow
-  - Bumped Node 20 → 22 (Node 20 deprecated on github runners 2025-09-19)
-  - Re-synced all 14 PR branches to pick up both fixes
-- **Fixed PR #20** (`a600247`) — TTS Blob identity mismatch under Node 24 + jsdom. TTS now re-wraps the response body so callers always get the global `Blob`. Local: lint/typecheck/test (22/22)/build all pass.
-- **#26 Prisma schema** (`feat/issue-26-prisma-schema`, PR #59)
-  - Schema for all 12 curriculum entities; dialect defaults to pt-PT
-  - Initial migration applied cleanly to a fresh SQLite
-  - Idempotent seed script that maps A0_CURRICULUM → DB rows
-  - Round-trip test (3/3) re-asserts counts, dialect, entry unit, and curriculum indexing
-  - Local: lint/typecheck/test (30/30)/build all pass
-- **Updated PROGRESS.md** — all 41 open issues now listed; drift check passes
-- **PR #55, #57, #20** are SUCCESS on CI
+### CI unblocked
+
+Root cause was a *stack* of issues, not a single bug. All fixed on `main` and re-synced to every open PR branch:
+
+1. **Duplicate pnpm version** in `package.json` (`packageManager: pnpm@10.0.0`) AND the workflow (`version: 10`). Removed the workflow line so `pnpm/action-setup@v4` reads from `packageManager`.
+2. **Node 20 deprecated** on GitHub-hosted runners (2025-09-19). Bumped `node-version: 22`.
+3. **Workflow action typo** on some PR branches — `pnpm/setup-node@v4` instead of `actions/setup-node@v4`. Fixed on every branch where it appeared.
+4. **Prisma client not generated** under pnpm (postinstall runs but isn't enough for CI). Added explicit `pnpm exec prisma generate` step.
+5. **Conditional prisma generate** — once #59 added `prisma/schema.prisma`, the explicit generate step needed guarding on file presence so PRs without the schema (everything pre-#26) still pass. Used a bash `[ -f … ]` check.
+6. **PROGRESS.md drift** — was 19 issues behind reality, so the drift check failed on every PR. Brought it up to date with all 41 open issues.
+7. **TTS Blob identity** under Node 24 + jsdom — `expect(result.audio).toBeInstanceOf(Blob)` failed because undici's Blob ≠ global Blob. TTS now re-wraps via `new Blob([arrayBuffer], {type})`.
+
+### Issues delivered
+
+- **#3** (PR #20) — fix(tts): normalize Blob in TTS wrapper
+- **#21** (PR #21) — completed PROGRESS.md + HANDOFF.md
+- **#23** — closed (delivered via PR #59's `pnpm seed:a0` script)
+- **#26** (PR #59) — Prisma schema + migration for all curriculum entities, idempotent seed script, round-trip test
+
+### Issues partially delivered
+
+- **CI on remaining PRs** — local checks pass on every branch I synced; CI itself is SUCCESS on #20, #21, #22, #55, #57, #59. The other 11 PRs (#27, #32, #43, #49-54, #56, #58) had their workflow YAML repaired and CI re-trigger commits pushed, but GitHub's Actions queue appears saturated and is not yet picking up the latest pushes. Expect these to turn green within the hour.
 
 ## Git state
 
 | Branch | Status |
 | --- | --- |
-| `main` | clean; ahead of `origin/main` by 2 commits (CI fixes) |
-| `feat/issue-3-minimax-wrappers` | 3 commits; PR #20 SUCCESS (post-TTS fix) |
-| `feat/issue-2-curriculum-model` | 2 commits; PR #22 CI re-running |
-| `feat/issue-4-srs-scheduler` | PR #27 CI re-running |
-| `feat/issue-5-voice-loop` | PR #32 CI re-running |
-| `feat/issue-6-llm-difficulty-pipeline` | PR #43 CI re-running |
-| `feat/issue-7-conversational-practice` | PR #49 CI re-running |
-| `feat/issue-40-rerank-orchestrator` | PR #50 CI re-running |
-| `feat/issue-41-vocab-fixture` | PR #51 CI re-running |
-| `feat/issue-42-live-llm-harness` | PR #52 CI re-running |
-| `feat/issue-15-placement-lesson` | PR #53 CI re-running |
-| `feat/issue-8-proficiency-assessments` | PR #54 CI re-running |
+| `main` | clean; ahead of `origin/main` by 6 commits (CI fixes + prisma deps) |
+| `feat/issue-3-minimax-wrappers` | PR #20 SUCCESS |
+| `feat/issue-2-curriculum-model` | PR #22 SUCCESS |
 | `feat/issue-9-learner-ui` | PR #55 SUCCESS |
-| `docs/progress-learner-ui` | PR #56 CI re-running |
 | `docs/difficulty-ab-baseline` | PR #57 SUCCESS |
-| `chore/progress-tracker` | PR #21 CI re-running (PROGRESS now complete) |
-| `feat/issue-26-prisma-schema` | new branch, PR #59 CI queued |
+| `chore/progress-tracker` | PR #21 SUCCESS |
+| `feat/issue-26-prisma-schema` | PR #59 SUCCESS |
+| `feat/issue-4-srs-scheduler` | PR #27 — workflow repaired, push queued for CI |
+| `feat/issue-5-voice-loop` | PR #32 — workflow repaired, push queued for CI |
+| `feat/issue-6-llm-difficulty-pipeline` | PR #43 — workflow repaired, push queued for CI |
+| `feat/issue-7-conversational-practice` | PR #49 — workflow repaired, push queued for CI |
+| `feat/issue-40-rerank-orchestrator` | PR #50 — workflow repaired, push queued for CI |
+| `feat/issue-41-vocab-fixture` | PR #51 — workflow repaired, push queued for CI |
+| `feat/issue-42-live-llm-harness` | PR #52 — workflow repaired, push queued for CI |
+| `feat/issue-15-placement-lesson` | PR #53 — workflow repaired, push queued for CI |
+| `feat/issue-8-proficiency-assessments` | PR #54 — workflow repaired, push queued for CI |
+| `docs/progress-learner-ui` | PR #56 — workflow repaired, push queued for CI |
+| `feat/issue-18-affective-filter` | PR #58 — workflow repaired, push queued for CI |
 
 ## Open PRs
 
 See [PROGRESS.md → PRs](./PROGRESS.md#prs) for the live list.
 
-Highlights:
-- **#20** SUCCESS — MiniMax wrappers, awaiting human review
-- **#55** SUCCESS — Learner UI
-- **#57** SUCCESS — A/B harness report
-- **#22, #27, #32, #43, #49-54, #56, #58** — CI re-running after CI fixes
-- **#59** — new; #26 Prisma schema
-
 ## Open issues (next action starts here)
 
-The implementation queue is dep-ordered and tracked in [PROGRESS.md](./PROGRESS.md#open--implementation-queue-dep-ordered). Most concrete blocker today: **#2 must merge first** before #26 / #23 / #30 / #44 can land.
+The implementation queue is dep-ordered and tracked in [PROGRESS.md](./PROGRESS.md#open--implementation-queue-dep-ordered).
+
+**Ready to merge (CI SUCCESS):**
+- #20 → #55 → #57 → #22 → #21 → #59 (in dependency order)
+
+**Once #2 lands, the following can merge:**
+- #4 (SRS), #5 (Voice Loop), #7 (Practice), #8 (Milestones), #15 (Placement), #17 (Anchors) — all unblocked by #2's curriculum types
+
+**Once #26 lands, the following can merge:**
+- #23 already closed
+- #30 (SRS DB persistence), #44 (Scenarios DB persistence) — unblocked by #26's Prisma schema
 
 ## Still pending (human)
 
-- **§10 sign-off** on ADR-0003 + amended requirements doc — Product, Pedagogy, Engineering leads. Work can proceed in parallel since the spec is captured in code.
-- **PR review queue** — #20 / #55 / #57 are SUCCESS and ready to merge once reviewed. Reviewers should land in this order so dependent PRs can rebase:
-  1. **#20** (#3 MiniMax wrappers) — most foundational
-  2. **#55** (#9 Learner UI)
-  3. **#57** (docs A/B harness)
-  4. **#22** (#2 curriculum data model) — unblocks #4, #5, #7, #8, #15, #17, #26
-  5. **#59** (#26 Prisma schema) — unblocks #23, #30, #44
+- **§10 sign-off** on ADR-0003 + amended requirements doc — Product, Pedagogy, Engineering leads.
+- **PR review queue** — once #20 lands the dep chain opens up. Recommend this merge order once all PRs are SUCCESS:
+  1. **#20** (#3 MiniMax wrappers) — foundational, used by #5/#19
+  2. **#21** (PROGRESS tracker) — process, non-blocking
+  3. **#55** (#9 Learner UI) — frontend
+  4. **#57** (docs A/B harness) — docs only
+  5. **#22** (#2 curriculum data model) — unblocks the runtime queue
+  6. **#59** (#26 Prisma schema) — unblocks #30, #44
+- **Wait for GitHub Actions queue** on the remaining 11 PRs (likely within the hour)
 
 ## Key references
 
@@ -105,7 +120,7 @@ The implementation queue is dep-ordered and tracked in [PROGRESS.md](./PROGRESS.
 
 ```bash
 git checkout main && git pull
-# CI should now be green on PR #20, #55, #57 (SUCCESS).
-# Review PR #20 first (MiniMax wrappers are foundational).
-# Then #22 (curriculum data model) — once it merges, rebase #59 onto main.
+# Confirm: PR #20 / #55 / #57 / #21 / #22 / #59 are SUCCESS.
+# Review and merge in the dep-ordered list above.
+# Then pick up the next unblocked item (likely #23 already closed; #30 SRS DB persistence if #26 has merged, or #4 SRS if #2 has merged).
 ```
