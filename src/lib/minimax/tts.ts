@@ -40,10 +40,12 @@ export class MiniMaxTTS {
           "tts",
         );
       }
-      const audio = await response.blob();
+      const buffer = await response.arrayBuffer();
+      const contentType = response.headers.get("content-type") || "audio/mpeg";
+      const audio = new Blob([buffer], { type: contentType });
       return {
         audio,
-        contentType: audio.type || "audio/mpeg",
+        contentType,
         durationMs: 0,
       };
     });

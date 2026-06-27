@@ -21,6 +21,7 @@ describe("MiniMaxTTS", () => {
     });
     const result = await tts.synthesize("olá", { voice: VOICE });
     expect(result.audio).toBeInstanceOf(Blob);
+    expect(result.audio.size).toBeGreaterThan(0);
     expect(result.contentType).toBe("audio/mpeg");
     expect(calls[0]?.url).toBe("https://tts.example/v1/tts/synthesize");
   });
