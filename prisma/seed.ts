@@ -14,13 +14,33 @@
 //   - docs/adr/0003-v1-scope-amendment.md (v1 is pt-PT only)
 
 import { PrismaClient } from "@prisma/client";
+import { execSync } from "node:child_process";
 import { A0_CURRICULUM } from "../src/lib/curriculum/seed-a0";
 
 const prisma = new PrismaClient();
 
 const CURRICULUM_ID = "pt-PT-v1";
 
+function ensureMigrationsApplied(): void {
+  // `migrate status` exits non-zero when there are pending migrations.
+  // We surface that as a hard failure (issue #23 acceptance).
+  try {
+    execSync("pnpm exec prisma migrate status", { stdio: "pipe" });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // eslint-disable-next-line no-console
+    console.error(
+      "prisma migrate status failed. Apply pending migrations with `pnpm prisma:migrate` before seeding.\n" +
+        msg,
+    );
+    process.exit(1);
+  }
+}
+
 async function main(): Promise<void> {
+  const start = Date.now();
+  ensureMigrationsApplied();
+
   const curriculum = A0_CURRICULUM;
   if (curriculum.dialect !== "pt-PT") {
     throw new Error(
@@ -249,7 +269,8 @@ async function main(): Promise<void> {
     `Seeded curriculum ${curriculum.dialect} (${CURRICULUM_ID}): ` +
       `${unitsCount} units, ${lessonsCount} lessons, ${exercisesCount} exercises, ` +
       `${vocabCount} vocabulary items, ${scenariosCount} scenarios, ` +
-      `${anchorsCount} remedial anchors, ${milestonesCount} milestones.`,
+      `${anchorsCount} remedial anchors, ${milestonesCount} milestones. ` +
+      `(${Date.now() - start}ms)`,
   );
 }
 
