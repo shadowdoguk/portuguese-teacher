@@ -1,0 +1,207 @@
+// Portuguese Teacher — curriculum data model
+//
+// v1 is pt-PT only. The Dialect column defaults to "pt-PT" on every row;
+// keeping it as a column rather than a hard-coded constant makes the schema
+// forward-compatible with v1.1 (pt-BR) without an enum migration.
+//
+// We use SQLite for local dev (no external deps) and document the Postgres
+// path for production. Both providers work because:
+//   - we never use native arrays (arrays are JSON-encoded strings)
+//   - we use only portable types
+//
+// See docs/adr/0002-voice-loop-architecture.md and
+// docs/adr/0003-v1-scope-amendment.md for the related decisions.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Curriculum is a singleton row (id "pt-PT-v1"). v1.1 will add a second
+// row for pt-BR. Children do not FK back to Curriculum to keep the schema
+// shallow and to allow the singleton to be seeded independently.
+model Curriculum {
+  id           String  @id @default("pt-PT-v1")
+  dialect      String  @default("pt-PT")
+  entryUnitId  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  levels Level[]
+}
+
+model Level {
+  id          String   @id // "A0", "A1", "A2", "B1"
+  curriculumId String
+  order       Int
+  label       String
+
+  curriculum Curriculum @relation(fields: [curriculumId], references: [id])
+  units      Unit[]
+
+  @@index([curriculumId])
+}
+
+model Unit {
+  id                    String   @id
+  curriculumId          String
+  levelId               String
+  order                 Int
+  title                 String
+  description           String
+  prerequisiteUnitIdsJson String   @default("[]") // JSON-encoded string[]
+
+  level                 Level    @relation(fields: [levelId], references: [id])
+  lessons               Lesson[]
+  vocabulary           VocabularyItem[]
+  grammar              GrammarPattern[]
+  scenarios            Scenario[]
+  remedialAnchorsFrom  RemedialAnchor[] @relation("RemedialAnchorFrom")
+  remedialAnchorsTo    RemedialAnchor[] @relation("RemedialAnchorTo")
+  milestones           Milestone[]
+
+  @@index([curriculumId])
+  @@index([levelId])
+}
+
+model Lesson {
+  id               String   @id
+  unitId           String
+  order            Int
+  kind             String   // LessonKind enum (see src/lib/curriculum/types.ts)
+  title            String
+  estimatedMinutes Int
+
+  unit             Unit @relation(fields: [unitId], references: [id])
+  body             LessonBody?
+  exercises        PracticeExercise[]
+
+  @@index([unitId])
+}
+
+model LessonBody {
+  id           String @id @default(cuid())
+  lessonId     String @unique
+  introduction String
+  blocksJson   String // JSON-encoded TextBlock[]
+
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+}
+
+model PracticeExercise {
+  id              String   @id
+  lessonId        String
+  kind            String   // PracticeExerciseKind
+  prompt          String
+  expectedAnswer  String?
+  difficulty      String   // ExerciseDifficulty: easy | core | stretch
+  vocabularyRefsJson String @default("[]")
+  grammarRefsJson    String @default("[]")
+
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
+  @@index([lessonId])
+}
+
+model VocabularyItem {
+  id            String  @id
+  unitId        String
+  pt            String
+  gloss         String
+  partOfSpeech  String?
+  audioAssetId  String?
+  imageAssetId  String?
+  examplePt     String?
+  exampleGloss  String?
+
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  @@index([unitId])
+}
+
+model GrammarPattern {
+  id          String @id
+  unitId      String
+  name        String
+  description String
+  examplesJson String // JSON-encoded { pt, gloss }[]
+
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  @@index([unitId])
+}
+
+model Scenario {
+  id               String @id
+  unitId           String
+  goal             String
+  setting          String
+  learnerRole      String
+  teacherRole      String
+  successCriteriaJson String // JSON-encoded string[]
+
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  @@index([unitId])
+}
+
+model RemedialAnchor {
+  id           String @id @default(cuid())
+  fromUnitId   String
+  toUnitId     String
+  reason       String // RemedialAnchorReason
+  note         String
+
+  fromUnit Unit @relation("RemedialAnchorFrom", fields: [fromUnitId], references: [id])
+  toUnit   Unit @relation("RemedialAnchorTo",   fields: [toUnitId],   references: [id])
+
+  @@index([fromUnitId])
+  @@index([toUnitId])
+}
+
+model Milestone {
+  id                          String @id @default(cuid())
+  boundary                    String @unique // "A0-A1" | "A1-A2" | "A2-B1"
+  fromLevel                   String
+  toLevel                     String
+  unitId                      String
+  passingScore                Float
+  itemCountMin                Int
+  itemCountMax                Int
+  cooldownHours               Int
+  maxAttemptsBeforeReferral   Int
+
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  @@index([unitId])
+}
+
+// Forward-compatibility: required by FR-DATA-1 (email + hashed pw + dialect
+// + Lesson history + mastery state + assessments + affective values +
+// engagement metrics). The full Learner model is owned by issue #9 (UI);
+// here we only need the stub so PlacementLessonAttempt can FK cleanly.
+model Learner {
+  id           String  @id @default(cuid())
+  externalRef  String? @unique
+  createdAt    DateTime @default(now())
+
+  placementAttempts PlacementLessonAttempt[]
+}
+
+model PlacementLessonAttempt {
+  id                  String   @id @default(cuid())
+  learnerId           String
+  attemptedAt         DateTime
+  selfAssessedLevel   String   // "A1" | "A2" | "B1" (never "A0")
+  score               Float
+  suggestedStartUnitId String
+  notes               String?
+
+  learner Learner @relation(fields: [learnerId], references: [id])
+
+  @@index([learnerId])
+}
