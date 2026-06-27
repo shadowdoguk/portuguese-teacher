@@ -1,121 +1,87 @@
 #!/usr/bin/env node
-import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
-const repoRoot = resolve(new URL("..", import.meta.url).pathname);
-const progressPath = resolve(repoRoot, "PROGRESS.md");
+const __filename = fileURLToPath(import.meta.url);
+const repoRoot = path.resolve(path.dirname(__filename), "..");
+const progressPath = path.join(repoRoot, "PROGRESS.md");
 const staleAfterDays = Number(process.env.PROGRESS_STALE_AFTER_DAYS ?? "14");
 
-function readProgress() {
-  return readFileSync(progressPath, "utf-8");
+function fail(msg) {
+  console.error(`progress-check: ${msg}`);
+  process.exit(1);
 }
 
-function fetchIssues() {
-  const json = execFileSync(
-    "gh",
-    [
-      "issue",
-      "list",
-      "--repo",
-      "shadowdoguk/portuguese-teacher",
-      "--state",
-      "all",
-      "--limit",
-      "200",
-      "--json",
-      "number,state,title",
-    ],
-    { encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] },
+if (!existsSync(progressPath)) {
+  console.log("progress-check: PROGRESS.md not present on this branch — skipping drift check.");
+  process.exit(0);
+}
+
+const content = readFileSync(progressPath, "utf8");
+const updatedMatch = content.match(/\*\*Last updated:\*\*\s*(\d{4}-\d{2}-\d{2})/);
+if (!updatedMatch) {
+  fail("PROGRESS.md has no `**Last updated:** YYYY-MM-DD` line.");
+}
+const lastUpdated = new Date(`${updatedMatch[1]}T00:00:00Z`);
+const now = new Date();
+const ageDays = (now.getTime() - lastUpdated.getTime()) / (1000 * 60 * 60 * 24);
+if (Number.isNaN(ageDays)) {
+  fail(`Could not parse Last updated date: ${updatedMatch[1]}`);
+}
+if (ageDays > staleAfterDays) {
+  fail(
+    `PROGRESS.md last updated ${updatedMatch[1]} is ${Math.floor(ageDays)} days old ` +
+      `(threshold: ${staleAfterDays}). Bump the date or override with PROGRESS_STALE_AFTER_DAYS=N.`,
   );
-  return JSON.parse(json);
 }
 
-function extractIssueMentions(text) {
-  const matches = text.matchAll(/#(\d+)\b/g);
-  const set = new Set();
-  for (const m of matches) {
-    const n = Number(m[1]);
-    if (Number.isInteger(n)) set.add(n);
-  }
-  return set;
-}
-
-function extractLastUpdated(text) {
-  const m = text.match(/\*\*Last updated:\*\*\s+(\d{4}-\d{2}-\d{2})/);
-  return m ? new Date(`${m[1]}T00:00:00Z`) : null;
-}
-
-function diff(openIssues, mentioned, allKnownNumbers) {
-  const openNumbers = openIssues.map((i) => i.number);
-  const knownSet = new Set(allKnownNumbers);
-  const missingFromProgress = openNumbers.filter((n) => !mentioned.has(n));
-  const onlyInProgress = [...mentioned]
-    .filter((n) => !openNumbers.includes(n))
-    .filter((n) => knownSet.has(n));
-  return { missingFromProgress, onlyInProgress };
-}
-
-function checkLastUpdated(text) {
-  const updated = extractLastUpdated(text);
-  if (!updated) {
-    return { ok: false, reason: "no `**Last updated:** YYYY-MM-DD` line found in PROGRESS.md" };
-  }
-  const ageDays = Math.floor((Date.now() - updated.getTime()) / 86_400_000);
-  if (ageDays > staleAfterDays) {
-    return {
-      ok: false,
-      reason: `Last updated ${ageDays} days ago (stale threshold: ${staleAfterDays})`,
-    };
-  }
-  return { ok: true, ageDays };
-}
-
-function main() {
-  let exitCode = 0;
-  const progress = readProgress();
-  const mentioned = extractIssueMentions(progress);
-  const issues = fetchIssues();
-  const open = issues.filter((i) => i.state === "OPEN");
-  const closed = issues.filter((i) => i.state === "CLOSED");
-  const allKnownNumbers = issues.map((i) => i.number);
-
-  const { missingFromProgress, onlyInProgress } = diff(open, mentioned, allKnownNumbers);
-
-  if (missingFromProgress.length > 0) {
-    console.error(
-      `[progress-check] FAIL: ${missingFromProgress.length} open issue(s) not mentioned in PROGRESS.md: #${missingFromProgress.join(", #")}`,
-    );
-    for (const n of missingFromProgress) {
-      const issue = open.find((i) => i.number === n);
-      if (issue) console.error(`  #${n} [${issue.state}] ${issue.title}`);
-    }
-    exitCode = 1;
-  } else {
-    console.log(`[progress-check] OK: all ${open.length} open issue(s) are mentioned in PROGRESS.md.`);
-  }
-
-  if (onlyInProgress.length > 0) {
-    console.warn(
-      `[progress-check] WARN: PROGRESS.md references ${onlyInProgress.length} closed/unknown issue(s) in the active sections: #${onlyInProgress.join(", #")}. (Likely benign — PR numbers, recently-completed refs.)`,
-    );
-  }
-
-  const lastUpdatedCheck = checkLastUpdated(progress);
-  if (!lastUpdatedCheck.ok) {
-    console.error(`[progress-check] FAIL: PROGRESS.md is stale — ${lastUpdatedCheck.reason}.`);
-    exitCode = 1;
-  } else {
-    console.log(
-      `[progress-check] OK: PROGRESS.md last updated ${lastUpdatedCheck.ageDays} day(s) ago.`,
-    );
-  }
-
+const token = process.env.GH_TOKEN;
+if (!token) {
   console.log(
-    `[progress-check] summary: ${open.length} open, ${closed.length} closed, ${mentioned.size} unique issues referenced in PROGRESS.md.`,
+    "progress-check: GH_TOKEN not set — skipping issue-queue drift check. " +
+      "Set GH_TOKEN to enable.",
   );
-
-  process.exit(exitCode);
+  process.exit(0);
 }
 
-main();
+const repo = process.env.GITHUB_REPOSITORY ?? "shadowdoguk/portuguese-teacher";
+const api = `https://api.github.com/repos/${repo}/issues?state=open&per_page=100`;
+
+const res = await fetch(api, {
+  headers: {
+    Accept: "application/vnd.github+json",
+    Authorization: `Bearer ${token}`,
+    "X-GitHub-Api-Version": "2022-11-28",
+  },
+});
+if (!res.ok) {
+  fail(`GitHub API returned ${res.status} ${res.statusText}`);
+}
+const issues = await res.json();
+const open = issues.filter((i) => !i.pull_request);
+
+const knownPatterns = [
+  /^\s*-\s+\*\*#(\d+)\*\*\s+/gm,
+];
+
+const seen = new Set();
+for (const pattern of knownPatterns) {
+  let m;
+  while ((m = pattern.exec(content)) !== null) {
+    seen.add(Number(m[1]));
+  }
+}
+
+const missing = open.filter((i) => !seen.has(i.number));
+if (missing.length > 0) {
+  const list = missing.map((i) => `#${i.number} ${i.title}`).join("\n  - ");
+  fail(
+    `Open issues missing from PROGRESS.md:\n  - ${list}\n` +
+      "Add them under the appropriate section or file an update.",
+  );
+}
+
+console.log(
+  `progress-check: PROGRESS.md is ${Math.floor(ageDays)} day(s) old and references all ${open.length} open issue(s).`,
+);
