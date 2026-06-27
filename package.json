@@ -8,7 +8,7 @@
   },
   "packageManager": "pnpm@10.0.0",
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "unrs-resolver"]
+    "onlyBuiltDependencies": ["esbuild", "unrs-resolver", "@prisma/client", "@prisma/engines", "prisma"]
   },
   "scripts": {
     "dev": "next dev",
@@ -20,7 +20,13 @@
     "test:watch": "vitest",
     "progress:check": "node scripts/progress-check.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css,md}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css,md}\"",
+    "progress:check": "node scripts/progress-check.mjs",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "seed": "tsx prisma/seed.ts",
+    "seed:a0": "tsx prisma/seed.ts --dialect pt-PT --level A0"
   },
   "dependencies": {
     "next": "14.2.18",
@@ -28,6 +34,7 @@
     "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@prisma/client": "5.22.0",
     "@testing-library/jest-dom": "6.6.3",
     "@testing-library/react": "16.0.1",
     "@types/node": "20.17.6",
@@ -41,7 +48,9 @@
     "postcss": "8.4.49",
     "prettier": "3.3.3",
     "prettier-plugin-tailwindcss": "0.6.8",
+    "prisma": "5.22.0",
     "tailwindcss": "3.4.14",
+    "tsx": "4.19.2",
     "typescript": "5.6.3",
     "vitest": "2.1.4"
   }
