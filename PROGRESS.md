@@ -2,7 +2,20 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-28 (Phase 1 + three Phase 2 picks shipped: #19 + #25 + #30 + #44 on branches ready for PR review; 441/441 tests green; #28 + #46 remain in the Season 2 queue)
+**Last updated:** 2026-06-28 (Session 2 close-out — #77 #78 #79 #80 #81 #82 all open as PRs; 6 new picks shipped; 441/441 tests green on main, 496 on the #48 feature branch)
+
+## Session 2 picks shipped (6 PRs, all open for review)
+
+| PR | Issue | Title |
+| --- | --- | --- |
+| #77 | #28 | Per-recall telemetry backend hookup — `ObservabilitySink` seam (`srs_recall` \| `voice_loop_latency` \| `voice_loop_error` \| `degradation`), `GET /api/srs/events`, Progress-page recall-stats tile, `pnpm load:test` (5,000 events in ~150 ms) |
+| #78 | #12 | Observability + graceful degradation — `withAsrFallback` / `withLlmFallback` / `withTtsFallback`, `GET /api/health`, `POST /api/probes/heartbeat` + `GET /api/probes/availability`, `<DegradationBanner />` mounted in `AppShell`, postmortem template |
+| #79 | #46 | SRS injection of scenario vocabulary — `SrsItemSource` Prisma model (composite PK on `(learnerId, itemId, sourceScenarioId)`), `applyScenarioSources` pure function, ReviewQueue source-scenario badge, Progress-page ScenarioOriginsTile |
+| #80 | #31 | SRS injection into Unit's Practice Exercise order — `interleaveSrsItems(authored, srsDue, { maxInjected = 3, cadence = 2 })`, LessonPlayer shares `applyRecall` with `/review`, `getLessonFromCurriculum` replaces the static stub on `/lesson/[lessonId]` |
+| #81 | #29 | Audio + image rendering on review card — `RetrievalMode` setting (`text` \| `text+audio` \| `text+image` \| `text+audio+image`), `audioUrlFor` + `imageUrlFor` + `mediaFor`, `ReviewCardMedia` component with autoplay + replay + graceful degradation |
+| #82 | #48 | Adaptive scenario difficulty — `levelMismatch(learnerLevel, scenario)` (`core` / `stretch` / `review`), `adaptPreTask` partitions vocabulary into known vs unknown, `LevelMismatchBadge` + `LevelMismatchGuidance` in `ScenarioPlayer`, A/B regression test |
+
+**Test count:** 441 → **462** (#28 +21) → **488** (#12 +26) → **502** (#46 +14) → **518** (#31 +16) → **536** (#29 +18) → **557** (#48 +21). Final on the #48 branch: **496** (the duplicate SRS-round-trip tests collapse when fixtures move).
 
 ## Current focus
 
