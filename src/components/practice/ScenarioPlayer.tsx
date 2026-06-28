@@ -4,6 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { FeedbackOverlay } from "@/components/practice/FeedbackOverlay";
 import {
+  LevelMismatchBadge,
+  LevelMismatchGuidance,
+} from "@/components/practice/LevelMismatchBadge";
+import { useAuth } from "@/lib/auth/useAuth";
+import {
   DEFAULT_DIFFICULTY_TARGET,
   capabilitiesFromGlobals,
   type BrowserTier,
@@ -13,6 +18,11 @@ import {
   initialDifficulty,
   adjustFromRules,
 } from "@/lib/voice-loop";
+import {
+  adaptPreTask,
+  levelMismatch,
+  type AdaptedPreTask,
+} from "@/lib/scenarios/adaptive";
 import {
   advance,
   complete,
@@ -40,6 +50,7 @@ type ApiError = {
 type ApiResponse = ApiSuccess | ApiError;
 
 const SCENARIO_TIER_FALLBACK: BrowserTier = 3;
+const SCENARIO_SRS_LEARNER_ID = "demo-learner";
 
 export function ScenarioPlayer({
   scenario,
@@ -55,6 +66,8 @@ export function ScenarioPlayer({
     reasons: ReadonlyArray<string>;
   }) => void;
 }) {
+  const { user } = useAuth();
+  const learnerLevel = user?.level ?? "A0";
   const [capabilities, setCapabilities] = useState<VoiceLoopTierCapabilities | null>(null);
   const [state, setState] = useState<RunnerState>(() => initialState(scenario));
   const [history, setHistory] = useState<VoiceLoopTurn[]>([]);
@@ -65,6 +78,13 @@ export function ScenarioPlayer({
     initialDifficulty(DEFAULT_DIFFICULTY_TARGET),
   );
   const [criteriaOverride, setCriteriaOverride] = useState<ReadonlyArray<boolean> | null>(null);
+  const [knownVocabIds, setKnownVocabIds] = useState<ReadonlySet<string>>(() => new Set());
+
+  const mismatch = useMemo(() => levelMismatch(learnerLevel, scenario), [learnerLevel, scenario]);
+  const adaptedPreTask = useMemo<AdaptedPreTask>(
+    () => adaptPreTask(scenario, knownVocabIds),
+    [scenario, knownVocabIds],
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -72,6 +92,35 @@ export function ScenarioPlayer({
       capabilitiesFromGlobals({ navigator: window.navigator, window }),
     );
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let cancelled = false;
+    async function load(): Promise<void> {
+      try {
+        const res = await fetch(
+          `/api/srs/state?learnerId=${encodeURIComponent(SCENARIO_SRS_LEARNER_ID)}`,
+        );
+        if (!res.ok) return;
+        const body = (await res.json()) as {
+          ok: boolean;
+          state?: { items?: Record<string, { reviewCount?: number }> };
+        };
+        if (!body.ok || cancelled) return;
+        const seen = new Set<string>();
+        for (const [itemId, record] of Object.entries(body.state?.items ?? {})) {
+          if (record.reviewCount && record.reviewCount > 0) seen.add(itemId);
+        }
+        setKnownVocabIds(seen);
+      } catch {
+        /* best-effort; leave the known set empty */
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [scenario.id]);
 
   const tier: BrowserTier = capabilities?.tier ?? SCENARIO_TIER_FALLBACK;
 
@@ -154,6 +203,14 @@ export function ScenarioPlayer({
     return (
       <Card eyebrow={`Pre-task · ${scenario.targetLevel}`} title={scenario.goal}>
         <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <LevelMismatchBadge mismatch={mismatch} />
+            <span className="text-xs text-ink-mute">
+              Your level: <span className="font-mono">{learnerLevel}</span> · Scenario:{" "}
+              <span className="font-mono">{scenario.targetLevel}</span>
+            </span>
+          </div>
+          <LevelMismatchGuidance mismatch={mismatch} />
           <p className="text-sm text-ink-soft">{scenario.setting}</p>
           <dl className="grid grid-cols-2 gap-3 text-sm">
             <div>
@@ -170,10 +227,33 @@ export function ScenarioPlayer({
             <p className="mt-1 text-sm text-ink-soft">{scenario.preTask}</p>
           </div>
           {scenario.vocabularyRefs.length > 0 ? (
-            <p className="text-xs text-ink-mute">
-              Vocabulary: {scenario.vocabularyRefs.length} item
-              {scenario.vocabularyRefs.length === 1 ? "" : "s"} from this Unit.
-            </p>
+            <div
+              className="rounded-lg border border-ink/10 bg-paper p-4"
+              data-testid="scenario-vocab-hints"
+            >
+              <p className="stage-stamp">Vocabulary for this scenario</p>
+              <p className="mt-1 text-xs text-ink-mute">
+                {adaptedPreTask.knownVocab.length} already known ·{" "}
+                {adaptedPreTask.unknownVocab.length} new
+              </p>
+              {adaptedPreTask.unknownVocab.length > 0 ? (
+                <p
+                  className="mt-2 text-xs text-ink-soft"
+                  data-testid="scenario-vocab-unknown"
+                >
+                  <span className="stage-stamp mr-2">New</span>
+                  {adaptedPreTask.unknownVocab.join(", ")}
+                </p>
+              ) : (
+                <p
+                  className="mt-2 text-xs text-ink-soft"
+                  data-testid="scenario-vocab-all-known"
+                >
+                  You&apos;ve reviewed every item in this Unit already — the
+                  scenario is mostly a fluency run.
+                </p>
+              )}
+            </div>
           ) : null}
           <p className="text-xs text-ink-mute">
             Target turns: {scenario.expectedTurns}. Passing score:{" "}
