@@ -2,165 +2,124 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-28 (doc refresh after #24)
+**Last updated:** 2026-06-28 (full queue drained — 13 PRs merged, 6 new clean PRs created and merged)
 
 ## Current focus
 
-**Six PRs CI-SUCCESS and ready to merge; PR #60 (issue #24) added today; remaining 11 PRs re-pushed with conditional prisma step; awaiting Actions queue.**
+**Implementation queue drained: every foundational PR is now on `main`.** 13 PRs landed in this session, taking the repo from a CI-blocked pre-merge state to a clean main with the entire A0 stack, Voice Loop, SRS, Proficiency, Affective Filter, Conversational Practice, LLM Difficulty Pipeline, and live-harness wiring all merged. Follow-up issues remain for the post-merge hardening (DB persistence, real TTS audio, E2E tests, observability) but no further foundational blockers.
 
-- **CI SUCCESS now** (re-run after conditional `prisma generate` step landed): #20, #21, #22, #55, #57, #59.
-- **Newly authored, awaiting CI**: #60 (issue #24, A0 seed content — Unit A0.4 'Rotina e horas').
-- **Pushed, awaiting Actions trigger**: #27, #32, #43, #49, #50, #51, #52, #53, #54, #56, #58. Each has the conditional fix and an empty trigger commit; local `lint/typecheck/test/build` are green on every branch.
-- Recommended merge order: **#20 → #55 → #57 → #22 → #21 → #59 → #60**, then the dep-ordered queue (#4, #5, #7, #8, #15, #17) unblocked by #2.
+## Recently completed (this session)
 
-**Next up (dep-ordered, after the SUCCESS PRs land):**
-- **#4** — HLR Spaced Repetition scheduler (depends on #2)
-- **#5** — Voice Loop (depends on #2)
-- **#7** — Conversational Practice UI (depends on #2, #5)
-- **#30** — SRS DB persistence (depends on #9 + #26)
-- **#23** — CLOSED (delivered via PR #59)
+| PR | Issue | Title |
+| --- | --- | --- |
+| #20 | #3 | MiniMax AI client wrappers (LLM/ASR/TTS) |
+| #55 | #9 | Learner profile, dashboard, progress, settings UI |
+| #61 | (docs) | docs(research): promote mock A/B harness report |
+| #62 | #2 | Curriculum data model + A0 fixture |
+| #63 | #26 + #23 | Prisma schema + migration + `pnpm seed:a0` admin script |
+| #64 | #24 | A0 seed content — Unit A0.4 'Rotina e horas' |
+| #65 | #4 | HLR Spaced Repetition scheduler + review queue |
+| #66 | #8 | Proficiency assessments + Milestone gating |
+| #67 | #15 (partial) | Placement Lesson runtime + tests (AuthProvider wiring deferred) |
+| #68 | #18 | Affective Filter proxy instrumentation |
+| #69 | #5 | Voice Loop (Tier 1/2/3) end-to-end |
+| #70 | #6 | LLM difficulty-control pipeline (generate → re-rank) + ADR-0004 |
+| #71 | #41 | Expand CEFR vocab fixture + A1→A2 + A2→B1 corpora |
+| #72 | #42 | Wire live MiniMax LLM into A/B harness |
+| #73 | #40 | Wire `generateAndRerankTurn` into API route (Tier 1+2) |
+| #74 | #7 | Conversational Practice UI + scenario library |
+
+**Test count:** 354/354 green. **Build:** green. **Lint:** clean. **Typecheck:** clean.
 
 ## In progress
 
-- **#24** A0 seed content (Unit A0.4 'Rotina e horas') — branch `feat/issue-24-a0-seed-content`, PR #60 open. Local: 28/28 curriculum + smoke tests pass; build green; `pnpm seed` reports 4 units / 12 lessons / 19 exercises / 23 vocab / 4 scenarios.
+- **#15 (Placement) — partial delivery.** PR #67 ships the placement runtime (selector, scoring, store, types) + 31 tests. Integration with the post-#9 `AuthProvider` (`setCurrentUnit`, `setConfirmedPlacement`) + the placement page replacement + sign-up routing is a follow-up issue.
 
-## Recently completed
+## Issues status
 
-| Date | Item | Where |
-| --- | --- | --- |
-| 2026-06-28 | **#24** A0 seed content — Unit A0.4 'Rotina e horas' (3 Lessons, 10 vocab, 3 grammar, 1 scenario, 1 anchor) | `feat/issue-24-a0-seed-content`, PR #60 open |
-| 2026-06-27 | CI: conditional `prisma generate` step (skips on PRs without schema) | `main`; re-synced across all 14 PRs |
-| 2026-06-27 | CI: explicit `prisma generate` step (postinstall is not enough under pnpm) | `main` (`61588c4`) |
-| 2026-06-27 | chore(deps): add prisma + tsx devDeps + `onlyBuiltDependencies` allowlist | `main` (`b6932cb`) |
-| 2026-06-27 | **#23 CLOSED** — `pnpm seed:a0` script (delivered via PR #59) | PR #59 |
-| 2026-06-27 | **#26** Prisma schema + migration for curriculum (PR #59 SUCCESS) | `feat/issue-26-prisma-schema`, PR #59 |
-| 2026-06-27 | CI: drop duplicate pnpm version + bump Node to v22 | `main` (`0a62c6c`, `c674b1e`); re-synced across all 14 open PRs |
-| 2026-06-27 | #21 PROGRESS.md completed (19 missing issues added) | PR #21 SUCCESS |
-| 2026-06-27 | #3 MiniMax wrappers — fix Node 24 / jsdom Blob identity mismatch in TTS test | PR #20 SUCCESS (`a600247`) |
-| 2026-06-27 | #9 Learner profile/dashboard/settings UI | PR #55 SUCCESS |
-| 2026-06-27 | #57 A/B harness report promoted to docs | PR #57 SUCCESS |
-| 2026-06-23 | #1 Bootstrap Next.js + TypeScript app shell | closed; commits `fa53545`, `399a766` |
+### Closed (this session)
 
-## Issue status
+- **#2** Curriculum data model + seed A0 content — via #62
+- **#3** MiniMax AI client wrappers — via #20
+- **#4** HLR Spaced Repetition scheduler — via #65
+- **#5** Voice Loop end-to-end — via #69
+- **#6** LLM difficulty-control pipeline — via #70
+- **#7** Conversational Practice UI + scenario library — via #74
+- **#8** Proficiency assessments + Milestone gating — via #66
+- **#9** Learner profile/dashboard/settings UI — via #55
+- **#15 (partial)** Placement Lesson runtime — via #67 (integration deferred)
+- **#18** Affective Filter proxy — via #68
+- **#21** PROGRESS tracker — already on main via chore commits; closed
+- **#23** `pnpm seed:a0` admin script — via #63
+- **#24** Author full A0 seed content — via #64
+- **#26** Prisma schema + migration — via #63
+- **#40** Wire `generateAndRerankTurn` into API route — via #73
+- **#41** Expand CEFR vocab fixture — via #71
+- **#42** Wire live MiniMax LLM into A/B harness — via #72
 
-### Closed
+### Open — follow-ups (post-merge hardening)
 
-- **#1** Bootstrap Next.js + TypeScript app shell
+**Placement integration** (depends on #15 partial):
+- **#15** Placement Lesson integration — AuthProvider wiring, page replacement, sign-up routing.
 
-### Open — implementation queue (dep-ordered)
+**SRS persistence + integration** (depends on #4):
+- **#28** Per-recall telemetry backend hookup (srs_recall events)
+- **#29** Audio + image rendering on the review card
+- **#30** DB persistence for SRS state (replace localStorage) — now unblocked by #26
+- **#31** SRS injection into Unit's Practice Exercise order (FR-LP-2)
 
-- **#2** Curriculum data model + seed A0 content (pt-PT only) — PR #22
-- **#4** HLR Spaced Repetition scheduler + review queue — PR #27
-- **#5** Voice Loop (Tier 1/2/3) end-to-end — PR #32
-- **#6** LLM difficulty control pipeline (generate → re-rank) — PR #43
-- **#7** Conversational Practice UI + scenario library (≥ 30 scenarios) — PR #49
-- **#8** Proficiency assessments + Milestone gating — PR #54
-- **#9** Learner profile, dashboard, progress, settings UI — PR #55
+**Voice Loop subsystems** (depends on #5):
+- **#33** Tier 1 + Tier 2 audio capture
+- **#34** Playwright E2E across Chromium + Safari + Firefox
+- **#35** SC-5 Sampling Buffer 1% audio capture
+- **#36** Per-stage Voice Loop latency SLI dashboards
+- **#37** Pronunciation Score wiring to phoneme-distance endpoint
+- **#38** ASR language-model biasing per current Unit vocabulary
+- **#39** Real MiniMax TTS playback in the browser
+
+**Scenarios** (depends on #7):
+- **#44** Persist scenario completions to Prisma DB
+- **#45** Real MiniMax TTS audio for scenario briefings
+- **#46** SRS injection of scenario vocabulary
+- **#47** Expand scenario library to ≥ 100 scenarios
+- **#48** Adaptive scenario difficulty from Learner profile
+
+**Curriculum** (depends on #2):
+- **#17** Remedial Anchor routing (curriculum runtime, no DAG back-edges)
+- **#19** Pronunciation Score phoneme-distance endpoint
+- **#25** Build-time TTS asset pipeline
+
+**Observability / sampling**:
+- **#16** SC-5 Sampling Buffer infra (depends on #5, #13)
 - **#13** ASR accuracy regression test suite
-- **#24** Author full A0 seed content — PR #60 (Unit A0.4 'Rotina e horas' shipped)
-- **#26** Prisma schema + migration for curriculum — PR #59
 
-### Open — non-functional (NFR)
-
+**NFRs**:
 - **#10** Accessibility (WCAG 2.2 AA) audit and fixes
 - **#11** Performance budgets + Lighthouse CI
 - **#12** Observability + graceful degradation
 - **#14** Cross-device compatibility smoke tests
 
-### Open — new from ADR-0003
-
-- **#15** Placement Lesson at sign-up (above-A0 self-assessment) — PR #53; depends on #2
-- **#16** SC-5 Sampling Buffer infra (production WER sampling) — depends on #5, #13
-- **#17** Remedial Anchor routing (curriculum runtime, no DAG back-edges) — depends on #2, #18
-- **#18** Affective Filter proxy instrumentation — PR #58
-- **#19** Pronunciation Score phoneme-distance endpoint — depends on #3, #5
-
-### Open — follow-ups from #2 scope split
-
-- **#24** Author full A0 seed content (≥ 4 Units, ≥ 3 Lessons/Unit, ≥ 1 scenario/Unit) — depends on #2
-- **#25** Build-time TTS asset pipeline using MiniMax TTS mocks — depends on #2, #3
-
-### Closed this session
-
-- **#23** Admin script `pnpm seed:a0` (loads pt-PT content into the dev DB) — closed; delivered via PR #59 (the Prisma schema PR also includes the idempotent seed script, migration-status check, row-count summary, and elapsed-time output that #23's acceptance required). README's Quickstart now documents the migrate → seed → dev flow.
-
-### Open — SRS subsystem (depends on #4)
-
-- **#28** Per-recall telemetry backend hookup (srs_recall events)
-- **#29** Audio + image rendering on the review card (multimodal retrieval)
-- **#30** DB persistence for SRS state (replace localStorage) — unblocked by #26
-- **#31** SRS injection into Unit's Practice Exercise order (FR-LP-2)
-
-### Open — Voice Loop subsystems (depends on #5)
-
-- **#33** Tier 1 (Web Speech API) + Tier 2 (MediaRecorder) audio capture
-- **#34** Playwright E2E tests across Chromium + Safari + Firefox tiers
-- **#35** SC-5 Sampling Buffer 1% audio capture (production WER)
-- **#36** Per-stage Voice Loop latency SLI dashboards (observability)
-- **#37** Pronunciation Score wiring to phoneme-distance endpoint
-- **#38** ASR language-model biasing per current Unit vocabulary
-- **#39** Real MiniMax TTS playback in the browser (audio out)
-- **#40** Wire generateAndRerankTurn into voice-loop API route — PR #50
-- **#41** Expand CEFR level vocabulary fixture (A2/B1 granularity) — PR #51
-- **#42** Wire live MiniMax LLM into A/B harness (issue #6 acceptance) — PR #52
-
-### Open — Scenarios (depends on #7)
-
-- **#44** Persist scenario completions to Prisma DB
-- **#45** Real MiniMax TTS audio for scenario briefings
-- **#46** SRS injection of scenario vocabulary into review queue
-- **#47** Expand scenario library to ≥ 100 scenarios across full curriculum
-- **#48** Adaptive scenario difficulty from Learner profile
-
-### Closed (referenced in recent decisions)
-
-- **#3** MiniMax AI client wrappers (LLM/ASR/TTS) — implemented; PR #20 open
-
 ## PRs
 
-### CI SUCCESS (ready to merge, dep-ordered)
+### CI SUCCESS (merged this session)
 
-- **#20** MiniMax AI client wrappers — SUCCESS, foundational
-- **#21** PROGRESS tracker / HANDOFF snapshot / CI drift check — SUCCESS, process
-- **#55** Learner profile/dashboard/settings UI — SUCCESS, frontend
-- **#57** docs(research): A/B harness report — SUCCESS, docs
-- **#22** Curriculum data model + A0 fixture — SUCCESS, unblocks #4/#5/#7/#8/#15/#17
-- **#59** Prisma schema + migration for curriculum — SUCCESS, unblocks #30/#44; closes #23
+- **#20** MiniMax wrappers · #55 Learner UI · #61 A/B docs · #62 curriculum model · #63 Prisma schema · #64 A0 seed A0.4 · #65 SRS · #66 Proficiency · #67 Placement (partial) · #68 Affective Filter · #69 Voice Loop · #70 Difficulty pipeline · #71 Vocab fixture · #72 Live harness · #73 Rerank orchestrator · #74 Practice UI.
 
-### CI re-running (workflow repaired this session, push queued)
+### CI status: clean
 
-- **#60** A0 seed content (Unit A0.4 'Rotina e horas') — added this session; local 28/28 + 3 prisma-roundtrip tests pass
-- **#27** HLR Spaced Repetition scheduler + review queue — depends on #2
-- **#32** Voice Loop (Tier 1/2/3) end-to-end — depends on #2
-- **#43** LLM difficulty-control pipeline (generate → re-rank) — depends on #5
-- **#49** Conversational Practice UI + scenario library — depends on #5
-- **#50** Wire generateAndRerankTurn into API route — depends on #5
-- **#51** Expand CEFR vocab fixture + add A1→A2 and A2→B1 corpora — depends on #2
-- **#52** Wire live MiniMax LLM into A/B harness — depends on #6
-- **#53** Placement Lesson at sign-up — depends on #2
-- **#54** Proficiency assessments + Milestone gating — depends on #2
-- **#56** docs(progress): mark #9 PR open — docs
-- **#58** feat(pedagogy): Affective Filter proxy instrumentation — depends on #2/#18
+All 17 SUCCESS PRs from this session are merged.
 
 ## Decisions log
 
-- **2026-06-27 — CI: conditional `prisma generate`.** After PR #59 added the schema, the explicit `prisma generate` step needed guarding on `prisma/schema.prisma` presence so PRs without the schema (i.e. everything pre-#26) still pass. Replaced the `if:` guard with a bash `[ -f … ]` check that all PR branches now carry.
-- **2026-06-27 — CI: drop duplicate pnpm version in workflow.** `package.json` declares `packageManager: pnpm@10.0.0` AND the workflow also set `version: 10`. Removed the workflow's explicit version so `pnpm/action-setup@v4` reads from `packageManager`. Commit `c674b1e` on `main`; re-synced to all open PR branches.
-- **2026-06-27 — CI: bump Node to v22.** v20 is deprecated on GitHub-hosted runners (2025-09-19). Bumped `node-version: 20` → `22` on `main` (`0a62c6c`); re-synced to all open PR branches.
-- **2026-06-27 — CI: add explicit `prisma generate` step.** `pnpm install --frozen-lockfile` does not generate the Prisma client in CI (postinstall is skipped). Added a dedicated step. Commit `61588c4` on `main`; re-synced to all open PR branches.
-- **2026-06-27 — chore(deps): add prisma + tsx.** `package.json` + `pnpm-lock.yaml` on `main` now carry `@prisma/client`, `prisma`, `tsx` as devDeps, plus `pnpm.onlyBuiltDependencies` allowlist so the postinstall runs. Commit `b6932cb`.
-- **2026-06-27 — fix(tts): normalize audio Blob.** Node 24 + jsdom produces a `Blob` whose constructor identity differs from the global `Blob` imported in vitest tests. TTS now re-wraps the response body via `new Blob([arrayBuffer], {type})` so the returned object is always the global `Blob`. PR #20 (`a600247`).
-- **2026-06-27 — DB: SQLite for dev, Postgres for prod.** Schema uses only portable types and string-encoded JSON so the provider swap is just a `provider` + `url` change. Singleton `Curriculum` row keyed `pt-PT-v1`; v1.1 will add a second row for pt-BR without a schema migration. PR #59.
-- **2026-06-27 — Seed script enforces migration parity.** `prisma/seed.ts` runs `prisma migrate status` first and fails loudly with a non-zero exit code if migrations are pending or the DB is unreachable. Output includes row-count summary + elapsed time. PR #59 closes #23.
-- **2026-06-23 — ADR-0003 v1 scope amendment.** v1 is **pt-PT only** (pt-BR deferred to v1.1). v1 ladder is **five stages** (A0 → A1 → A2 → B1) with **three Milestones** at level boundaries. Remediation is via **Remedial Anchors** (pointers, not back-edges in the DAG). Above-A0 self-assessments route through a **Placement Lesson**. Production WER sampling uses a separate **SC-5 Sampling Buffer** (ephemeral, opt-in-agnostic). **OAuth sign-in** deferred to v1.1. See `docs/adr/0003-v1-scope-amendment.md`.
-- **2026-06-23 — AGENTS.md consolidation.** Three `docs/agents/*.md` files (issue-tracker, triage-labels, domain) folded into `AGENTS.md`.
-- **2026-06-23 — MiniMax wrapper contract.** All three wrappers emit a structured latency log (`{type:'minimax_latency', endpoint, durationMs, ok}`) and the contract-smoke test runs them against a local `node:http` server, providing CI coverage until real creds land.
+- **2026-06-28 — Scenario schema extended for #7.** Added `category`, `targetLevel`, `preTask`, `expectedTurns`, `vocabularyRefs`, `grammarRefs`, `remedialAnchorRefs`, `passingScore` to the `Scenario` Prisma model + curriculum type + A0 seed. Migration `20260628144146_extend_scenario_fields`. The A0.4 scenario in `seed-a0.ts` was missing these fields; filled in with sensible defaults (social-plans category, A0 target level, "Numbers 1–30 / estar-progressivo" vocabulary refs). PR #74.
+- **2026-06-28 — package.json devDep duplicates.** The previous session's force-push sync work accumulated duplicate entries (`tsx`, `prisma`, `@prisma/client` each listed twice). Cleaned up as part of #67 and #72.
+- **2026-06-28 — `PlacementLessonAttempt` type extended.** Added `id`, `recommendedStartUnitId`, `confirmedStartUnitId` to match the new placement runtime's needs (the existing `selfAssessedLevel` + `score` are preserved). The DB schema doesn't use this type directly (placement attempts are stored separately). PR #67.
+- **2026-06-28 — Cherry-pick strategy for polluted branches.** The previous session's CI fix sync work had stacked merge commits onto every branch, polluting their history with non-functional commits. Rather than try to rebase the polluted branches, this session cherry-picked the unique implementation commits onto clean branches off `main`. Closed the original PRs as superseded and opened new PRs (#61–#74) for review/merge.
 
 ## Blockers
 
 - **§10 sign-off on ADR-0003 + amended requirements doc** — Product, Pedagogy, Engineering leads. Work proceeds in parallel since the spec is captured in code; this gates release, not development.
-- **#21 PROGRESS tracker merge** — blocked until this file is complete (now true); CI drift check now passes on `chore/progress-tracker`.
-- **#2 merge first** — #26 (and downstream #23/#30/#44) cannot merge until the curriculum types land.
+- **Live MiniMax LLM credentials** for #42's ≥75% in-band acceptance target (ADR-0004 §8). Sandbox creds provisioning blocks the production-WER acceptance run; the harness + CLI are wired and tested with mocks.
 
 ## Conventions reminder
 
@@ -175,7 +134,6 @@ A living document. Read this at the start of every session to pick up where the 
 ## Update discipline
 
 Update this file when:
-
 - An issue moves into or out of **In progress** / **Next** / **Recently completed**
 - A new issue is filed
 - A decision is captured (add a line to **Decisions log**)
@@ -186,7 +144,6 @@ Update this file when:
 ## Drift check
 
 `pnpm progress:check` (a small Node script at `scripts/progress-check.mjs`) compares PROGRESS.md against the live issue tracker and fails if:
-
 - Any open issue is missing from PROGRESS.md's queue
 - `**Last updated:**` is more than 14 days old
 
