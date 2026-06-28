@@ -26,6 +26,8 @@
     "prisma:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
     "seed:a0": "tsx prisma/seed.ts --dialect pt-PT --level A0",
+    "assets:tts": "tsx scripts/build-tts-assets.ts",
+    "assets:check": "tsx scripts/check-tts-assets.ts",
     "anchors:suggest": "tsx scripts/anchors-suggest.ts",
     "harness:live": "node scripts/run-ab-harness-live.mjs",
     "harness:mock": "vitest run -- ab-harness"
