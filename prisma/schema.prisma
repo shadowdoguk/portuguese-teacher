@@ -253,3 +253,32 @@ model SrsRecallEvent {
   @@index([learnerId, occurredAt])
   @@index([itemId])
 }
+
+// One row per Learner × Scenario completion attempt. Stores the star rating
+// + turns-taken + timestamp. Replaces the prior localStorage ScenarioStoreSnapshot.
+model ScenarioCompletion {
+  id           String   @id @default(cuid())
+  learnerId    String
+  scenarioId   String
+  passed       Boolean
+  stars        Int      // 0..3
+  turnsTaken   Int
+  completedAt  DateTime @default(now())
+
+  @@index([learnerId, completedAt])
+  @@index([scenarioId])
+}
+
+// One row per Learner × Scenario — the denormalised best-progress view that
+// the dashboard + library UI read from. Updated on every ScenarioCompletion.
+model ScenarioProgress {
+  learnerId     String
+  scenarioId    String
+  bestStars     Int      @default(0)
+  attempts      Int      @default(0)
+  completedAt   DateTime?
+  updatedAt     DateTime @updatedAt
+
+  @@id([learnerId, scenarioId])
+  @@index([learnerId])
+}

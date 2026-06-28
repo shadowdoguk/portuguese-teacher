@@ -3,9 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   emptySnapshot,
-  loadSnapshot,
   recordCompletion,
-  saveSnapshot,
   type ScenarioStoreSnapshot,
   type ScenarioProgress,
 } from "@/lib/scenarios/store";
@@ -13,41 +11,90 @@ import { ScenarioLibrary } from "@/components/practice/ScenarioLibrary";
 import { ScenarioPlayer } from "@/components/practice/ScenarioPlayer";
 import type { Scenario } from "@/lib/scenarios";
 
+const SESSION_LEARNER_ID = "demo-learner";
+
 export function ScenarioWorkspace() {
   const [snapshot, setSnapshot] = useState<ScenarioStoreSnapshot>(emptySnapshot);
   const [active, setActive] = useState<Scenario | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    setSnapshot(loadSnapshot(window.localStorage));
-    setHydrated(true);
+    let cancelled = false;
+    async function load(): Promise<void> {
+      try {
+        const res = await fetch(
+          `/api/scenarios?learnerId=${encodeURIComponent(SESSION_LEARNER_ID)}`,
+        );
+        if (!res.ok) {
+          throw new Error(`Failed to load scenario progress (${res.status})`);
+        }
+        const body = (await res.json()) as {
+          ok: boolean;
+          snapshot: ScenarioStoreSnapshot;
+        };
+        if (!body.ok) {
+          throw new Error("Scenario snapshot response was not ok");
+        }
+        if (cancelled) return;
+        setSnapshot(body.snapshot);
+        setHydrated(true);
+        setError(null);
+      } catch (err) {
+        if (cancelled) return;
+        setSnapshot(emptySnapshot());
+        setHydrated(true);
+        setError(err instanceof Error ? err.message : "Unknown error");
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  useEffect(() => {
-    if (!hydrated || typeof window === "undefined") return;
-    saveSnapshot(window.localStorage, snapshot);
-  }, [snapshot, hydrated]);
-
   const onComplete = useCallback(
-    (result: {
+    async (result: {
       stars: 0 | 1 | 2 | 3;
       passed: boolean;
       turnsTaken: number;
       reasons: ReadonlyArray<string>;
     }) => {
       if (!active) return;
-      setSnapshot((prev) =>
-        recordCompletion(prev, {
-          scenarioId: active.id,
-          stars: result.stars,
-          passed: result.passed,
-          turnsTaken: result.turnsTaken,
-          completedAt: Date.now(),
-        }),
-      );
+      const completedAt = Date.now();
+      const optimistic = recordCompletion(snapshot, {
+        scenarioId: active.id,
+        stars: result.stars,
+        passed: result.passed,
+        turnsTaken: result.turnsTaken,
+        completedAt,
+      });
+      setSnapshot(optimistic);
+      try {
+        const res = await fetch(
+          `/api/scenarios/${encodeURIComponent(active.id)}/complete`,
+          {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              learnerId: SESSION_LEARNER_ID,
+              passed: result.passed,
+              stars: result.stars,
+              turnsTaken: result.turnsTaken,
+              completedAt,
+            }),
+          },
+        );
+        if (!res.ok) {
+          const message = await readError(res);
+          throw new Error(message);
+        }
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Network error");
+      }
     },
-    [active],
+    [active, snapshot],
   );
 
   if (active) {
@@ -61,5 +108,23 @@ export function ScenarioWorkspace() {
   }
 
   const progress = snapshot.byId as Record<string, ScenarioProgress>;
-  return <ScenarioLibrary progress={progress} onSelect={setActive} />;
+  return (
+    <div className="space-y-6">
+      <ScenarioLibrary progress={progress} onSelect={setActive} />
+      {error ? (
+        <p className="text-xs text-terracotta-deep" data-testid="scenario-error">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+async function readError(res: Response): Promise<string> {
+  try {
+    const body = (await res.json()) as { error?: string };
+    return body.error ?? `Request failed (${res.status})`;
+  } catch {
+    return `Request failed (${res.status})`;
+  }
 }
