@@ -1,6 +1,6 @@
 # Session Handoff
 
-**Snapshot date:** 2026-06-27 (end of session + doc refresh)
+**Snapshot date:** 2026-06-28 (doc refresh after #24)
 **Repo:** `shadowdoguk/portuguese-teacher`
 
 > **This file is a point-in-time snapshot.** For the living, agent-picked-up
@@ -11,7 +11,7 @@
 
 ## TL;DR
 
-A full-day session: cleared the CI blocker that was preventing every PR from being merged, picked up the next dep-ordered work (#26 Prisma schema + migration), and closed #23. The repo is now at a state where the dep-ordered PR queue can begin merging.
+A full-day session: cleared the CI blocker that was preventing every PR from being merged, picked up the next dep-ordered work (#26 Prisma schema + migration), closed #23, and authored the missing A0 seed content (#24 — Unit A0.4 'Rotina e horas'). The repo is now at a state where the dep-ordered PR queue can begin merging.
 
 ## Session outcomes
 
@@ -32,6 +32,7 @@ Root cause was a *stack* of issues, not a single bug. All fixed on `main` and re
 - **#3** (PR #20) — fix(tts): normalize Blob in TTS wrapper
 - **#21** (PR #21) — completed PROGRESS.md + HANDOFF.md
 - **#23** — closed (delivered via PR #59's `pnpm seed:a0` script)
+- **#24** (PR #60) — Unit A0.4 'Rotina e horas' (3 Lessons, 10 vocab, 3 grammar, 1 scenario, 1 anchor); A0 now at 4 Units / 12 Lessons / 19 Exercises
 - **#26** (PR #59) — Prisma schema + migration for all curriculum entities, idempotent seed script, round-trip test
 
 ### Issues partially delivered
