@@ -1,6 +1,6 @@
 # Session Handoff
 
-**Snapshot date:** 2026-06-28 (Season 1 wrapped — 18 PRs merged; Phase 1 hardening shipped)
+**Snapshot date:** 2026-06-28 (Season 2 in flight — 4 PRs landed in this session: #19, #25, #30, #44)
 **Repo:** `shadowdoguk/portuguese-teacher`
 
 > **This file is a point-in-time snapshot.** For the living, agent-picked-up
@@ -11,24 +11,30 @@
 
 ## TL;DR
 
-Season 1 of the Portuguese Teacher build is **complete**. Over two sessions
-the repo went from a CI-blocked bootstrap to a clean `main` with:
+Season 1 of the Portuguese Teacher build is **complete** (16 foundational PRs
++ 2 Phase-1 hardening PRs landed). Season 2 has shipped **4 PRs in this
+session** — Phase 1 is now closed (Pronunciation + TTS pipeline) and the first
+three Phase 2 state-persistence picks are done:
 
-- **18 PRs merged** (16 foundational + 2 Phase-1 hardening).
-- **405/405 tests green** (`pnpm typecheck` / `pnpm lint` / `pnpm build` all green).
-- **A0 curriculum seeded**: 4 Units / 12 Lessons / 19 Exercises / 23 vocab / 4 scenarios.
-- **Runtime stack complete**: MiniMax wrappers, Voice Loop (Tier 1/2/3),
-  SRS, Proficiency assessments, Affective Filter, Conversational Practice,
-  LLM difficulty pipeline (ADR-0004), live MiniMax harness.
+- **22 PRs total** on `main` (18 from Season 1 + #19, #25, #30, #44).
+- **441/441 tests green** (`pnpm typecheck` / `pnpm lint` / `pnpm build` all green).
+- **Runtime stack complete**: MiniMax wrappers (LLM/ASR/TTS/Pronunciation), Voice
+  Loop (Tier 1/2/3) with phoneme-distance pronunciation scoring, SRS with
+  DB persistence, Proficiency assessments, Affective Filter, Conversational
+  Practice, LLM difficulty pipeline (ADR-0004), live MiniMax harness.
 - **Learner-facing flow wired**: sign-up → placement (or A0 skip) →
-  dashboard → review queue → proficiency assessment → remediation plan.
+  dashboard → review queue (DB-backed) → proficiency assessment → remediation
+  plan → scenarios (DB-backed).
+- **Build-time TTS pipeline**: 38 A0 audio assets emitted + manifest, deterministic
+  regeneration via `pnpm assets:tts`, CI check via `pnpm assets:check`.
 - **Schema**: Prisma `Curriculum` + `Learner` + `Assessment` + `RemedialAnchor`
-  + `Scenario` rows; all idempotent via `pnpm seed`.
+  + `Scenario` + `SrsReviewRecord` + `SrsRecallEvent` + `ScenarioCompletion` +
+  `ScenarioProgress` rows; all idempotent via `pnpm seed`.
 
-Season 2 starts now. The remaining work is: 2 more Phase-1 items
-(`#19` Pronunciation endpoint, `#25` TTS asset pipeline), state
-persistence (`#28`/`#30`/`#44`/`#46`), the bulk content authoring (A1/A2/B1
-+ `#47` ≥100 scenarios), real-world audio capture/playback (`#33`/`#35`/`#37`/`#38`/`#39`),
+Season 2 next picks: **`#28`** Per-recall telemetry backend hookup (depends on
+`#12` observability — soft block) and **`#46`** SRS injection of scenario
+vocabulary (depends on `#28`/`#30`). Then content authoring (A1/A2/B1 + `#47`
+≥100 scenarios), real-world audio capture/playback (`#33`/`#35`/`#37`/`#38`/`#39`),
 NFRs (`#10`–`#14`), and E2E validation (`#34`/`#36`/`#48`).
 
 ## Season 1 outcomes
@@ -72,29 +78,62 @@ Closed PRs covering 14 distinct issues:
   including a 50-anchor content-team pass that stays acyclic and
   terminates in ≤ 5 steps.
 
+### Season 2 picks shipped in this session (4 PRs)
+
+- **#19** — Pronunciation Score phoneme-distance endpoint: new
+  `MiniMaxPronunciation` wrapper + mock; 10-utterance native-speaker
+  calibration set (`PronunciationRuntime` singleton) running lazily on
+  first use with logged baseline + fallback; drill mode calls the
+  endpoint with `targetPhrase` + observed (1.5 s p95 budget via
+  `Promise.race`, falls back to ASR bias on timeout); free-form path
+  weights ASR word-level confidence against the active Level's
+  vocabulary set; `VoiceLoopTurn` gained `pronunciationPerPhoneme` +
+  `pronunciationSource`; `FeedbackOverlay` replaced the bare score
+  number with an accessible `role="progressbar"` bar plus a per-phoneme
+  breakdown for drill mode plus a "Source:" indicator.
+- **#25** — Build-time TTS asset pipeline: `pnpm assets:tts` walks
+  every vocabulary item (pt or examplePt), grammar example, and lesson
+  audio block; runs the MiniMax TTS wrapper (mock by default); writes
+  `public/assets/tts/{unitId}/{assetId}.mp3` + `manifest.json`. 38 A0
+  assets emitted. `pnpm assets:check` fails the build on orphan
+  `audioAssetId` references. Deterministic IDs + manifest snapshot;
+  regenerated mp3 blobs gitignored.
+- **#30** — DB persistence for SRS state: `SrsReviewRecord` +
+  `SrsRecallEvent` Prisma models + migration; `createSrsRepository`
+  wraps the half-life math from `@/lib/srs/scheduler.applyRecall` and
+  persists the result + emits the event row; `GET /api/srs/state` +
+  `POST /api/srs/recalls` endpoints; `ReviewQueue` swapped
+  `loadPersisted` / `savePersisted` (localStorage) for these endpoints
+  with async loading + error surface.
+- **#44** — DB persistence for scenario completions:
+  `ScenarioCompletion` (append-only attempts) + `ScenarioProgress`
+  (denormalised best-stars/attempts per Learner + scenario) Prisma
+  models + migration; `createScenarioRepository` wraps the
+  `recordCompletion` pure function in upsert semantics;
+  `GET /api/scenarios` + `POST /api/scenarios/[id]/complete` endpoints;
+  `ScenarioWorkspace` swapped `loadSnapshot` / `saveSnapshot`
+  (localStorage) for these endpoints with optimistic update + error
+  surface.
+
 ## Git state
 
 | Branch | Status |
 | --- | --- |
-| `main` | clean; 18 new merge commits; 405/405 tests green |
-| All `-clean` branches | merged + deleted via `--delete-branch` |
-| Original polluted branches | closed as superseded, branches deleted |
+| `main` | clean; 22 merge commits; 441/441 tests green |
+| `feat/issue-19-pronunciation-score-endpoint` | merged + deleted |
+| `feat/issue-25-tts-asset-pipeline` | merged + deleted |
+| `feat/issue-30-srs-db-persistence` | merged + deleted |
+| `feat/issue-44-scenario-completion-persistence` | merged + deleted |
 
 ## Open PRs
 
 None.
 
-## Open issues (Season 2 starts here)
+## Open issues (Season 2 continues here)
 
-**Phase 1 — runtime integration (2 remaining of 4)**
-- **#19** Pronunciation Score phoneme-distance endpoint (depends on #3 + #5)
-- **#25** Build-time TTS asset pipeline using MiniMax TTS mocks (depends on #2 + #3)
-
-**Phase 2 — state persistence (depends on #4, #7, #26)**
-- **#28** Per-recall telemetry backend hookup
-- **#30** DB persistence for SRS state (replace localStorage)
-- **#44** Persist scenario completions to Prisma DB
-- **#46** SRS injection of scenario vocabulary
+**Phase 2 — state persistence (2 remaining of 4)**
+- **#28** Per-recall telemetry backend hookup — depends on #12 (soft block)
+- **#46** SRS injection of scenario vocabulary — depends on #28 + #30
 
 **Phase 3 — content (the bulk)**
 - A1 / A2 / B1 curriculum authoring (currently 4 of ~30 Units seeded)
@@ -105,7 +144,7 @@ None.
 - **#33** Tier 1 + Tier 2 audio capture
 - **#39** Real MiniMax TTS playback in the browser
 - **#38** ASR LM biasing per current Unit vocabulary
-- **#37** Pronunciation Score wiring
+- **#37** Pronunciation Score wiring (uses #19 endpoint — already wired)
 - **#35** SC-5 Sampling Buffer 1% audio capture
 
 **Phase 5 — NFRs**
@@ -119,13 +158,23 @@ None.
 **Phase 6 — E2E validation**
 - **#34** Playwright E2E across Chromium + Safari + Firefox
 - **#36** Per-stage Voice Loop latency SLI dashboards
-- **#48** Adaptive scenario difficulty
+- **#48** Adaptive scenario difficulty from Learner profile
 
 ## Still pending (human / external)
 
 - **§10 sign-off** on ADR-0003 + amended requirements doc (Product,
   Pedagogy, Engineering leads).
 - **Live MiniMax LLM credentials** for #42's ≥75% in-band acceptance target.
+
+## First action for next session
+
+```bash
+git checkout main && git pull
+# Confirm: 441/441 tests pass; typecheck/lint/build green.
+# Pick up #28 (Per-recall telemetry backend hookup) — soft-blocked by #12
+# (observability). Decide whether to stub a minimal observability sink or
+# wait for #12 to land first. After #28, #46 is unblocked.
+```
 
 ## Key references
 
