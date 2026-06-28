@@ -3,7 +3,17 @@ import { payloadToTurn, parseStructuredOutput } from "./structured-output";
 import { buildVoiceLoopSystemPrompt } from "./system-prompt";
 import type { VoiceLoopTurn, VoiceLoopTurnInput } from "./types";
 import type { Dialect, Level } from "@/lib/curriculum/types";
-import type { LlmCompleteResult, LlmMessage } from "@/lib/minimax/types";
+import type { LlmCompleteResult, LlmMessage, PronunciationPhonemeScore } from "@/lib/minimax/types";
+
+export type PronunciationDetails = {
+  score: number;
+  perPhoneme?: ReadonlyArray<PronunciationPhonemeScore>;
+  source: "endpoint" | "asr-bias" | "default";
+};
+
+export type RerankPronunciationResolver = (
+  input: VoiceLoopTurnInput,
+) => PronunciationDetails | number | Promise<PronunciationDetails | number>;
 
 export type RerankDeps = {
   llm: (messages: LlmMessage[]) => Promise<LlmCompleteResult>;
@@ -13,7 +23,7 @@ export type RerankDeps = {
   dialect: Dialect;
   level: Level;
   candidateCount?: number;
-  pronunciationFromAsr?: (input: VoiceLoopTurnInput) => number;
+  pronunciationFromAsr?: RerankPronunciationResolver;
   mock?: boolean;
 };
 
@@ -44,7 +54,7 @@ export async function generateAndRerankTurn(
 ): Promise<RerankResult> {
   const startedAt = deps.now();
   const turnId = deps.generateId();
-  const pronunciation = deps.pronunciationFromAsr?.(input) ?? 80;
+  const pronunciation = await resolvePronunciation(deps.pronunciationFromAsr, input);
   const candidateCount = Math.max(1, deps.candidateCount ?? 4);
 
   const systemPrompt = buildVoiceLoopSystemPrompt({
@@ -82,7 +92,9 @@ export async function generateAndRerankTurn(
       utteranceId: input.learnerUtteranceId,
       generatedAt: deps.now(),
       mock: false,
-      pronunciationScore: pronunciation,
+      pronunciationScore: pronunciation.score,
+      pronunciationPerPhoneme: pronunciation.perPhoneme,
+      pronunciationSource: pronunciation.source,
     },
   );
 
@@ -93,6 +105,18 @@ export async function generateAndRerankTurn(
     scoredCandidates: scored,
     chosenIndex,
   };
+}
+
+async function resolvePronunciation(
+  resolver: RerankPronunciationResolver | undefined,
+  input: VoiceLoopTurnInput,
+): Promise<PronunciationDetails> {
+  if (!resolver) return { score: 80, source: "default" };
+  const result = await resolver(input);
+  if (typeof result === "number") {
+    return { score: result, source: "default" };
+  }
+  return result;
 }
 
 function parseCandidatesEnvelope(text: string): Envelope {

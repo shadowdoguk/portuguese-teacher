@@ -1,4 +1,5 @@
 import type { ErrorCategory, FeedbackItem, VoiceLoopLLMPayload, VoiceLoopTurn } from "./types";
+import type { PronunciationPhonemeScore } from "@/lib/minimax/types";
 
 export class StructuredOutputError extends Error {
   constructor(message: string) {
@@ -186,6 +187,8 @@ export function payloadToTurn(
     generatedAt: number;
     mock: boolean;
     pronunciationScore: number;
+    pronunciationPerPhoneme?: ReadonlyArray<PronunciationPhonemeScore>;
+    pronunciationSource?: "endpoint" | "asr-bias" | "default";
     fluencyMsPerWord?: number;
   },
 ): VoiceLoopTurn {
@@ -195,6 +198,12 @@ export function payloadToTurn(
     teacherUtterance: payload.utterance,
     feedback: payload.feedback,
     pronunciationScore: overrides.pronunciationScore,
+    ...(overrides.pronunciationPerPhoneme
+      ? { pronunciationPerPhoneme: overrides.pronunciationPerPhoneme }
+      : {}),
+    ...(overrides.pronunciationSource
+      ? { pronunciationSource: overrides.pronunciationSource }
+      : {}),
     nextDifficultyTarget: payload.difficulty_estimate,
     comprehensionOk: payload.comprehension_ok,
     ...(typeof overrides.fluencyMsPerWord === "number"

@@ -6,6 +6,7 @@ import {
   buildMockRerankLlm,
   buildRerankTelemetry,
   chooseVoiceLoopPath,
+  createPronunciationService,
   generateAndRerankTurn,
   runTurn,
   telemetryLogLine,
@@ -28,6 +29,9 @@ export type VoiceLoopTurnRequest = {
   difficultyTarget?: number;
   utteranceId?: string;
   learnerLevel?: string;
+  targetPhrase?: string;
+  learnerAsrConfidence?: number;
+  learnerAsrWords?: ReadonlyArray<{ word: string; confidence: number }>;
 };
 
 export type VoiceLoopTurnResponse = {
@@ -92,13 +96,27 @@ export async function POST(request: Request): Promise<NextResponse> {
     hasLiveLlm: !clients.mock,
   });
 
+  const vocabByLevel = buildVocabByLevel();
+  const pronunciationService = createPronunciationService({
+    client: clients.pronunciation,
+    vocabBias: vocabByLevel[learnerLevel],
+    logger: (line) => console.info(line),
+  });
+
   const input = buildInput({
     learnerText: body.learnerText,
     tier: tier as BrowserTier,
     practiceMode: practiceMode as PracticeMode,
     difficultyTarget,
     utteranceId: body.utteranceId,
+    ...(typeof body.targetPhrase === "string" ? { targetPhrase: body.targetPhrase } : {}),
+    ...(typeof body.learnerAsrConfidence === "number"
+      ? { learnerAsrConfidence: body.learnerAsrConfidence }
+      : {}),
+    ...(body.learnerAsrWords ? { learnerAsrWords: body.learnerAsrWords } : {}),
   });
+
+  const pronunciationResolver = (turnInput: typeof input) => pronunciationService.resolve(turnInput);
 
   if (path === "rerank") {
     const llmFn: (messages: LlmMessage[]) => ReturnType<typeof clients.llm.complete> = clients.mock
@@ -109,10 +127,11 @@ export async function POST(request: Request): Promise<NextResponse> {
       llm: llmFn,
       generateId: () => `turn-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
       now: () => Date.now(),
-      vocabByLevel: buildVocabByLevel(),
+      vocabByLevel,
       dialect: PT_PT,
       level: learnerLevel,
       mock: clients.mock,
+      pronunciationFromAsr: pronunciationResolver,
     });
 
     const telemetry = buildRerankTelemetry(
@@ -139,6 +158,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     generateId: () => `turn-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
     now: () => Date.now(),
     mock: clients.mock,
+    pronunciationFromAsr: pronunciationResolver,
   });
 
   const response: VoiceLoopTurnResponse = {

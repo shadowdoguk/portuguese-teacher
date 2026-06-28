@@ -1,5 +1,6 @@
 import type { MiniMaxLLM } from "./llm";
 import type { MiniMaxASR } from "./asr";
+import type { MiniMaxPronunciation } from "./pronunciation";
 import type { MiniMaxTTS } from "./tts";
 import {
   type AsrTranscribeOptions,
@@ -7,6 +8,8 @@ import {
   type LlmCompleteOptions,
   type LlmCompleteResult,
   type LlmMessage,
+  type PronunciationScoreOptions,
+  type PronunciationScoreResult,
   type TtsSynthesizeOptions,
   type TtsSynthesizeResult,
 } from "./types";
@@ -68,10 +71,89 @@ export class MockMiniMaxTTS {
   }
 }
 
+export class MockMiniMaxPronunciation {
+  async score(options: PronunciationScoreOptions): Promise<PronunciationScoreResult> {
+    const score = computeMockPronunciationScore(options.reference, options.observed);
+    const refTokens = options.reference.split(/\s+/).filter(Boolean);
+    const perPhoneme = refTokens.flatMap((token, i) => derivePhonemes(token, i, score));
+    return { score, perPhoneme };
+  }
+}
+
+function computeMockPronunciationScore(reference: string, observed: string): number {
+  if (!reference.trim()) return 0;
+  if (!observed.trim()) return 0;
+  const refTokens = reference.toLowerCase().split(/\s+/).filter(Boolean);
+  const obsTokens = observed.toLowerCase().split(/\s+/).filter(Boolean);
+  if (refTokens.length === 0) return 0;
+  const obsSet = new Set(obsTokens);
+  let inOrderHits = 0;
+  let outOfOrderHits = 0;
+  let unmatched = 0;
+  refTokens.forEach((refToken, i) => {
+    const obsToken = obsTokens[i];
+    if (obsToken === refToken) {
+      inOrderHits += 1;
+    } else if (obsToken !== undefined && levenshtein(refToken, obsToken) <= 2) {
+      inOrderHits += 0.7;
+    } else if (obsSet.has(refToken)) {
+      outOfOrderHits += 1;
+    } else {
+      unmatched += 1;
+    }
+  });
+  const coverage = (inOrderHits + outOfOrderHits * 0.5) / refTokens.length;
+  const completeness = (inOrderHits + outOfOrderHits + unmatched > 0
+    ? (inOrderHits + outOfOrderHits) / refTokens.length
+    : 0);
+  const raw = coverage * 60 + completeness * 40;
+  return Math.max(0, Math.min(100, Math.round(raw)));
+}
+
+function derivePhonemes(token: string, index: number, baseScore: number): Array<{
+  phoneme: string;
+  score: number;
+  start: number;
+  end: number;
+}> {
+  const chars = [...token];
+  const start = index * 0.4;
+  const perChar = 0.4 / Math.max(1, chars.length);
+  return chars.map((ch, j) => ({
+    phoneme: ch,
+    score: clampPhoneme(baseScore, j, chars.length),
+    start: start + j * perChar,
+    end: start + (j + 1) * perChar,
+  }));
+}
+
+function clampPhoneme(base: number, index: number, total: number): number {
+  const drift = ((index - total / 2) / Math.max(1, total)) * 6;
+  return Math.max(0, Math.min(100, Math.round(base + drift)));
+}
+
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  const prev = new Array<number>(b.length + 1);
+  const curr = new Array<number>(b.length + 1);
+  for (let j = 0; j <= b.length; j += 1) prev[j] = j;
+  for (let i = 1; i <= a.length; i += 1) {
+    curr[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(curr[j - 1]! + 1, prev[j]! + 1, prev[j - 1]! + cost);
+    }
+    for (let j = 0; j <= b.length; j += 1) prev[j] = curr[j]!;
+  }
+  return prev[b.length]!;
+}
+
 export const MOCK_PT_VOICE = {
   id: DEFAULT_PT_VOICE_ID,
   dialect: "pt-PT" as const,
   gender: "female" as const,
 };
 
-export type { MiniMaxLLM, MiniMaxASR, MiniMaxTTS };
+export type { MiniMaxLLM, MiniMaxASR, MiniMaxPronunciation, MiniMaxTTS };

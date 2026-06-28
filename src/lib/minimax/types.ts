@@ -64,16 +64,35 @@ export class MiniMaxError extends Error {
   constructor(
     message: string,
     readonly status: number,
-    readonly endpoint: "llm" | "asr" | "tts",
+    readonly endpoint: "llm" | "asr" | "tts" | "pronunciation",
   ) {
     super(message);
     this.name = "MiniMaxError";
   }
 }
 
+export type PronunciationPhonemeScore = {
+  phoneme: string;
+  score: number;
+  start: number;
+  end: number;
+};
+
+export type PronunciationScoreOptions = {
+  reference: string;
+  observed: string;
+  lang: "pt-PT";
+  signal?: AbortSignal;
+};
+
+export type PronunciationScoreResult = {
+  score: number;
+  perPhoneme: ReadonlyArray<PronunciationPhonemeScore>;
+};
+
 export type LatencyLog = {
   type: "minimax_latency";
-  endpoint: "llm" | "asr" | "tts";
+  endpoint: "llm" | "asr" | "tts" | "pronunciation";
   durationMs: number;
   ok: boolean;
 };
@@ -101,7 +120,7 @@ const defaultLatencySink: LatencySink = (entry) => {
 };
 
 export async function withLatencyMetric<T>(
-  endpoint: "llm" | "asr" | "tts",
+  endpoint: "llm" | "asr" | "tts" | "pronunciation",
   fn: () => Promise<T>,
   sink: LatencySink = defaultLatencySink,
 ): Promise<T> {

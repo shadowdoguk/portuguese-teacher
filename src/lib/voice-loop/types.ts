@@ -1,3 +1,5 @@
+import type { PronunciationPhonemeScore } from "@/lib/minimax/types";
+
 export type BrowserTier = 1 | 2 | 3;
 
 export const BROWSER_TIERS: readonly BrowserTier[] = [1, 2, 3] as const;
@@ -41,6 +43,7 @@ export type VoiceLoopTurnInput = {
   learnerAsrConfidence?: number;
   learnerAsrWords?: ReadonlyArray<{ word: string; confidence: number }>;
   pronunciationScore?: number;
+  targetPhrase?: string;
   practiceMode: PracticeMode;
   tier: BrowserTier;
   difficultyTarget: number;
@@ -53,6 +56,8 @@ export type VoiceLoopTurn = {
   teacherUtterance: string;
   feedback: ReadonlyArray<FeedbackItem>;
   pronunciationScore: number;
+  pronunciationPerPhoneme?: ReadonlyArray<PronunciationPhonemeScore>;
+  pronunciationSource?: "endpoint" | "asr-bias" | "default";
   nextDifficultyTarget: number;
   comprehensionOk: boolean;
   fluencyMsPerWord?: number;
