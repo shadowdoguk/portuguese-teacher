@@ -31,6 +31,19 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client
+        run: |
+          if [ -f prisma/schema.prisma ]; then
+            pnpm exec prisma generate
+          else
+            echo "No prisma/schema.prisma; skipping prisma generate"
+          fi
+
+      - name: Progress tracker drift check
+        run: pnpm progress:check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Generate Prisma client (if schema present)
         run: pnpm exec prisma generate
         if: hashFiles('prisma/schema.prisma') != ''

@@ -42,6 +42,11 @@ MiniMax AI suite.
 | **User Data** | Profile, lesson history, mastery state, voice recordings, and assessment results associated with a Learner account. |
 | **SC-5 Sampling Buffer** | An ephemeral audio buffer (≤ 24 h retention, separate from opt-in "stored recordings") used solely to compute SC-5 production-WER on a 1% sample of utterances. |
 | **Stored Recording** | A voice recording the Learner has explicitly opted in to retain. Encrypted at rest, deletable from Settings, default off. |
+| **Settings** | Per-Learner preferences that shape how the AI teacher speaks and how the platform behaves: `voiceSpeed` (0.75–1.25×), `cfTiming` (immediate vs end-of-conversation), `captions` (on/off), `reducedMotion` (auto/reduce/no-preference), `textOnlyMode` (bool), `voiceRecordingOptIn` (bool), `confidenceCheckinOptIn` (bool), `weeklyGoalMinutes` (50–300). Persisted to localStorage keyed by Learner ID. |
+| **Weekly Goal** | The Learner's self-selected weekly practice minutes (range 50–300, default 105), shown as a progress bar on the dashboard. |
+| **Voice-Recording Opt-In** | Per-Learner toggle (default off) to retain voice recordings for personal review, encrypted at rest. **Independent from the SC-5 Sampling Buffer** — opt-in retention never runs without explicit consent; SC-5 sampling is always on (1% sample, ephemeral). |
+| **Confidence Check-In Opt-In** | Per-Learner toggle (default off) for a 1–5 self-reported confidence rating fed into the Affective Filter proxy (per #18). Never surfaced on the dashboard. |
+| **Account Deletion Request** | Explicit Learner-initiated request recorded in localStorage with a 30-day completion window (FR-DATA-3). The placeholder UI ships in v1; the marketplace / human-tutor integration is out of scope per requirements §9. |
 
 ## Key concepts
 
