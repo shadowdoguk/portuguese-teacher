@@ -53,6 +53,7 @@ MiniMax AI suite.
 | **Affective Filter Proxy** | Internal signal (0–100 + trend: `rising`/`flat`/`falling`) computed from a per-Learner event stream of client + server + self-report signals. Drives the AI Teacher's warmth calibration (FR-AI-6) and the difficulty-control drop rule (FR-CP-5). **Internal — never surfaced in the Learner UI in v1** per ADR-0001. |
 | **Affective Filter Signal** | A single event in the per-Learner stream. Kinds: `response-latency`, `silence-gap`, `mic-cancel`, `tab-blur`, `review-skip` (client); `rolling-accuracy`, `srs-half-life-decay`, `milestone-attempt`, `unit-drop-off` (server); `confidence-checkin` (self-report, opt-in only). |
 | **Affective Filter Directive** | The LLM system-prompt fragment injected by the AI Teacher based on the proxy score: *warmer / more scaffolding / drop difficulty by 0.5 sub-level* when score ≤ 30; *terse and efficient* when score ≥ 70. Emitted by `buildAffectiveDirective(score)` (issue #18). |
+| **Lesson Exercise Stream** | The interleaved sequence a Learner steps through on the Lesson player (`/lesson/[lessonId]`). Built by `interleaveSrsItems(authored, srsDue, { maxInjected, cadence })` — authored `PracticeExercise`s in their canonical order, with one SRS-due `SrsItemRef` injected every `cadence` authored items (default 2), capped at `maxInjected` reviews (default 3, per FR-LP-2). Authored items carry a "Mark done" affordance; injected items carry a "Review · SRS" badge and grade through the shared `/api/srs/recalls` endpoint so state stays in sync with `/review`. |
 
 ## Key concepts
 
