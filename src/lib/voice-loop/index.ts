@@ -8,6 +8,7 @@ export * from "./system-prompt";
 export * from "./mock";
 export * from "./orchestrator";
 export * from "./rerank";
+export * from "./rerank-orchestrator";
 export * from "./ab-corpus";
 export * from "./ab-mocks";
 export * from "./ab-harness";

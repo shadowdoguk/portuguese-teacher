@@ -14,6 +14,7 @@ export type RerankDeps = {
   level: Level;
   candidateCount?: number;
   pronunciationFromAsr?: (input: VoiceLoopTurnInput) => number;
+  mock?: boolean;
 };
 
 export type ScoredCandidate = {
@@ -88,7 +89,7 @@ export async function generateAndRerankTurn(
   return {
     turn,
     latencyMs: deps.now() - startedAt,
-    mock: false,
+    mock: deps.mock ?? false,
     scoredCandidates: scored,
     chosenIndex,
   };
