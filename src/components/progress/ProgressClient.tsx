@@ -15,6 +15,7 @@ import {
   type RemedialAnchorGapArea,
 } from "@/lib/curriculum";
 import { getAssessmentStore } from "@/lib/assessment";
+import { RecallStatsTile } from "@/components/progress/RecallStatsTile";
 
 const GAP_AREA_LABEL: Record<RemedialAnchorGapArea, string> = {
   vocab: "Vocabulary",
@@ -178,6 +179,10 @@ export function ProgressClient() {
           </p>
           <RetentionBars series={retentionCurve} />
         </Card>
+      </section>
+
+      <section aria-label="Recall telemetry">
+        <RecallStatsTile learnerId={user.id} />
       </section>
 
       {remediationChains.length > 0 ? (
