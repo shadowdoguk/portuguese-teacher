@@ -1,6 +1,6 @@
 # Session Handoff
 
-**Snapshot date:** 2026-06-28 (Season 2 in flight — 4 PRs landed in this session: #19, #25, #30, #44)
+**Snapshot date:** 2026-06-28 (Season 2 closes — 3 new PRs landed: #77, #78, #79)
 **Repo:** `shadowdoguk/portuguese-teacher`
 
 > **This file is a point-in-time snapshot.** For the living, agent-picked-up
@@ -12,133 +12,94 @@
 ## TL;DR
 
 Season 1 of the Portuguese Teacher build is **complete** (16 foundational PRs
-+ 2 Phase-1 hardening PRs landed). Season 2 has shipped **4 PRs in this
-session** — Phase 1 is now closed (Pronunciation + TTS pipeline) and the first
-three Phase 2 state-persistence picks are done:
++ 2 Phase-1 hardening PRs). Season 2 has shipped **7 PRs across two
+sessions** — Phase 1 closed (#19, #25) and all four Phase 2 state-persistence
++ observability picks are done (#30 SRS, #44 scenarios, #28 telemetry, #12
+observability, #46 scenario→SRS injection).
 
-- **22 PRs total** on `main` (18 from Season 1 + #19, #25, #30, #44).
-- **441/441 tests green** (`pnpm typecheck` / `pnpm lint` / `pnpm build` all green).
-- **Runtime stack complete**: MiniMax wrappers (LLM/ASR/TTS/Pronunciation), Voice
-  Loop (Tier 1/2/3) with phoneme-distance pronunciation scoring, SRS with
-  DB persistence, Proficiency assessments, Affective Filter, Conversational
-  Practice, LLM difficulty pipeline (ADR-0004), live MiniMax harness.
+- **25 PRs total** on `main` (16 from Season 1 + #75, #76 + #19, #25, #30, #44
+  + #77, #78, #79).
+- **502/502 tests green** (`pnpm typecheck` / `pnpm lint` / `pnpm build` all green).
+- **Runtime stack complete**: MiniMax wrappers (LLM/ASR/TTS/Pronunciation) with
+  graceful-degradation fallbacks, Voice Loop (Tier 1/2/3) with phoneme-distance
+  pronunciation scoring, SRS with DB persistence + scenario-source injection,
+  Proficiency assessments, Affective Filter, Conversational Practice, LLM
+  difficulty pipeline (ADR-0004), live MiniMax harness.
+- **Observability pipeline complete**: ObservabilitySink seam with discriminated
+  `ObservabilityEvent` union, `withLatencyMetric` → sink, `GET /api/health`,
+  `POST /api/probes/heartbeat`, `GET /api/probes/availability`,
+  `<DegradationBanner />` mounted in `AppShell`, postmortem template, 5,000-event
+  load test (`pnpm load:test`) at ~33k/s on dev.
 - **Learner-facing flow wired**: sign-up → placement (or A0 skip) →
-  dashboard → review queue (DB-backed) → proficiency assessment → remediation
-  plan → scenarios (DB-backed).
+  dashboard → review queue (DB-backed, scenario-source-tagged) → proficiency
+  assessment → remediation plan → scenarios (DB-backed, scenario-completion
+  vocab-injects into SRS).
 - **Build-time TTS pipeline**: 38 A0 audio assets emitted + manifest, deterministic
   regeneration via `pnpm assets:tts`, CI check via `pnpm assets:check`.
 - **Schema**: Prisma `Curriculum` + `Learner` + `Assessment` + `RemedialAnchor`
   + `Scenario` + `SrsReviewRecord` + `SrsRecallEvent` + `ScenarioCompletion` +
-  `ScenarioProgress` rows; all idempotent via `pnpm seed`.
+  `ScenarioProgress` + `SrsItemSource` rows; all idempotent via `pnpm seed`.
 
-Season 2 next picks: **`#28`** Per-recall telemetry backend hookup (depends on
-`#12` observability — soft block) and **`#46`** SRS injection of scenario
-vocabulary (depends on `#28`/`#30`). Then content authoring (A1/A2/B1 + `#47`
-≥100 scenarios), real-world audio capture/playback (`#33`/`#35`/`#37`/`#38`/`#39`),
-NFRs (`#10`–`#14`), and E2E validation (`#34`/`#36`/`#48`).
+Season 2 is **closed**. Next picks: **Phase 3 content authoring** (A1/A2/B1
+curriculum + #47 ≥100 scenarios — the bulk of the remaining work) or **#31
+SRS injection into Unit's Practice Exercise order** (a small Phase 2 holdover).
+Then Phase 4 Voice Loop real-world wiring (`#33`/`#35`/`#37`/`#38`/`#39`),
+Phase 5 NFRs (`#10`–`#14`), and Phase 6 E2E (`#34`/`#36`/`#48`).
 
-## Season 1 outcomes
+## Season 2 picks shipped in this session (3 PRs)
 
-### Foundational work (session-1, 16 PRs)
-
-Closed PRs covering 14 distinct issues:
-- #20/#3 — MiniMax AI client wrappers (LLM/ASR/TTS)
-- #55/#9 — Learner profile, dashboard, progress, settings UI
-- #61 (docs) — promote mock A/B harness report from tmp/ to docs/
-- #62/#2 — Curriculum data model + A0 fixture
-- #63/#26 + #23 — Prisma schema + migration + `pnpm seed:a0` admin script
-- #64/#24 — A0 seed content (Unit A0.4 'Rotina e horas')
-- #65/#4 — HLR Spaced Repetition scheduler + review queue
-- #66/#8 — Proficiency assessments + Milestone gating
-- #67/#15 (partial) — Placement Lesson runtime + tests
-- #68/#18 — Affective Filter proxy instrumentation
-- #69/#5 — Voice Loop (Tier 1/2/3) end-to-end
-- #70/#6 — LLM difficulty-control pipeline + ADR-0004
-- #71/#41 — Expand CEFR vocab fixture + A1→A2 + A2→B1 corpora
-- #72/#42 — Wire live MiniMax LLM into A/B harness
-- #73/#40 — Wire `generateAndRerankTurn` into API route
-- #74/#7 — Conversational Practice UI + scenario library
-
-### Phase-1 hardening (session-2, 2 PRs)
-
-- **#75/#15** — Placement Lesson integration: AuthProvider shape
-  (`setCurrentUnit`, `confirmPlacement`, `latestPlacementAttempt`),
-  sign-up form captures self-assessment + routes above-A0 to
-  `/placement`, full adaptive runner on the placement page (start →
-  items → outcome → accept/override/retake), dashboard "Placement
-  pending" CTA + "Starting from" Unit card, profile "Jump straight to
-  a Unit" grid + latest-attempt display.
-- **#76/#17** — Remedial Anchor routing runtime:
-  `resolveRemediationPlan(unitId, { learnerMastery, maxDepth,
-  affectiveFilterScore })` returns the ordered anchor chain filtered by
-  gap-area weakness × anchor weight, capped at `maxDepth` (default 5),
-  deduped at the output level; Affective Filter scaffolding flag at
-  HIGH score; `/progress` UI surfaces the chain for failed Milestones;
-  `pnpm anchors:suggest <unitId>` admin script; 14 new property tests
-  including a 50-anchor content-team pass that stays acyclic and
-  terminates in ≤ 5 steps.
-
-### Season 2 picks shipped in this session (4 PRs)
-
-- **#19** — Pronunciation Score phoneme-distance endpoint: new
-  `MiniMaxPronunciation` wrapper + mock; 10-utterance native-speaker
-  calibration set (`PronunciationRuntime` singleton) running lazily on
-  first use with logged baseline + fallback; drill mode calls the
-  endpoint with `targetPhrase` + observed (1.5 s p95 budget via
-  `Promise.race`, falls back to ASR bias on timeout); free-form path
-  weights ASR word-level confidence against the active Level's
-  vocabulary set; `VoiceLoopTurn` gained `pronunciationPerPhoneme` +
-  `pronunciationSource`; `FeedbackOverlay` replaced the bare score
-  number with an accessible `role="progressbar"` bar plus a per-phoneme
-  breakdown for drill mode plus a "Source:" indicator.
-- **#25** — Build-time TTS asset pipeline: `pnpm assets:tts` walks
-  every vocabulary item (pt or examplePt), grammar example, and lesson
-  audio block; runs the MiniMax TTS wrapper (mock by default); writes
-  `public/assets/tts/{unitId}/{assetId}.mp3` + `manifest.json`. 38 A0
-  assets emitted. `pnpm assets:check` fails the build on orphan
-  `audioAssetId` references. Deterministic IDs + manifest snapshot;
-  regenerated mp3 blobs gitignored.
-- **#30** — DB persistence for SRS state: `SrsReviewRecord` +
-  `SrsRecallEvent` Prisma models + migration; `createSrsRepository`
-  wraps the half-life math from `@/lib/srs/scheduler.applyRecall` and
-  persists the result + emits the event row; `GET /api/srs/state` +
-  `POST /api/srs/recalls` endpoints; `ReviewQueue` swapped
-  `loadPersisted` / `savePersisted` (localStorage) for these endpoints
-  with async loading + error surface.
-- **#44** — DB persistence for scenario completions:
-  `ScenarioCompletion` (append-only attempts) + `ScenarioProgress`
-  (denormalised best-stars/attempts per Learner + scenario) Prisma
-  models + migration; `createScenarioRepository` wraps the
-  `recordCompletion` pure function in upsert semantics;
-  `GET /api/scenarios` + `POST /api/scenarios/[id]/complete` endpoints;
-  `ScenarioWorkspace` swapped `loadSnapshot` / `saveSnapshot`
-  (localStorage) for these endpoints with optimistic update + error
-  surface.
+- **#77 / #28** — Per-recall telemetry backend hookup:
+  `src/lib/observability/{sink,aggregate,index}.ts` define a discriminated
+  `ObservabilityEvent` union (`srs_recall` \| `voice_loop_latency` \|
+  `voice_loop_error` \| `degradation`) + a swappable sink. `GET /api/srs/events`
+  reads via `SrsRepository.loadRecentEvents` + the pure `aggregateRecallStats`
+  function (today count, easy percent, lifetime total). `RecallStatsTile` on
+  `/progress` renders the rolling stat with loading/empty/error states.
+  `pnpm load:test` bulk-ingests 5,000 events via `createMany` batches of 500
+  + reads back — measured at **~150 ms (~33k/s)** on the current
+  SQLite-backed dev DB.
+- **#78 / #12** — Observability + graceful degradation:
+  `src/lib/minimax/fallbacks.ts` adds `withAsrFallback` / `withLlmFallback` /
+  `withTtsFallback` that catch transient `MiniMaxError` (status 0/408/429/5xx),
+  emit a `degradation` event, record the service health, and return a
+  degraded result. ASR returns `confidence: 0` so the client falls back to
+  Web Speech API (Tier 1) or text input (Tiers 2-3); LLM returns a canned
+  rule-based response keyed on the user's first word; TTS returns `audio:
+  null` so the client renders the teacher utterance as text only.
+  `withLatencyMetric` default sink also emits `voice_loop_latency` events
+  through the ObservabilitySink. `GET /api/health` + probe endpoints +
+  `<DegradationBanner />` + postmortem template.
+- **#79 / #46** — SRS injection of scenario vocabulary: new `SrsItemSource`
+  model with composite PK on `(learnerId, itemId, sourceScenarioId)`.
+  `applyScenarioSources(refs, sourceMap)` pure function merges source tags
+  without mutating inputs. `ScenarioRepository.recordCompletion` accepts an
+  optional `vocabularyRefs` and upserts one source row per ref.
+  `GET /api/srs/state` returns `sources`. Review card renders a "From
+  scenario" badge when the current item carries a source; `/progress`
+  renders a new `ScenarioOriginsTile` with top-5 distinct scenarios by
+  item count.
 
 ## Git state
 
 | Branch | Status |
 | --- | --- |
-| `main` | clean; 22 merge commits; 441/441 tests green |
-| `feat/issue-19-pronunciation-score-endpoint` | merged + deleted |
-| `feat/issue-25-tts-asset-pipeline` | merged + deleted |
-| `feat/issue-30-srs-db-persistence` | merged + deleted |
-| `feat/issue-44-scenario-completion-persistence` | merged + deleted |
+| `main` | clean; 25 merge commits; 502/502 tests green |
+| `feat/issue-28-srs-recall-telemetry` | merged + deleted |
+| `feat/issue-12-observability-and-degradation` | merged + deleted |
+| `feat/issue-46-srs-scenario-injection` | merged + deleted |
 
 ## Open PRs
 
 None.
 
-## Open issues (Season 2 continues here)
+## Open issues (Season 2 closed; next: Phase 3 content + #31)
 
-**Phase 2 — state persistence (2 remaining of 4)**
-- **#28** Per-recall telemetry backend hookup — depends on #12 (soft block)
-- **#46** SRS injection of scenario vocabulary — depends on #28 + #30
+**Phase 2 — small holdover (1 remaining)**
+- **#31** SRS injection into Unit's Practice Exercise order (FR-LP-2)
 
 **Phase 3 — content (the bulk)**
 - A1 / A2 / B1 curriculum authoring (currently 4 of ~30 Units seeded)
 - **#47** Expand scenario library to ≥ 100 scenarios
-- **#31** SRS injection into Unit's Practice Exercise order
 
 **Phase 4 — Voice Loop real-world wiring**
 - **#33** Tier 1 + Tier 2 audio capture
@@ -150,7 +111,6 @@ None.
 **Phase 5 — NFRs**
 - **#10** Accessibility (WCAG 2.2 AA)
 - **#11** Performance budgets + Lighthouse CI
-- **#12** Observability + graceful degradation
 - **#13** ASR accuracy regression test suite
 - **#14** Cross-device smoke tests
 - **#16** SC-5 Sampling Buffer infra
@@ -165,15 +125,18 @@ None.
 - **§10 sign-off** on ADR-0003 + amended requirements doc (Product,
   Pedagogy, Engineering leads).
 - **Live MiniMax LLM credentials** for #42's ≥75% in-band acceptance target.
+- **Real Grafana + 60 s × 3-region synthetic-probe scheduling** for #12 (infra;
+  the data seam ships in #78, the dashboards ship in ops).
 
 ## First action for next session
 
 ```bash
 git checkout main && git pull
-# Confirm: 441/441 tests pass; typecheck/lint/build green.
-# Pick up #28 (Per-recall telemetry backend hookup) — soft-blocked by #12
-# (observability). Decide whether to stub a minimal observability sink or
-# wait for #12 to land first. After #28, #46 is unblocked.
+# Confirm: 502/502 tests pass; typecheck/lint/build green.
+# Pick a Phase 3 content track — the curriculum authoring is the biggest
+# remaining block. If authoring is out of scope for the agent, pick #31
+# (small, well-specified SRS-into-Practice-Exercise-order change) or one
+# of the Phase 4 voice-loop items.
 ```
 
 ## Key references
@@ -195,7 +158,13 @@ git checkout main && git pull
 | Affective Filter | `src/lib/affective/`, `src/test/affective-*.test.ts` |
 | Scenarios | `src/lib/scenarios/`, `src/test/scenarios-*.test.ts` |
 | Anchor routing | `src/lib/curriculum/graph.ts`, `src/test/anchor-routing.test.ts` |
-| Admin scripts | `scripts/anchors-suggest.ts`, `scripts/progress-check.mjs` |
+| Observability | `src/lib/observability/`, `src/test/observability-*.test.ts` |
+| Degradation fallbacks | `src/lib/minimax/fallbacks.ts`, `src/test/observability-degradation.test.ts` |
+| Health + probes | `src/lib/observability/health.ts`, `src/app/api/health/`, `src/app/api/probes/` |
+| DegradationBanner | `src/components/layout/DegradationBanner.tsx`, `src/test/degradation-banner.test.tsx` |
+| Scenario → SRS injection | `src/lib/srs/enroll-from-curriculum.ts` (`applyScenarioSources`), `src/components/progress/ScenarioOriginsTile.tsx` |
+| Postmortem template | [`docs/postmortems/TEMPLATE.md`](./docs/postmortems/TEMPLATE.md) |
+| Admin scripts | `scripts/anchors-suggest.ts`, `scripts/progress-check.mjs`, `scripts/load-test-srs-events.mjs` |
 | Project status snapshot | [`README.md` § Status](./README.md#status) |
 | Workflow conventions | [`AGENTS.md`](./AGENTS.md) |
 | Research synthesis | [`docs/research/language-acquisition-findings.md`](./docs/research/language-acquisition-findings.md) |
@@ -210,13 +179,3 @@ git checkout main && git pull
 - One logical unit per commit; commit messages match the repo style
 - Do not commit secrets or `.env` files; `.env.example` is the convention
 - New domain terms go into `CONTEXT.md` in the same change
-
-## First action for Season 2
-
-```bash
-git checkout main && git pull
-# Confirm: 405/405 tests pass; typecheck/lint/build green.
-# Pick up #19 (Pronunciation Score phoneme-distance endpoint) to finish
-# Phase 1 — only #19 + #25 remain after that, then move into Phase 2
-# state persistence (#30 is the cleanest next pick).
-```
