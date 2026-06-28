@@ -141,11 +141,13 @@ export type Milestone = {
 };
 
 export type PlacementLessonAttempt = {
+  id: string;
   learnerId: string;
   attemptedAt: string;
   selfAssessedLevel: Exclude<Level, "A0">;
   score: number;
-  suggestedStartUnitId: string;
+  recommendedStartUnitId: string;
+  confirmedStartUnitId: string;
   notes?: string;
 };
 
