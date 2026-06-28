@@ -26,6 +26,7 @@
     "prisma:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
     "seed:a0": "tsx prisma/seed.ts --dialect pt-PT --level A0",
+    "anchors:suggest": "tsx scripts/anchors-suggest.ts",
     "harness:live": "node scripts/run-ab-harness-live.mjs",
     "harness:mock": "vitest run -- ab-harness"
   },
@@ -53,7 +54,6 @@
     "tailwindcss": "3.4.14",
     "tsx": "4.19.2",
     "typescript": "5.6.3",
-    "vitest": "2.1.4",
-    "@prisma/client": "5.22.0"
+    "vitest": "2.1.4"
   }
 }

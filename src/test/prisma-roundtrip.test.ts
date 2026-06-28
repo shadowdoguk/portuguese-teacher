@@ -139,7 +139,10 @@ beforeAll(async () => {
           fromUnitId: a.fromUnitId,
           toUnitId: a.toUnitId,
           reason: a.reason,
+          gapArea: a.gapArea,
+          weight: a.weight,
           note: a.note,
+          createdAt: a.createdAt ? new Date(a.createdAt) : new Date(),
         },
       });
     }
@@ -223,7 +226,10 @@ describe("Prisma schema round-trip", () => {
           fromUnitId: a.fromUnitId,
           toUnitId: a.toUnitId,
           reason: a.reason as "phoneme-confusion",
+          gapArea: "vocab" as const,
+          weight: 0.5,
           note: a.note,
+          createdAt: new Date().toISOString(),
         })),
         lessons: u.lessons.map((l) => ({
           id: l.id,

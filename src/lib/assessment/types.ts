@@ -40,6 +40,18 @@ export type AssessmentOutcome = {
   passed: boolean;
   recommendedAnchorUnitIds: ReadonlyArray<string>;
   rationale: string;
+  /**
+   * Anchor step details used by the runtime remediation plan. Empty when
+   * the Milestone was passed.
+   */
+  recommendedAnchorSteps?: ReadonlyArray<{
+    unitId: string;
+    gapArea: "vocab" | "grammar" | "pronunciation" | "fluency";
+    reason: "phoneme-confusion" | "grammar-gap" | "vocabulary-decay" | "scenario-struggle";
+    weight: number;
+    priority: number;
+    scaffolded: boolean;
+  }>;
 };
 
 export type ProficiencyAssessmentAttempt = {

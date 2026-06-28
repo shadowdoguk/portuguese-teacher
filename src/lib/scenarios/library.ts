@@ -73,6 +73,7 @@ export const SCENARIO_LIBRARY: ReadonlyArray<Scenario> = [
       {
         toUnitId: "a0-1-alfabeto-saudacoes",
         reason: "phoneme-confusion",
+        gapArea: "pronunciation",
         note: "Voltar ao alfabeto se o Learner hesitar a soletrar o nome.",
       },
     ],
@@ -154,6 +155,7 @@ export const SCENARIO_LIBRARY: ReadonlyArray<Scenario> = [
       {
         toUnitId: "a0-1-alfabeto-saudacoes",
         reason: "vocabulary-decay",
+        gapArea: "fluency",
         note: "Voltar a ‘bom dia / por favor / obrigado’ se o Learner esquecer as cortesias.",
       },
     ],

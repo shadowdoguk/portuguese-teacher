@@ -97,7 +97,12 @@ export type Scenario = {
   expectedTurns: number;
   vocabularyRefs: ReadonlyArray<string>;
   grammarRefs: ReadonlyArray<string>;
-  remedialAnchorRefs: ReadonlyArray<{ toUnitId: string; reason: RemedialAnchorReason; note: string }>;
+  remedialAnchorRefs: ReadonlyArray<{
+    toUnitId: string;
+    reason: RemedialAnchorReason;
+    gapArea: RemedialAnchorGapArea;
+    note: string;
+  }>;
   successCriteria: ReadonlyArray<string>;
   passingScore: number;
 };
@@ -130,11 +135,23 @@ export type RemedialAnchorReason =
   | "vocabulary-decay"
   | "scenario-struggle";
 
+export type RemedialAnchorGapArea = "vocab" | "grammar" | "pronunciation" | "fluency";
+
+export const REMEDIAL_ANCHOR_GAP_AREAS: readonly RemedialAnchorGapArea[] = [
+  "vocab",
+  "grammar",
+  "pronunciation",
+  "fluency",
+] as const;
+
 export type RemedialAnchor = {
   fromUnitId: string;
   toUnitId: string;
   reason: RemedialAnchorReason;
+  gapArea: RemedialAnchorGapArea;
+  weight: number;
   note: string;
+  createdAt: string;
 };
 
 export type Unit = {
@@ -178,4 +195,13 @@ export type Curriculum = {
   units: ReadonlyArray<Unit>;
   milestones: ReadonlyArray<Milestone>;
   entryUnitId: string;
+};
+
+export type LearnerSkillMastery = Readonly<Record<RemedialAnchorGapArea, number>>;
+
+export const EMPTY_LEARNER_SKILL_MASTERY: LearnerSkillMastery = {
+  vocab: 0.5,
+  grammar: 0.5,
+  pronunciation: 0.5,
+  fluency: 0.5,
 };

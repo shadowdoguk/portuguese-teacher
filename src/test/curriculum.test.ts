@@ -200,7 +200,7 @@ describe("Remedial Anchor runtime", () => {
     expect(result.paths.map((p) => p.total)).toEqual([1, 1]);
   });
 
-  it("rejects curricula whose anchor graph contains a cycle", () => {
+it("rejects curricula whose anchor graph contains a cycle", () => {
     const cyclicAnchors = {
       ...A0_CURRICULUM,
       units: A0_CURRICULUM.units.map((u) =>
@@ -212,7 +212,10 @@ describe("Remedial Anchor runtime", () => {
                   fromUnitId: "a0-1-alfabeto-saudacoes",
                   toUnitId: "a0-3-cafe-pedidos",
                   reason: "phoneme-confusion" as const,
+                  gapArea: "pronunciation" as const,
+                  weight: 0.5,
                   note: "introduces a cycle for the test",
+                  createdAt: "2026-06-23T00:00:00.000Z",
                 },
               ],
             }
@@ -236,13 +239,16 @@ describe("Remedial Anchor runtime", () => {
                   fromUnitId: "a0-1-alfabeto-saudacoes",
                   toUnitId: "a0-3-cafe-pedidos",
                   reason: "phoneme-confusion" as const,
+                  gapArea: "pronunciation" as const,
+                  weight: 0.5,
                   note: "forward-pointing anchor",
+                  createdAt: "2026-06-23T00:00:00.000Z",
                 },
               ],
             }
-          : u.id === "a0-3-cafe-pedidos"
-            ? { ...u, remedialAnchors: [] }
-            : u,
+            : u.id === "a0-3-cafe-pedidos"
+              ? { ...u, remedialAnchors: [] }
+              : u,
       ),
     };
     expect(() => assertCurriculumInvariants(forwardAnchors)).toThrow(
