@@ -117,11 +117,19 @@ beforeAll(async () => {
         data: {
           id: s.id,
           unitId: u.id,
+          category: s.category,
+          targetLevel: s.targetLevel,
           goal: s.goal,
           setting: s.setting,
           learnerRole: s.roles.learner,
           teacherRole: s.roles.teacher,
+          preTask: s.preTask,
+          expectedTurns: s.expectedTurns,
+          vocabularyRefsJson: JSON.stringify(s.vocabularyRefs),
+          grammarRefsJson: JSON.stringify(s.grammarRefs),
+          remedialAnchorRefsJson: JSON.stringify(s.remedialAnchorRefs),
           successCriteriaJson: JSON.stringify(s.successCriteria),
+          passingScore: s.passingScore,
         },
       });
     }
@@ -258,10 +266,18 @@ describe("Prisma schema round-trip", () => {
         scenarios: u.scenarios.map((s) => ({
           id: s.id,
           unitId: s.unitId,
+          category: s.category as "greetings-introductions",
+          targetLevel: s.targetLevel as "A0",
           goal: s.goal,
           setting: s.setting,
           roles: { learner: s.learnerRole, teacher: s.teacherRole },
+          preTask: s.preTask,
+          expectedTurns: s.expectedTurns,
+          vocabularyRefs: JSON.parse(s.vocabularyRefsJson),
+          grammarRefs: JSON.parse(s.grammarRefsJson),
+          remedialAnchorRefs: JSON.parse(s.remedialAnchorRefsJson),
           successCriteria: JSON.parse(s.successCriteriaJson),
+          passingScore: s.passingScore,
         })),
       })),
       milestones: milestones.map((m) => ({

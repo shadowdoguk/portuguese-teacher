@@ -138,11 +138,19 @@ model GrammarPattern {
 model Scenario {
   id               String @id
   unitId           String
+  category         String // ScenarioCategory
+  targetLevel      String // Level
   goal             String
   setting          String
   learnerRole      String
   teacherRole      String
-  successCriteriaJson String // JSON-encoded string[]
+  preTask          String
+  expectedTurns    Int
+  vocabularyRefsJson    String // JSON-encoded string[]
+  grammarRefsJson       String // JSON-encoded string[]
+  remedialAnchorRefsJson String // JSON-encoded {toUnitId, reason, note}[]
+  successCriteriaJson   String // JSON-encoded string[]
+  passingScore     Float
 
   unit Unit @relation(fields: [unitId], references: [id])
 

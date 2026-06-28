@@ -203,17 +203,26 @@ const A0_1_ALPHABET: Unit = {
     {
       id: "a0-1-s-apresentar-cafe",
       unitId: "a0-1-alfabeto-saudacoes",
+      category: "greetings-introductions",
+      targetLevel: "A0",
       goal: "Entrar num café, saudar e pedir uma bebida em três falas.",
       setting: "Balcão de um café em Lisboa, manhã de sábado.",
       roles: {
         learner: "Cliente estrangeiro a entrar pela primeira vez.",
         teacher: "Empregado de balcão simpático.",
       },
+      preTask:
+        "Planeia a tua entrada: que horas são? Que saudação é apropriada? Que bebida queres?",
+      expectedTurns: 3,
+      vocabularyRefs: ["a0-1-v-bom-dia", "a0-1-v-por-favor", "a0-1-v-obrigado"],
+      grammarRefs: ["a0-1-g-artigo"],
+      remedialAnchorRefs: [],
       successCriteria: [
         "O Learner usa uma saudação adequada à hora.",
         "O Learner diz ‘por favor’ ao pedir.",
         "O Learner agradece antes de sair.",
       ],
+      passingScore: 0.6,
     },
   ],
 };
@@ -400,17 +409,32 @@ const A0_2_NUMEROS: Unit = {
     {
       id: "a0-2-s-apresentar-grupo",
       unitId: "a0-2-numeros-apresentacoes",
+      category: "greetings-introductions",
+      targetLevel: "A0",
       goal: "Apresentar-te a três pessoas novas num grupo, dando nome e idade.",
       setting: "Encontro de intercâmbio numa associação em Coimbra.",
       roles: {
         learner: "Recém-chegado a um grupo de conversação.",
         teacher: "Três participantes portugueses que se apresentam primeiro.",
       },
+      preTask:
+        "Prepara uma apresentação de 10 segundos: nome, idade, e de onde vieste. Conta até vinte em voz alta uma vez antes de começar.",
+      expectedTurns: 6,
+      vocabularyRefs: ["a0-2-v-chamar", "a0-2-v-ter"],
+      grammarRefs: ["a0-2-g-apresentar"],
+      remedialAnchorRefs: [
+        {
+          toUnitId: "a0-1-alfabeto-saudacoes",
+          reason: "phoneme-confusion",
+          note: "Voltar ao alfabeto se o Learner hesitar a soletrar o nome.",
+        },
+      ],
       successCriteria: [
         "O Learner cumprimenta cada pessoa de forma adequada.",
         "O Learner usa ‘chamo-me…’ e ‘tenho … anos’ em todas as apresentações.",
         "O Learner responde com ‘prazer’ quando apresentado.",
       ],
+      passingScore: 0.6,
     },
   ],
 };
@@ -583,17 +607,32 @@ const A0_3_CAFE: Unit = {
     {
       id: "a0-3-s-pedir-cafe",
       unitId: "a0-3-cafe-pedidos",
+      category: "cafe-restaurant",
+      targetLevel: "A0",
       goal: "Pedir uma bebida e um doce, perguntar o preço e pagar.",
       setting: "Café tradicional em Lisboa, hora do lanche.",
       roles: {
         learner: "Cliente a pedir pela primeira vez em português.",
         teacher: "Empregado paciente que confirma o pedido.",
       },
+      preTask:
+        "Lê o menu em silêncio. Decide o que pedes. Prepara a pergunta ‘quanto é?’ antes de pedir a conta.",
+      expectedTurns: 5,
+      vocabularyRefs: ["a0-3-v-pastel-nata", "a0-3-v-agua", "a0-3-v-cafe"],
+      grammarRefs: ["a0-3-g-condicional-pedir"],
+      remedialAnchorRefs: [
+        {
+          toUnitId: "a0-1-alfabeto-saudacoes",
+          reason: "vocabulary-decay",
+          note: "Voltar a ‘bom dia / por favor / obrigado’ se o Learner esquecer as cortesias.",
+        },
+      ],
       successCriteria: [
         "O Learner cumprimenta o empregado ao entrar.",
         "O Learner usa ‘queria’ para fazer o pedido.",
         "O Learner confirma o preço antes de pagar.",
       ],
+      passingScore: 0.7,
     },
   ],
 };
@@ -910,17 +949,25 @@ const A0_4_ROTINA: Unit = {
     {
       id: "a0-4-s-plano-amanha",
       unitId: "a0-4-rotina-e-horas",
+      category: "social-plans",
+      targetLevel: "A0",
       goal: "Combinares com um colega português a hora de um encontro para amanhã e descreve a tua rotina actual.",
       setting: "Mensagem de telemóvel entre dois colegas que vão ter um café amanhã.",
       roles: {
         learner: "Trabalhador estrangeiro a marcar um encontro.",
         teacher: "Colega português paciente que propõe e confirma horários.",
       },
+      preTask: "Revê os números 1–30 e as horas (que horas são?).",
+      expectedTurns: 6,
+      vocabularyRefs: ["a0-4-v-rotina", "a0-4-v-horas"],
+      grammarRefs: ["a0-4-g-estar-progressivo"],
+      remedialAnchorRefs: [{ toUnitId: "a0-2-numeros-apresentacoes", reason: "vocabulary-decay", note: "Numbers 1–30 for compound hours" }],
       successCriteria: [
         "O Learner propõe duas janelas horárias com números e horas correctos (ex.: ‘dez da manhã’).",
         "O Learner refere pelo menos duas refeições (pequeno-almoço, almoço ou jantar).",
         "O Learner usa ‘estar a’ + infinitivo para descrever o que está a fazer hoje.",
       ],
+      passingScore: 0.75,
     },
   ],
 };
