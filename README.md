@@ -8,10 +8,18 @@ Built with **Next.js 14**, **TypeScript**, and **Tailwind**. Powered by the **Mi
 
 ```bash
 pnpm install
+cp .env.example .env       # if not already present
+pnpm prisma:migrate        # apply the curriculum schema
+pnpm seed                  # seed the A0 curriculum into the dev DB
 pnpm dev
 ```
 
 The home page renders at <http://localhost:3000>.
+
+The seed script (`prisma/seed.ts`) maps the canonical in-memory
+`A0_CURRICULUM` fixture to Prisma rows. It is idempotent (re-running leaves
+row counts unchanged) and refuses to run when the schema has pending
+migrations. Output includes a row-count summary and elapsed time.
 
 ## Routes
 
@@ -32,13 +40,18 @@ Per the requirements doc ([docs/requirements/portuguese-teacher-requirements.md]
 ## Scripts
 
 ```bash
-pnpm dev          # Next.js dev server
-pnpm build        # Production build
-pnpm start        # Production server
-pnpm lint         # ESLint
-pnpm typecheck    # tsc --noEmit
-pnpm test         # Vitest run
-pnpm format       # Prettier write
+pnpm dev             # Next.js dev server
+pnpm build           # Production build
+pnpm start           # Production server
+pnpm lint            # ESLint
+pnpm typecheck       # tsc --noEmit
+pnpm test            # Vitest run
+pnpm format          # Prettier write
+pnpm prisma:generate # Prisma client generation
+pnpm prisma:migrate  # Prisma migration (dev)
+pnpm prisma:studio   # Prisma data browser
+pnpm seed            # Seed the dev DB from src/lib/curriculum/seed-a0.ts
+pnpm seed:a0         # Alias for pnpm seed (Level A0)
 ```
 
 ## Architecture
