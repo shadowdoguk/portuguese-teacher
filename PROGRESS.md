@@ -2,15 +2,16 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-27 (session end + doc refresh)
+**Last updated:** 2026-06-28 (doc refresh after #24)
 
 ## Current focus
 
-**Six PRs CI-SUCCESS and ready to merge; remaining 11 PRs re-pushed with conditional prisma step; awaiting Actions queue.**
+**Six PRs CI-SUCCESS and ready to merge; PR #60 (issue #24) added today; remaining 11 PRs re-pushed with conditional prisma step; awaiting Actions queue.**
 
 - **CI SUCCESS now** (re-run after conditional `prisma generate` step landed): #20, #21, #22, #55, #57, #59.
+- **Newly authored, awaiting CI**: #60 (issue #24, A0 seed content — Unit A0.4 'Rotina e horas').
 - **Pushed, awaiting Actions trigger**: #27, #32, #43, #49, #50, #51, #52, #53, #54, #56, #58. Each has the conditional fix and an empty trigger commit; local `lint/typecheck/test/build` are green on every branch.
-- Recommended merge order: **#20 → #55 → #57 → #22 → #21 → #59**, then the dep-ordered queue (#4, #5, #7, #8, #15, #17) unblocked by #2.
+- Recommended merge order: **#20 → #55 → #57 → #22 → #21 → #59 → #60**, then the dep-ordered queue (#4, #5, #7, #8, #15, #17) unblocked by #2.
 
 **Next up (dep-ordered, after the SUCCESS PRs land):**
 - **#4** — HLR Spaced Repetition scheduler (depends on #2)
@@ -21,13 +22,14 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## In progress
 
-_(none — all in-progress work landed this session; awaiting reviewer on the SUCCESS PRs)_
+- **#24** A0 seed content (Unit A0.4 'Rotina e horas') — branch `feat/issue-24-a0-seed-content`, PR #60 open. Local: 28/28 curriculum + smoke tests pass; build green; `pnpm seed` reports 4 units / 12 lessons / 19 exercises / 23 vocab / 4 scenarios.
 
 ## Recently completed
 
 | Date | Item | Where |
 | --- | --- | --- |
-| 2026-06-27 | CI: conditional `prisma generate` step (skips on PRs without schema) | `main` (`a4a...`); re-synced across all 14 PRs |
+| 2026-06-28 | **#24** A0 seed content — Unit A0.4 'Rotina e horas' (3 Lessons, 10 vocab, 3 grammar, 1 scenario, 1 anchor) | `feat/issue-24-a0-seed-content`, PR #60 open |
+| 2026-06-27 | CI: conditional `prisma generate` step (skips on PRs without schema) | `main`; re-synced across all 14 PRs |
 | 2026-06-27 | CI: explicit `prisma generate` step (postinstall is not enough under pnpm) | `main` (`61588c4`) |
 | 2026-06-27 | chore(deps): add prisma + tsx devDeps + `onlyBuiltDependencies` allowlist | `main` (`b6932cb`) |
 | 2026-06-27 | **#23 CLOSED** — `pnpm seed:a0` script (delivered via PR #59) | PR #59 |
@@ -38,7 +40,6 @@ _(none — all in-progress work landed this session; awaiting reviewer on the SU
 | 2026-06-27 | #9 Learner profile/dashboard/settings UI | PR #55 SUCCESS |
 | 2026-06-27 | #57 A/B harness report promoted to docs | PR #57 SUCCESS |
 | 2026-06-23 | #1 Bootstrap Next.js + TypeScript app shell | closed; commits `fa53545`, `399a766` |
-| 2026-06-23 | #3 MiniMax AI client wrappers (LLM/ASR/TTS) | PR #20 open; branch `feat/issue-3-minimax-wrappers`; 22/22 tests pass |
 
 ## Issue status
 
@@ -56,6 +57,7 @@ _(none — all in-progress work landed this session; awaiting reviewer on the SU
 - **#8** Proficiency assessments + Milestone gating — PR #54
 - **#9** Learner profile, dashboard, progress, settings UI — PR #55
 - **#13** ASR accuracy regression test suite
+- **#24** Author full A0 seed content — PR #60 (Unit A0.4 'Rotina e horas' shipped)
 - **#26** Prisma schema + migration for curriculum — PR #59
 
 ### Open — non-functional (NFR)
@@ -127,6 +129,7 @@ _(none — all in-progress work landed this session; awaiting reviewer on the SU
 
 ### CI re-running (workflow repaired this session, push queued)
 
+- **#60** A0 seed content (Unit A0.4 'Rotina e horas') — added this session; local 28/28 + 3 prisma-roundtrip tests pass
 - **#27** HLR Spaced Repetition scheduler + review queue — depends on #2
 - **#32** Voice Loop (Tier 1/2/3) end-to-end — depends on #2
 - **#43** LLM difficulty-control pipeline (generate → re-rank) — depends on #5
