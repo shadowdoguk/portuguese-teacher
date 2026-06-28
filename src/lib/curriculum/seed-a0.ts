@@ -949,17 +949,25 @@ const A0_4_ROTINA: Unit = {
     {
       id: "a0-4-s-plano-amanha",
       unitId: "a0-4-rotina-e-horas",
+      category: "social-plans",
+      targetLevel: "A0",
       goal: "Combinares com um colega português a hora de um encontro para amanhã e descreve a tua rotina actual.",
       setting: "Mensagem de telemóvel entre dois colegas que vão ter um café amanhã.",
       roles: {
         learner: "Trabalhador estrangeiro a marcar um encontro.",
         teacher: "Colega português paciente que propõe e confirma horários.",
       },
+      preTask: "Revê os números 1–30 e as horas (que horas são?).",
+      expectedTurns: 6,
+      vocabularyRefs: ["a0-4-v-rotina", "a0-4-v-horas"],
+      grammarRefs: ["a0-4-g-estar-progressivo"],
+      remedialAnchorRefs: [{ toUnitId: "a0-2-numeros-apresentacoes", reason: "vocabulary-decay", note: "Numbers 1–30 for compound hours" }],
       successCriteria: [
         "O Learner propõe duas janelas horárias com números e horas correctos (ex.: ‘dez da manhã’).",
         "O Learner refere pelo menos duas refeições (pequeno-almoço, almoço ou jantar).",
         "O Learner usa ‘estar a’ + infinitivo para descrever o que está a fazer hoje.",
       ],
+      passingScore: 0.75,
     },
   ],
 };
