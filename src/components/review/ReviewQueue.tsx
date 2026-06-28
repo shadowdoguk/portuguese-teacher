@@ -17,6 +17,9 @@ import {
   type SrsReviewRecord,
   type SrsState,
 } from "@/lib/srs";
+import { resolveRetrievalMode, surfaceForMode } from "@/lib/settings";
+import { useSettings } from "@/lib/settings/SettingsProvider";
+import { ReviewCardMedia } from "@/components/review/ReviewCardMedia";
 
 const SESSION_LEARNER_ID = "demo-learner";
 
@@ -61,6 +64,9 @@ type FetchError = { kind: "error"; message: string };
 
 export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink } = {}) {
   const refs = useMemo(() => allReviewableRefs(), []);
+  const { settings } = useSettings();
+  const retrievalMode = resolveRetrievalMode(settings);
+  const surface = surfaceForMode(retrievalMode);
   const [state, setState] = useState<SrsState | null>(null);
   const [now, setNow] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
@@ -238,6 +244,7 @@ export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink 
               {head.ref.pt}
             </p>
             <p className="mt-2 text-pretty text-ink-soft">{head.ref.gloss}</p>
+            <ReviewCardMedia itemRef={head.ref} surface={surface} />
           </div>
           <dl className="grid grid-cols-2 gap-4 text-sm">
             <div className="rounded-lg border border-ink/10 bg-paper-warm/40 p-4">

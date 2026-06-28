@@ -1,4 +1,8 @@
-export { SettingsProvider, SettingsContext, useSettings } from "./SettingsProvider";
+export {
+  SettingsProvider,
+  SettingsContext,
+  useSettings,
+} from "./SettingsProvider";
 export type { SettingsContextValue } from "./SettingsProvider";
 export {
   DEFAULT_SETTINGS,
@@ -8,7 +12,21 @@ export {
   clampVoiceSpeed,
   clampWeeklyGoal,
 } from "./types";
-export type { Settings, SettingsPatch, CFTiming, CaptionsPref, ReducedMotionPref } from "./types";
+export type {
+  Settings,
+  SettingsPatch,
+  CFTiming,
+  CaptionsPref,
+  ReducedMotionPref,
+} from "./types";
+export {
+  DEFAULT_RETRIEVAL_MODE,
+  RETRIEVAL_MODES,
+  isRetrievalMode,
+  resolveRetrievalMode,
+  surfaceForMode,
+} from "./retrieval";
+export type { RetrievalMode, RetrievalModeSurface } from "./retrieval";
 export {
   STORAGE_PREFIX,
   loadSettings,

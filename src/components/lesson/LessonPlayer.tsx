@@ -13,6 +13,9 @@ import {
   type SrsReviewRecord,
   type SrsState,
 } from "@/lib/srs";
+import { resolveRetrievalMode, surfaceForMode } from "@/lib/settings";
+import { useSettings } from "@/lib/settings/SettingsProvider";
+import { ReviewCardMedia } from "@/components/review/ReviewCardMedia";
 import {
   DEFAULT_MAX_INJECTED,
   interleaveSrsItems,
@@ -59,6 +62,9 @@ function describePracticeExercise(exercise: PracticeExercise): string {
 
 export function LessonPlayer({ lesson }: { lesson: Lesson }) {
   const baseRefs = useMemo(() => allReviewableRefs(), []);
+  const { settings } = useSettings();
+  const retrievalMode = resolveRetrievalMode(settings);
+  const surface = surfaceForMode(retrievalMode);
   const [refs, setRefs] = useState<SrsItemRef[]>(baseRefs);
   const [srsState, setSrsState] = useState<SrsState | null>(null);
   const [stream, setStream] = useState<LessonExercise[]>(() =>
@@ -296,6 +302,7 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
                     {item.ref.pt}
                   </p>
                   <p className="text-sm text-ink-soft">{item.ref.gloss}</p>
+                  <ReviewCardMedia itemRef={item.ref} surface={surface} />
                   <div className="grid grid-cols-4 gap-2">
                     {RECALL_GRADES.map((grade) => (
                       <button

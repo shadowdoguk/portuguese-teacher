@@ -13,6 +13,7 @@ export type SelectProps<T extends string> = {
   hint?: string;
   disabled?: boolean;
   ariaLabel?: string;
+  "data-testid"?: string;
 };
 
 function normalize<T extends string>(
@@ -31,6 +32,7 @@ export function Select<T extends string>({
   hint,
   disabled,
   ariaLabel,
+  ...rest
 }: SelectProps<T>) {
   const id = useId();
   const normalized = normalize(options);
@@ -45,6 +47,7 @@ export function Select<T extends string>({
         disabled={disabled}
         aria-label={ariaLabel ?? label}
         onChange={(event) => onChange(event.target.value as T)}
+        data-testid={rest["data-testid"]}
         className={cx(
           "w-full rounded-lg border border-ink/15 bg-paper px-3 py-2.5 text-base text-ink focus:border-terracotta focus:outline-none",
           disabled && "cursor-not-allowed opacity-60",
