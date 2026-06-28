@@ -6,14 +6,15 @@ import {
   AGAIN_RESET_HALF_LIFE_MS,
   RECALL_GRADES,
   allReviewableRefs,
-  applyRecall,
   consoleRecallSink,
   countDue,
   dueQueue,
+  emptyState,
   enrollMany,
-  loadPersisted,
-  savePersisted,
   type RecallGrade,
+  type SrsItemRef,
+  type SrsRecallEvent,
+  type SrsReviewRecord,
   type SrsState,
 } from "@/lib/srs";
 
@@ -54,25 +55,46 @@ const GRADE_DESCRIPTIONS: Record<RecallGrade, string> = {
   easy: "Trivial — half-life × 4",
 };
 
-type Sink = (event: import("@/lib/srs").SrsRecallEvent) => void;
+type Sink = (event: SrsRecallEvent) => void;
+
+type FetchError = { kind: "error"; message: string };
 
 export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink } = {}) {
   const refs = useMemo(() => allReviewableRefs(), []);
   const [state, setState] = useState<SrsState | null>(null);
   const [now, setNow] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const persisted = loadPersisted();
-    const initial = enrollMany(persisted.state, refs, Date.now());
-    const next = {
-      ...persisted,
-      state: initial,
-    };
-    if (!persisted.state || Object.keys(persisted.state.items).length === 0) {
-      savePersisted(next);
+    let cancelled = false;
+    async function load(): Promise<void> {
+      try {
+        const res = await fetch(
+          `/api/srs/state?learnerId=${encodeURIComponent(SESSION_LEARNER_ID)}`,
+        );
+        if (!res.ok) {
+          throw new Error(`Failed to load SRS state (${res.status})`);
+        }
+        const body = (await res.json()) as { ok: boolean; state: SrsState };
+        if (!body.ok) {
+          throw new Error("SRS state response was not ok");
+        }
+        if (cancelled) return;
+        const enrolled = enrollMany(body.state, refs, Date.now());
+        setState(enrolled);
+        setNow(Date.now());
+        setError(null);
+      } catch (err) {
+        if (cancelled) return;
+        setState(emptyState());
+        setNow(Date.now());
+        setError(err instanceof Error ? err.message : "Unknown error");
+      }
     }
-    setState(next.state);
-    setNow(Date.now());
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, [refs]);
 
   const queue = useMemo(() => {
@@ -86,23 +108,50 @@ export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink 
   }, [state, refs]);
 
   const handleGrade = useCallback(
-    (grade: RecallGrade) => {
+    async (grade: RecallGrade) => {
       if (!state || queue.length === 0) return;
       const head = queue[0]!;
       const at = Date.now();
-      const result = applyRecall(state, SESSION_LEARNER_ID, head.ref.itemId, grade, at);
-      const persisted = loadPersisted();
-      const next = {
-        ...persisted,
-        state: result.state,
-        recallLog: [...persisted.recallLog, result.event],
-      };
-      savePersisted(next);
-      onRecall(result.event);
-      setState(result.state);
-      setNow(at);
+      try {
+        const res = await fetch("/api/srs/recalls", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            learnerId: SESSION_LEARNER_ID,
+            itemId: head.ref.itemId,
+            kind: head.ref.kind,
+            grade,
+            timestamp: at,
+            pt: head.ref.pt,
+            gloss: head.ref.gloss,
+            unitId: head.ref.unitId,
+            refs,
+          }),
+        });
+        if (!res.ok) {
+          const message = await readError(res);
+          throw new Error(message);
+        }
+        const body = (await res.json()) as {
+          ok: boolean;
+          record: SrsReviewRecord;
+          event: SrsRecallEvent;
+        };
+        if (!body.ok) {
+          throw new Error("Recall response was not ok");
+        }
+        const nextState: SrsState = {
+          items: { ...state.items, [head.ref.itemId]: body.record },
+        };
+        setState(nextState);
+        setNow(at);
+        setError(null);
+        onRecall(body.event);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Network error");
+      }
     },
-    [state, queue, onRecall],
+    [state, queue, onRecall, refs],
   );
 
   if (state === null) {
@@ -138,6 +187,11 @@ export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink 
             Items reset their half-life when graded <em>Again</em> (back to{" "}
             {formatHalfLife(AGAIN_RESET_HALF_LIFE_MS)}).
           </p>
+          {error ? (
+            <p className="mt-3 text-xs text-terracotta-deep" data-testid="srs-error">
+              {error}
+            </p>
+          ) : null}
         </Card>
       </div>
     );
@@ -158,6 +212,11 @@ export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink 
           Each recall is logged. Again, Hard, Good, or Easy — the half-life scheduler tunes the next
           review to your answer.
         </p>
+        {error ? (
+          <p className="text-xs text-terracotta-deep" data-testid="srs-error">
+            {error}
+          </p>
+        ) : null}
       </header>
 
       <article
@@ -197,7 +256,7 @@ export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink 
             <button
               key={grade}
               type="button"
-              onClick={() => handleGrade(grade)}
+              onClick={() => void handleGrade(grade)}
               className="card-surface flex flex-col gap-1 px-4 py-3 text-left transition hover:border-terracotta hover:bg-paper-warm focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
               data-testid={`srs-grade-${grade}`}
             >
@@ -218,4 +277,13 @@ export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink 
       </Card>
     </div>
   );
+}
+
+async function readError(res: Response): Promise<string> {
+  try {
+    const body = (await res.json()) as { error?: string };
+    return body.error ?? `Request failed (${res.status})`;
+  } catch {
+    return `Request failed (${res.status})`;
+  }
 }

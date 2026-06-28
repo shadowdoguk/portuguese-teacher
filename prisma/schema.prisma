@@ -217,3 +217,39 @@ model PlacementLessonAttempt {
 
   @@index([learnerId])
 }
+
+// SRS per-item review record (the half-life state).
+// One row per (Learner, itemId). Replaces the prior localStorage SrsState.
+model SrsReviewRecord {
+  id              String   @id @default(cuid())
+  learnerId       String
+  itemId          String
+  kind            String   // SrsItemKind: "vocabulary" | "grammar"
+  halfLifeMs      Float
+  lastReviewedAt  DateTime?
+  dueAt           DateTime
+  reviewCount     Int      @default(0)
+  lapses          Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([learnerId, itemId])
+  @@index([learnerId])
+  @@index([learnerId, dueAt])
+}
+
+// Append-only recall event log. Drives the analytics + observability surface
+// (FR-CP-1 telemetry; SC-1 Pronunciation Score / SC-5 production WER funnels).
+model SrsRecallEvent {
+  id                 String   @id @default(cuid())
+  learnerId          String
+  itemId             String
+  grade              String   // RecallGrade
+  halfLifeBeforeMs   Float
+  halfLifeAfterMs    Float
+  dueAt              DateTime
+  occurredAt         DateTime @default(now())
+
+  @@index([learnerId, occurredAt])
+  @@index([itemId])
+}
