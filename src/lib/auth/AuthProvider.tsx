@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { mockSignIn, mockSignOut, mockSignUp } from "./mockUsers";
-import type { Learner, LearnerGoal, Level } from "./types";
+import type { Learner, LearnerGoal, Level, PlacementAttemptRecord } from "./types";
 import { DEFAULT_NATIVE_LANGUAGE, DEFAULT_SELF_ASSESSMENT } from "./types";
 
 type AuthState =
@@ -17,11 +17,30 @@ type AuthState =
   | { status: "anonymous"; user: null }
   | { status: "authenticated"; user: Learner };
 
+export type PlacementConfirmInput = {
+  attemptId: string;
+  attemptedAt: string;
+  selfAssessedLevel: Exclude<Level, "A0">;
+  overallScore: number;
+  recommendedStartUnitId: string;
+  recommendedStartLevel: Level;
+  confirmedStartUnitId: string;
+  confirmedStartLevel: Level;
+  learnerAccepted: boolean;
+};
+
 export type AuthContextValue = {
   state: AuthState;
   user: Learner | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (input: { name: string; email: string; password: string }) => Promise<void>;
+  signUp: (
+    input: {
+      name: string;
+      email: string;
+      password: string;
+      selfAssessmentLevel?: Level;
+    },
+  ) => Promise<void>;
   signOut: () => Promise<void>;
   setDialect: (dialect: Learner["dialect"]) => void;
   updateProfile: (
@@ -38,6 +57,9 @@ export type AuthContextValue = {
   ) => void;
   setLevel: (level: Level) => void;
   toggleGoal: (goal: LearnerGoal) => void;
+  setCurrentUnit: (unitId: string) => void;
+  confirmPlacement: (input: PlacementConfirmInput) => void;
+  latestPlacementAttempt: () => PlacementAttemptRecord | null;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -50,6 +72,7 @@ function withDefaults(user: Learner): Learner {
     nativeLanguage: user.nativeLanguage ?? DEFAULT_NATIVE_LANGUAGE,
     selfAssessmentLevel: user.selfAssessmentLevel ?? DEFAULT_SELF_ASSESSMENT,
     goals: user.goals ?? [],
+    placementAttempts: user.placementAttempts ?? [],
   };
 }
 
@@ -103,7 +126,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signUp = useCallback(
-    async (input: { name: string; email: string; password: string }) => {
+    async (input: {
+      name: string;
+      email: string;
+      password: string;
+      selfAssessmentLevel?: Level;
+    }) => {
       const user = await mockSignUp(input);
       persist(user);
       setState({ status: "authenticated", user });
@@ -151,6 +179,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [mutate],
   );
 
+  const setCurrentUnit = useCallback<AuthContextValue["setCurrentUnit"]>(
+    (unitId) => {
+      mutate((current) => ({ ...current, currentUnitId: unitId }));
+    },
+    [mutate],
+  );
+
+  const confirmPlacement = useCallback<AuthContextValue["confirmPlacement"]>(
+    (input) => {
+      const record: PlacementAttemptRecord = {
+        id: input.attemptId,
+        attemptedAt: input.attemptedAt,
+        selfAssessedLevel: input.selfAssessedLevel,
+        overallScore: input.overallScore,
+        recommendedStartUnitId: input.recommendedStartUnitId,
+        recommendedStartLevel: input.recommendedStartLevel,
+        confirmedStartUnitId: input.confirmedStartUnitId,
+        confirmedStartLevel: input.confirmedStartLevel,
+        learnerAccepted: input.learnerAccepted,
+      };
+      mutate((current) => {
+        const prior = current.placementAttempts ?? [];
+        return {
+          ...current,
+          currentUnitId: input.confirmedStartUnitId,
+          level: input.confirmedStartLevel,
+          selfAssessmentLevel: input.selfAssessedLevel,
+          placementAttempts: [...prior, record],
+        };
+      });
+    },
+    [mutate],
+  );
+
+  const latestPlacementAttempt = useCallback<
+    AuthContextValue["latestPlacementAttempt"]
+  >(() => {
+    if (state.status !== "authenticated") return null;
+    const attempts = state.user.placementAttempts ?? [];
+    return attempts.length === 0 ? null : attempts[attempts.length - 1] ?? null;
+  }, [state]);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       state,
@@ -162,8 +232,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateProfile,
       setLevel,
       toggleGoal,
+      setCurrentUnit,
+      confirmPlacement,
+      latestPlacementAttempt,
     }),
-    [state, signIn, signUp, signOut, setDialect, updateProfile, setLevel, toggleGoal],
+    [
+      state,
+      signIn,
+      signUp,
+      signOut,
+      setDialect,
+      updateProfile,
+      setLevel,
+      toggleGoal,
+      setCurrentUnit,
+      confirmPlacement,
+      latestPlacementAttempt,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

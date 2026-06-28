@@ -104,4 +104,25 @@ describe("ProfileForm", () => {
       expect(stored.goals).toContain("travel");
     });
   });
+
+  it("lets the learner skip to a different starting Unit", async () => {
+    seedUser();
+    render(<Harness />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Jump straight to a Unit/)).toBeInTheDocument();
+    });
+
+    const buttons = screen.getAllByRole("button");
+    const rotinaButton = buttons.find((button) =>
+      button.textContent?.includes("Rotina"),
+    );
+    expect(rotinaButton).toBeDefined();
+    fireEvent.click(rotinaButton!);
+
+    await waitFor(() => {
+      const stored = JSON.parse(window.localStorage.getItem("portuguese-teacher:user") ?? "{}");
+      expect(stored.currentUnitId).toBe("a0-4-rotina-e-horas");
+    });
+  });
 });

@@ -12,13 +12,22 @@ import {
   type LearnerGoal,
   type Level,
 } from "@/lib/auth/types";
+import {
+  A0_CURRICULUM,
+  indexCurriculum,
+  unitsAtLevel,
+  entryUnit,
+  LEVELS as CURRICULUM_LEVELS,
+} from "@/lib/curriculum";
 import { Card } from "@/components/ui/Card";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Field, textInputClassName } from "@/components/ui/Field";
 import { Select } from "@/components/ui/Select";
 
+const CURRICULUM_INDEX = indexCurriculum(A0_CURRICULUM);
+
 export function ProfileForm() {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, setCurrentUnit, latestPlacementAttempt } = useAuth();
   const nameId = useId();
 
   const [name, setName] = useState(user?.name ?? "");
@@ -44,6 +53,26 @@ export function ProfileForm() {
     () => (user?.selfAssessmentLevel ?? DEFAULT_SELF_ASSESSMENT) !== "A0",
     [user?.selfAssessmentLevel],
   );
+
+  const skipOptions = useMemo(() => {
+    const result: Array<{ unitId: string; level: Level; title: string }> = [];
+    for (const level of CURRICULUM_LEVELS) {
+      unitsAtLevel(CURRICULUM_INDEX, level).forEach((unit) => {
+        result.push({ unitId: unit.id, level, title: unit.title });
+      });
+    }
+    return result;
+  }, []);
+
+  const currentUnitTitle = useMemo(() => {
+    if (!user?.currentUnitId) return null;
+    for (const option of skipOptions) {
+      if (option.unitId === user.currentUnitId) return option.title;
+    }
+    return null;
+  }, [user?.currentUnitId, skipOptions]);
+
+  const latestAttempt = latestPlacementAttempt();
 
   if (!user) {
     return (
@@ -140,19 +169,70 @@ export function ProfileForm() {
       {placementEligible ? (
         <Card
           eyebrow="Placement"
-          title="A Placement Lesson will confirm your starting Unit"
+          title={
+            latestAttempt
+              ? `Last placed at ${latestAttempt.confirmedStartUnitId}`
+              : "A Placement Lesson will confirm your starting Unit"
+          }
           footer={
-            <Link href="/placement" className="btn-primary inline-flex">
-              Take Placement Lesson →
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/placement" className="btn-primary inline-flex">
+                {latestAttempt ? "Re-take Placement Lesson →" : "Take Placement Lesson →"}
+              </Link>
+            </div>
           }
         >
           You self-assessed as <strong>{user.selfAssessmentLevel ?? DEFAULT_SELF_ASSESSMENT}</strong>.
           The Placement Lesson is a single short adaptive check across reading,
           listening, and writing. It picks the right Unit for you — or you can
           self-correct afterwards.
+          {latestAttempt ? (
+            <p className="mt-3 text-xs text-ink-mute">
+              Last run {new Date(latestAttempt.attemptedAt).toLocaleDateString()}:{" "}
+              {Math.round(latestAttempt.overallScore * 100)}% overall ·{" "}
+              {latestAttempt.learnerAccepted ? "accepted" : "overridden"} recommendation.
+            </p>
+          ) : null}
         </Card>
       ) : null}
+
+      <Card
+        eyebrow="Skip to a level"
+        title="Jump straight to a Unit"
+      >
+        <p className="text-sm text-ink-soft">
+          {currentUnitTitle ? (
+            <>You&apos;re currently starting at <strong>{currentUnitTitle}</strong>.</>
+          ) : (
+            <>You haven&apos;t been placed yet — pick a Unit to start immediately.</>
+          )}{" "}
+          You can change this any time; it does not change your level.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {skipOptions.map((option) => (
+            <button
+              key={option.unitId}
+              type="button"
+              onClick={() => setCurrentUnit(option.unitId)}
+              className={
+                option.unitId === user?.currentUnitId ? "btn-primary text-xs" : "btn-ghost text-xs"
+              }
+              disabled={option.unitId === user?.currentUnitId}
+            >
+              {option.level} · {option.title}
+            </button>
+          ))}
+          {user?.currentUnitId ? null : (
+            <button
+              type="button"
+              onClick={() => setCurrentUnit(entryUnit(CURRICULUM_INDEX).id)}
+              className="btn-ghost text-xs"
+            >
+              Reset to entry Unit
+            </button>
+          )}
+        </div>
+      </Card>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-h-[1.25rem]" aria-live="polite">

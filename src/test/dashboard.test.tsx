@@ -73,4 +73,26 @@ describe("DashboardClient", () => {
       expect(screen.getByText(/Telling a story in the past/)).toBeInTheDocument();
     });
   });
+
+  it("surfaces a Placement pending CTA for above-A0 learners with no currentUnitId", async () => {
+    seedUser({ selfAssessmentLevel: "A2", level: "A0" });
+    render(<Harness />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Placement pending/)).toBeInTheDocument();
+    });
+    expect(
+      screen.getByRole("link", { name: /Start placement/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("surfaces the placed Unit for learners with a currentUnitId", async () => {
+    seedUser({ currentUnitId: "a0-4-rotina-e-horas", level: "A0" });
+    render(<Harness />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Rotina/)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Change starting Unit/)).toBeInTheDocument();
+  });
 });

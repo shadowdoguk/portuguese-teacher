@@ -27,6 +27,18 @@ export const NATIVE_LANGUAGES: readonly string[] = [
   "Other",
 ];
 
+export type PlacementAttemptRecord = {
+  id: string;
+  attemptedAt: string;
+  selfAssessedLevel: Exclude<Level, "A0">;
+  overallScore: number;
+  recommendedStartUnitId: string;
+  recommendedStartLevel: Level;
+  confirmedStartUnitId: string;
+  confirmedStartLevel: Level;
+  learnerAccepted: boolean;
+};
+
 export type Learner = {
   id: string;
   name: string;
@@ -40,6 +52,7 @@ export type Learner = {
   selfAssessmentLevel?: Level;
   goals?: LearnerGoal[];
   currentUnitId?: string;
+  placementAttempts?: ReadonlyArray<PlacementAttemptRecord>;
 };
 
 export const DEFAULT_NATIVE_LANGUAGE = "English";
