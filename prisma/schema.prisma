@@ -162,13 +162,17 @@ model RemedialAnchor {
   fromUnitId   String
   toUnitId     String
   reason       String // RemedialAnchorReason
+  gapArea      String // RemedialAnchorGapArea
+  weight       Float
   note         String
+  createdAt    DateTime @default(now())
 
   fromUnit Unit @relation("RemedialAnchorFrom", fields: [fromUnitId], references: [id])
   toUnit   Unit @relation("RemedialAnchorTo",   fields: [toUnitId],   references: [id])
 
   @@index([fromUnitId])
   @@index([toUnitId])
+  @@index([gapArea])
 }
 
 model Milestone {

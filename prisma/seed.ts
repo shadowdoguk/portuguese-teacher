@@ -248,7 +248,10 @@ async function main(): Promise<void> {
           fromUnitId: a.fromUnitId,
           toUnitId: a.toUnitId,
           reason: a.reason,
+          gapArea: a.gapArea,
+          weight: a.weight,
           note: a.note,
+          createdAt: a.createdAt ? new Date(a.createdAt) : new Date(),
         },
       });
     }

@@ -1,4 +1,12 @@
-import type { Curriculum, Level, Milestone, RemedialAnchor, Unit } from "./types";
+import type {
+  Curriculum,
+  LearnerSkillMastery,
+  Level,
+  Milestone,
+  RemedialAnchor,
+  RemedialAnchorGapArea,
+  Unit,
+} from "./types";
 
 export class CurriculumError extends Error {
   constructor(message: string) {
@@ -287,6 +295,65 @@ export type ResolveAnchorsResult = {
   paths: ReadonlyArray<ResolvedAnchorPath>;
 };
 
+/**
+ * Mastery signal used to filter + order Remedial Anchors. A higher number
+ * means the Learner is stronger in that gap area. Default = 0.5 for all
+ * areas (no information); values should be in [0, 1].
+ */
+export type AnchorMastery = Partial<LearnerSkillMastery>;
+
+export type ResolveAnchorsOptions = {
+  /** Cap on chain length. Default 5 (per #17 acceptance). */
+  maxDepth?: number;
+  /** Optional learner-mastery signal (gap area → 0..1). */
+  learnerMastery?: AnchorMastery;
+  /**
+   * Affective Filter score (0–100). When above the HIGH threshold (default
+   * 70), the runtime prefers warmer/scaffolded anchor content — the
+   * resolver marks every returned path with `scaffolded: true` so the
+   * AI Teacher can adjust its tone.
+   */
+  affectiveFilterScore?: number;
+  /** Threshold for considering the affective filter "high". Default 70. */
+  affectiveHighThreshold?: number;
+};
+
+export type ResolvedAnchorStep = {
+  unitId: string;
+  anchor: RemedialAnchor;
+  /** Score this anchor earned against the learner-mastery signal. */
+  priority: number;
+  /** True when the affective filter demands warmer scaffolding. */
+  scaffolded: boolean;
+};
+
+export type ResolvedRemediationPlan = {
+  startingUnitId: string;
+  steps: ReadonlyArray<ResolvedAnchorStep>;
+  /** True when at least one step is scaffolded. */
+  scaffolded: boolean;
+  /** Human-readable rationale for the AI Teacher. */
+  rationale: string;
+};
+
+const DEFAULT_MAX_DEPTH = 5;
+const DEFAULT_AFFECTIVE_HIGH = 70;
+
+function masteryFor(area: RemedialAnchorGapArea, signal: AnchorMastery): number {
+  const value = signal[area];
+  return typeof value === "number" ? Math.max(0, Math.min(1, value)) : 0.5;
+}
+
+function priorityFor(
+  anchor: RemedialAnchor,
+  mastery: AnchorMastery,
+): number {
+  // Higher priority when (a) anchor.weight is high and (b) Learner is weak in
+  // this gap area. Returns a value in [0, 1].
+  const weakness = 1 - masteryFor(anchor.gapArea, mastery);
+  return Math.max(0, Math.min(1, anchor.weight * weakness));
+}
+
 export function resolveAnchors(index: CurriculumIndex, unitId: string): ResolveAnchorsResult {
   const start = index.unitsById.get(unitId);
   if (!start) {
@@ -339,6 +406,100 @@ export function resolveAnchors(index: CurriculumIndex, unitId: string): ResolveA
     startingUnitId: startId,
     units: ordered,
     paths,
+  };
+}
+
+/**
+ * Build the runtime Remediation Plan for a failed Milestone (or any unit).
+ *
+ * Walks the anchor graph from `unitId`, ordered by gap-area weakness ×
+ * anchor weight, and produces a flat list of `ResolvedAnchorStep`s capped
+ * at `maxDepth` (default 5). The canonical curriculum DAG is unchanged;
+ * the *induced* graph is a DAG (assertRemedialAnchorsAcyclic + the per-step
+ * `visited` set).
+ *
+ * When `affectiveFilterScore` exceeds `affectiveHighThreshold`, every step
+ * is flagged `scaffolded: true` so the AI Teacher can soften its tone and
+ * add extra scaffolding on top of the anchor content.
+ */
+export function resolveRemediationPlan(
+  index: CurriculumIndex,
+  unitId: string,
+  options: ResolveAnchorsOptions = {},
+): ResolvedRemediationPlan {
+  const start = index.unitsById.get(unitId);
+  if (!start) {
+    throw new CurriculumError(`Cannot build remediation plan: unknown unit ${unitId}`);
+  }
+  const maxDepth = Math.max(1, options.maxDepth ?? DEFAULT_MAX_DEPTH);
+  const mastery = options.learnerMastery ?? {};
+  const affectiveHigh = options.affectiveHighThreshold ?? DEFAULT_AFFECTIVE_HIGH;
+  const affectiveScore = options.affectiveFilterScore;
+  const scaffolded = typeof affectiveScore === "number" && affectiveScore >= affectiveHigh;
+
+  const steps: ResolvedAnchorStep[] = [];
+  const emittedUnits = new Set<string>([start.id]);
+
+  /**
+   * Walk from `current` outward, tracking the visited set per-path.
+   * The canonical DAG stays acyclic (assertRemedialAnchorsAcyclic); the
+   * induced graph is also a DAG *per path* because Remedial Anchors only
+   * point to Units that are reachable *before* the anchor's source. We
+   * additionally pass a fresh copy of `visited` on each recursion so
+   * sibling branches don't poison each other (e.g. A→B and A→C→B are
+   * both valid and we want both B-anchored continuations).
+   *
+   * We also dedupe at the *output* level — the same Unit may be reached
+   * via multiple chains (e.g. A→B and A→C→B), but the AI Teacher only
+   * needs to re-present each Unit once. The per-path `visited` keeps the
+   * walker from looping; the output `emittedUnits` prevents duplicates.
+   */
+  function walkUnit(current: Unit, depth: number, visited: Set<string>): void {
+    if (depth >= maxDepth) return;
+    const orderedAnchors = [...current.remedialAnchors].sort(
+      (a, b) => priorityFor(b, mastery) - priorityFor(a, mastery),
+    );
+    for (const anchor of orderedAnchors) {
+      if (steps.length >= maxDepth) return;
+      if (visited.has(anchor.toUnitId)) {
+        throw new CurriculumError(
+          `Anchor cycle at ${current.id} -> ${anchor.toUnitId} during remediation planning`,
+        );
+      }
+      const target = index.unitsById.get(anchor.toUnitId);
+      if (!target) {
+        throw new CurriculumError(
+          `Anchor from ${current.id} references missing unit ${anchor.toUnitId}`,
+        );
+      }
+      if (!emittedUnits.has(target.id)) {
+        emittedUnits.add(target.id);
+        steps.push({
+          unitId: target.id,
+          anchor,
+          priority: priorityFor(anchor, mastery),
+          scaffolded,
+        });
+      }
+      const nextVisited = new Set(visited);
+      nextVisited.add(target.id);
+      walkUnit(target, depth + 1, nextVisited);
+    }
+  }
+
+  walkUnit(start, 0, new Set([start.id]));
+
+  const rationaleParts = [
+    `starting from ${start.id}`,
+    `${steps.length} anchor${steps.length === 1 ? "" : "s"}`,
+    scaffolded ? "scaffolded (affective filter high)" : "canonical",
+  ];
+
+  return {
+    startingUnitId: start.id,
+    steps,
+    scaffolded,
+    rationale: rationaleParts.join("; "),
   };
 }
 

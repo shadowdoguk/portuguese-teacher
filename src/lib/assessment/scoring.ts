@@ -1,5 +1,7 @@
 import {
+  resolveRemediationPlan,
   unitsAtLevel,
+  type AnchorMastery,
   type Curriculum,
   type CurriculumIndex,
   type Level,
@@ -73,14 +75,39 @@ export function buildAssessmentOutcome(
   index: CurriculumIndex,
   items: ReadonlyArray<AssessmentItem>,
   answers: ReadonlyArray<AssessmentAnswer>,
+  options: { affectiveFilterScore?: number } = {},
 ): AssessmentOutcome {
   const perSkillScores = computeSkillScores(items, answers);
   const overall = overallScore(perSkillScores);
   const passed = overall >= milestone.passingScore;
 
-  const anchorUnitIds = passed
-    ? []
-    : collectRemedialAnchorUnitIds(milestone, index, perSkillScores);
+  const anchorUnitIds: string[] = [];
+  const anchorSteps: Array<{
+    unitId: string;
+    gapArea: "vocab" | "grammar" | "pronunciation" | "fluency";
+    reason: "phoneme-confusion" | "grammar-gap" | "vocabulary-decay" | "scenario-struggle";
+    weight: number;
+    priority: number;
+    scaffolded: boolean;
+  }> = [];
+  if (!passed) {
+    const plan = resolveRemediationPlan(index, milestone.unitId, {
+      learnerMastery: assessmentMasteryFromScores(perSkillScores),
+      affectiveFilterScore: options.affectiveFilterScore,
+      maxDepth: 5,
+    });
+    for (const step of plan.steps) {
+      anchorUnitIds.push(step.unitId);
+      anchorSteps.push({
+        unitId: step.unitId,
+        gapArea: step.anchor.gapArea,
+        reason: step.anchor.reason,
+        weight: step.anchor.weight,
+        priority: step.priority,
+        scaffolded: step.scaffolded,
+      });
+    }
+  }
 
   const rationaleParts: string[] = [];
   rationaleParts.push(`overall ${(overall * 100).toFixed(0)}% vs pass ${(milestone.passingScore * 100).toFixed(0)}%`);
@@ -92,7 +119,25 @@ export function buildAssessmentOutcome(
     overallScore: overall,
     passed,
     recommendedAnchorUnitIds: anchorUnitIds,
+    recommendedAnchorSteps: anchorSteps,
     rationale: rationaleParts.join("; "),
+  };
+}
+
+/**
+ * Map the four assessment skills onto the four RemedialAnchor gapAreas
+ * (vocab | grammar | pronunciation | fluency). Used to derive a
+ * learner-mastery signal from the per-skill scores of a failed Milestone
+ * so `resolveRemediationPlan` can rank anchors by gap-area weakness.
+ */
+export function assessmentMasteryFromScores(
+  perSkillScores: AssessmentSkillScores,
+): AnchorMastery {
+  return {
+    vocab: (perSkillScores.reading + perSkillScores.writing) / 2,
+    grammar: perSkillScores.writing,
+    pronunciation: (perSkillScores.listening + perSkillScores.speaking) / 2,
+    fluency: perSkillScores.speaking,
   };
 }
 
@@ -100,63 +145,14 @@ function collectRemedialAnchorUnitIds(
   milestone: Milestone,
   index: CurriculumIndex,
   perSkillScores: AssessmentSkillScores,
+  affectiveFilterScore: number | undefined,
 ): string[] {
-  const weakest = weakestSkill(perSkillScores);
-  const result = new Set<string>();
-  for (const anchor of milestoneAnchorChains(milestone, index)) {
-    if (anchorMatchesSkill(anchor, weakest)) {
-      result.add(anchor.toUnitId);
-    }
-  }
-  for (const anchor of milestoneAnchorChains(milestone, index)) {
-    result.add(anchor.toUnitId);
-  }
-  return Array.from(result);
-}
-
-function anchorMatchesSkill(
-  anchor: { reason: string; toUnitId: string; fromUnitId: string },
-  weakest: AssessmentSkill,
-): boolean {
-  switch (anchor.reason) {
-    case "phoneme-confusion":
-      return weakest === "listening" || weakest === "speaking";
-    case "grammar-gap":
-      return weakest === "writing";
-    case "vocabulary-decay":
-      return weakest === "reading" || weakest === "writing";
-    case "scenario-struggle":
-      return weakest === "speaking";
-    default:
-      return false;
-  }
-}
-
-type AnchorEdge = {
-  fromUnitId: string;
-  toUnitId: string;
-  reason: "phoneme-confusion" | "grammar-gap" | "vocabulary-decay" | "scenario-struggle";
-  note: string;
-};
-
-function milestoneAnchorChains(
-  milestone: Milestone,
-  index: CurriculumIndex,
-): AnchorEdge[] {
-  const start = index.unitsById.get(milestone.unitId);
-  if (!start) return [];
-  const edges: AnchorEdge[] = [];
-  for (const unit of index.unitsById.values()) {
-    for (const anchor of unit.remedialAnchors) {
-      edges.push({
-        fromUnitId: unit.id,
-        toUnitId: anchor.toUnitId,
-        reason: anchor.reason,
-        note: anchor.note,
-      });
-    }
-  }
-  return edges.filter((edge) => edge.fromUnitId === milestone.unitId);
+  const plan = resolveRemediationPlan(index, milestone.unitId, {
+    learnerMastery: assessmentMasteryFromScores(perSkillScores),
+    affectiveFilterScore,
+    maxDepth: 5,
+  });
+  return plan.steps.map((step) => step.unitId);
 }
 
 export function nextUnitAfterMilestone(

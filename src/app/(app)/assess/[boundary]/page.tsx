@@ -31,6 +31,7 @@ import {
   type AssessmentItemScore,
 } from "@/lib/assessment";
 import { useAuth } from "@/lib/auth/useAuth";
+import { useAffective } from "@/lib/affective";
 
 type Phase = "loading" | "missing" | "ineligible" | "error" | "running" | "outcome";
 type IneligibleReason =
@@ -54,6 +55,7 @@ export default function AssessBoundaryPage({
 }) {
   const router = useRouter();
   const { user } = useAuth();
+  const { computeScore } = useAffective();
   const boundary = params.boundary;
   const [phase, setPhase] = useState<Phase>("loading");
   const [ineligibleReason, setIneligibleReason] = useState<IneligibleReason>(
@@ -241,9 +243,12 @@ export default function AssessBoundaryPage({
     finalItems: ReadonlyArray<AssessmentItem>,
     finalAnswers: ReadonlyArray<AssessmentAnswer>,
     milestone: ReturnType<typeof milestoneByBoundary> & object,
-  ) {
+) {
     const idx = indexCurriculum(A0_CURRICULUM);
-    const result = buildAssessmentOutcome(milestone, idx, finalItems, finalAnswers);
+    const affective = computeScore();
+    const result = buildAssessmentOutcome(milestone, idx, finalItems, finalAnswers, {
+      affectiveFilterScore: affective?.score,
+    });
     setItems([...finalItems]);
     setAnswers([...finalAnswers]);
     setOutcome(result);

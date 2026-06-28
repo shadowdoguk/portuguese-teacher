@@ -239,7 +239,10 @@ const A0_2_NUMEROS: Unit = {
       fromUnitId: "a0-2-numeros-apresentacoes",
       toUnitId: "a0-1-alfabeto-saudacoes",
       reason: "phoneme-confusion",
+      gapArea: "pronunciation",
+      weight: 0.6,
       note: "Rever o alfabeto se o Learner hesitar a soletrar o nome.",
+      createdAt: "2026-06-23T00:00:00.000Z",
     },
   ],
   lessons: [
@@ -426,6 +429,7 @@ const A0_2_NUMEROS: Unit = {
         {
           toUnitId: "a0-1-alfabeto-saudacoes",
           reason: "phoneme-confusion",
+          gapArea: "pronunciation",
           note: "Voltar ao alfabeto se o Learner hesitar a soletrar o nome.",
         },
       ],
@@ -451,13 +455,19 @@ const A0_3_CAFE: Unit = {
       fromUnitId: "a0-3-cafe-pedidos",
       toUnitId: "a0-1-alfabeto-saudacoes",
       reason: "phoneme-confusion",
+      gapArea: "pronunciation",
+      weight: 0.5,
       note: "Rever o alfabeto se o Learner tiver dificuldade a soletrar o nome ao empregado.",
+      createdAt: "2026-06-23T00:00:00.000Z",
     },
     {
       fromUnitId: "a0-3-cafe-pedidos",
       toUnitId: "a0-2-numeros-apresentacoes",
       reason: "vocabulary-decay",
+      gapArea: "vocab",
+      weight: 0.8,
       note: "Rever números 1–20 quando o Learner não conseguir perceber o preço.",
+      createdAt: "2026-06-23T00:00:00.000Z",
     },
   ],
   lessons: [
@@ -624,6 +634,7 @@ const A0_3_CAFE: Unit = {
         {
           toUnitId: "a0-1-alfabeto-saudacoes",
           reason: "vocabulary-decay",
+          gapArea: "fluency",
           note: "Voltar a ‘bom dia / por favor / obrigado’ se o Learner esquecer as cortesias.",
         },
       ],
@@ -650,8 +661,11 @@ const A0_4_ROTINA: Unit = {
       fromUnitId: "a0-4-rotina-e-horas",
       toUnitId: "a0-2-numeros-apresentacoes",
       reason: "vocabulary-decay",
+      gapArea: "vocab",
+      weight: 0.7,
       note:
         "Rever os números 1–30 quando o Learner hesitar nas horas compostas (ex.: ‘vinte e uma’).",
+      createdAt: "2026-06-23T00:00:00.000Z",
     },
   ],
   lessons: [
@@ -961,7 +975,7 @@ const A0_4_ROTINA: Unit = {
       expectedTurns: 6,
       vocabularyRefs: ["a0-4-v-rotina", "a0-4-v-horas"],
       grammarRefs: ["a0-4-g-estar-progressivo"],
-      remedialAnchorRefs: [{ toUnitId: "a0-2-numeros-apresentacoes", reason: "vocabulary-decay", note: "Numbers 1–30 for compound hours" }],
+      remedialAnchorRefs: [{ toUnitId: "a0-2-numeros-apresentacoes", reason: "vocabulary-decay", gapArea: "vocab", note: "Numbers 1–30 for compound hours" }],
       successCriteria: [
         "O Learner propõe duas janelas horárias com números e horas correctos (ex.: ‘dez da manhã’).",
         "O Learner refere pelo menos duas refeições (pequeno-almoço, almoço ou jantar).",
