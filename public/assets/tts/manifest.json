@@ -1,0 +1,388 @@
+{
+  "version": 1,
+  "dialect": "pt-PT",
+  "voiceId": "minimax-pt-pt-female-1",
+  "generatedAt": "2026-06-28T17:10:15.218Z",
+  "assets": [
+    {
+      "assetId": "grammar-a0-1-alfabeto-saudacoes-a0-1-g-artigo-ex0",
+      "unitId": "a0-1-alfabeto-saudacoes",
+      "url": "/assets/tts/a0-1-alfabeto-saudacoes/grammar-a0-1-alfabeto-saudacoes-a0-1-g-artigo-ex0.mp3",
+      "durationMs": 429,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "o café",
+      "sourceKind": "grammar-example",
+      "sourceRef": "a0-1-g-artigo#0"
+    },
+    {
+      "assetId": "grammar-a0-1-alfabeto-saudacoes-a0-1-g-artigo-ex1",
+      "unitId": "a0-1-alfabeto-saudacoes",
+      "url": "/assets/tts/a0-1-alfabeto-saudacoes/grammar-a0-1-alfabeto-saudacoes-a0-1-g-artigo-ex1.mp3",
+      "durationMs": 429,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "a água",
+      "sourceKind": "grammar-example",
+      "sourceRef": "a0-1-g-artigo#1"
+    },
+    {
+      "assetId": "grammar-a0-1-alfabeto-saudacoes-a0-1-g-artigo-ex2",
+      "unitId": "a0-1-alfabeto-saudacoes",
+      "url": "/assets/tts/a0-1-alfabeto-saudacoes/grammar-a0-1-alfabeto-saudacoes-a0-1-g-artigo-ex2.mp3",
+      "durationMs": 643,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "os amigos",
+      "sourceKind": "grammar-example",
+      "sourceRef": "a0-1-g-artigo#2"
+    },
+    {
+      "assetId": "vocab-a0-1-alfabeto-saudacoes-a0-1-v-boa-noite",
+      "unitId": "a0-1-alfabeto-saudacoes",
+      "url": "/assets/tts/a0-1-alfabeto-saudacoes/vocab-a0-1-alfabeto-saudacoes-a0-1-v-boa-noite.mp3",
+      "durationMs": 643,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "boa noite",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-1-v-boa-noite"
+    },
+    {
+      "assetId": "vocab-a0-1-alfabeto-saudacoes-a0-1-v-bom-dia",
+      "unitId": "a0-1-alfabeto-saudacoes",
+      "url": "/assets/tts/a0-1-alfabeto-saudacoes/vocab-a0-1-alfabeto-saudacoes-a0-1-v-bom-dia.mp3",
+      "durationMs": 1357,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Bom dia! Como está?",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-1-v-bom-dia"
+    },
+    {
+      "assetId": "vocab-a0-1-alfabeto-saudacoes-a0-1-v-de-nada",
+      "unitId": "a0-1-alfabeto-saudacoes",
+      "url": "/assets/tts/a0-1-alfabeto-saudacoes/vocab-a0-1-alfabeto-saudacoes-a0-1-v-de-nada.mp3",
+      "durationMs": 500,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "de nada",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-1-v-de-nada"
+    },
+    {
+      "assetId": "vocab-a0-1-alfabeto-saudacoes-a0-1-v-obrigado",
+      "unitId": "a0-1-alfabeto-saudacoes",
+      "url": "/assets/tts/a0-1-alfabeto-saudacoes/vocab-a0-1-alfabeto-saudacoes-a0-1-v-obrigado.mp3",
+      "durationMs": 571,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "obrigado",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-1-v-obrigado"
+    },
+    {
+      "assetId": "vocab-a0-1-alfabeto-saudacoes-a0-1-v-por-favor",
+      "unitId": "a0-1-alfabeto-saudacoes",
+      "url": "/assets/tts/a0-1-alfabeto-saudacoes/vocab-a0-1-alfabeto-saudacoes-a0-1-v-por-favor.mp3",
+      "durationMs": 643,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "por favor",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-1-v-por-favor"
+    },
+    {
+      "assetId": "grammar-a0-2-numeros-apresentacoes-a0-2-g-apresentar-ex0",
+      "unitId": "a0-2-numeros-apresentacoes",
+      "url": "/assets/tts/a0-2-numeros-apresentacoes/grammar-a0-2-numeros-apresentacoes-a0-2-g-apresentar-ex0.mp3",
+      "durationMs": 929,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Chamo-me Rui.",
+      "sourceKind": "grammar-example",
+      "sourceRef": "a0-2-g-apresentar#0"
+    },
+    {
+      "assetId": "grammar-a0-2-numeros-apresentacoes-a0-2-g-apresentar-ex1",
+      "unitId": "a0-2-numeros-apresentacoes",
+      "url": "/assets/tts/a0-2-numeros-apresentacoes/grammar-a0-2-numeros-apresentacoes-a0-2-g-apresentar-ex1.mp3",
+      "durationMs": 1786,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Tenho vinte e cinco anos.",
+      "sourceKind": "grammar-example",
+      "sourceRef": "a0-2-g-apresentar#1"
+    },
+    {
+      "assetId": "vocab-a0-2-numeros-apresentacoes-a0-2-v-chamar",
+      "unitId": "a0-2-numeros-apresentacoes",
+      "url": "/assets/tts/a0-2-numeros-apresentacoes/vocab-a0-2-numeros-apresentacoes-a0-2-v-chamar.mp3",
+      "durationMs": 643,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "chamar-se",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-2-v-chamar"
+    },
+    {
+      "assetId": "vocab-a0-2-numeros-apresentacoes-a0-2-v-dezoito",
+      "unitId": "a0-2-numeros-apresentacoes",
+      "url": "/assets/tts/a0-2-numeros-apresentacoes/vocab-a0-2-numeros-apresentacoes-a0-2-v-dezoito.mp3",
+      "durationMs": 500,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "dezoito",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-2-v-dezoito"
+    },
+    {
+      "assetId": "vocab-a0-2-numeros-apresentacoes-a0-2-v-quinze",
+      "unitId": "a0-2-numeros-apresentacoes",
+      "url": "/assets/tts/a0-2-numeros-apresentacoes/vocab-a0-2-numeros-apresentacoes-a0-2-v-quinze.mp3",
+      "durationMs": 429,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "quinze",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-2-v-quinze"
+    },
+    {
+      "assetId": "vocab-a0-2-numeros-apresentacoes-a0-2-v-sabado",
+      "unitId": "a0-2-numeros-apresentacoes",
+      "url": "/assets/tts/a0-2-numeros-apresentacoes/vocab-a0-2-numeros-apresentacoes-a0-2-v-sabado.mp3",
+      "durationMs": 429,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "sábado",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-2-v-sabado"
+    },
+    {
+      "assetId": "vocab-a0-2-numeros-apresentacoes-a0-2-v-ter",
+      "unitId": "a0-2-numeros-apresentacoes",
+      "url": "/assets/tts/a0-2-numeros-apresentacoes/vocab-a0-2-numeros-apresentacoes-a0-2-v-ter.mp3",
+      "durationMs": 214,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "ter",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-2-v-ter"
+    },
+    {
+      "assetId": "grammar-a0-3-cafe-pedidos-a0-3-g-condicional-pedir-ex0",
+      "unitId": "a0-3-cafe-pedidos",
+      "url": "/assets/tts/a0-3-cafe-pedidos/grammar-a0-3-cafe-pedidos-a0-3-g-condicional-pedir-ex0.mp3",
+      "durationMs": 1857,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Queria um café, por favor.",
+      "sourceKind": "grammar-example",
+      "sourceRef": "a0-3-g-condicional-pedir#0"
+    },
+    {
+      "assetId": "grammar-a0-3-cafe-pedidos-a0-3-g-condicional-pedir-ex1",
+      "unitId": "a0-3-cafe-pedidos",
+      "url": "/assets/tts/a0-3-cafe-pedidos/grammar-a0-3-cafe-pedidos-a0-3-g-condicional-pedir-ex1.mp3",
+      "durationMs": 1714,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Queria uma água com gás.",
+      "sourceKind": "grammar-example",
+      "sourceRef": "a0-3-g-condicional-pedir#1"
+    },
+    {
+      "assetId": "vocab-a0-3-cafe-pedidos-a0-3-v-agua",
+      "unitId": "a0-3-cafe-pedidos",
+      "url": "/assets/tts/a0-3-cafe-pedidos/vocab-a0-3-cafe-pedidos-a0-3-v-agua.mp3",
+      "durationMs": 286,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "água",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-3-v-agua"
+    },
+    {
+      "assetId": "vocab-a0-3-cafe-pedidos-a0-3-v-cafe",
+      "unitId": "a0-3-cafe-pedidos",
+      "url": "/assets/tts/a0-3-cafe-pedidos/vocab-a0-3-cafe-pedidos-a0-3-v-cafe.mp3",
+      "durationMs": 286,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "café",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-3-v-cafe"
+    },
+    {
+      "assetId": "vocab-a0-3-cafe-pedidos-a0-3-v-pastel-nata",
+      "unitId": "a0-3-cafe-pedidos",
+      "url": "/assets/tts/a0-3-cafe-pedidos/vocab-a0-3-cafe-pedidos-a0-3-v-pastel-nata.mp3",
+      "durationMs": 1000,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "pastel de nata",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-3-v-pastel-nata"
+    },
+    {
+      "assetId": "grammar-a0-4-rotina-e-horas-a0-4-g-estar-ex0",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/grammar-a0-4-rotina-e-horas-a0-4-g-estar-ex0.mp3",
+      "durationMs": 1000,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Estou em casa.",
+      "sourceKind": "grammar-example",
+      "sourceRef": "a0-4-g-estar#0"
+    },
+    {
+      "assetId": "grammar-a0-4-rotina-e-horas-a0-4-g-estar-ex1",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/grammar-a0-4-rotina-e-horas-a0-4-g-estar-ex1.mp3",
+      "durationMs": 1286,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Estou a trabalhar.",
+      "sourceKind": "grammar-example",
+      "sourceRef": "a0-4-g-estar#1"
+    },
+    {
+      "assetId": "grammar-a0-4-rotina-e-horas-a0-4-g-estar-ex2",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/grammar-a0-4-rotina-e-horas-a0-4-g-estar-ex2.mp3",
+      "durationMs": 786,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Onde estás?",
+      "sourceKind": "grammar-example",
+      "sourceRef": "a0-4-g-estar#2"
+    },
+    {
+      "assetId": "grammar-a0-4-rotina-e-horas-a0-4-g-hora-ex0",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/grammar-a0-4-rotina-e-horas-a0-4-g-hora-ex0.mp3",
+      "durationMs": 786,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "É uma hora.",
+      "sourceKind": "grammar-example",
+      "sourceRef": "a0-4-g-hora#0"
+    },
+    {
+      "assetId": "grammar-a0-4-rotina-e-horas-a0-4-g-hora-ex1",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/grammar-a0-4-rotina-e-horas-a0-4-g-hora-ex1.mp3",
+      "durationMs": 1786,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "São três e meia da tarde.",
+      "sourceKind": "grammar-example",
+      "sourceRef": "a0-4-g-hora#1"
+    },
+    {
+      "assetId": "grammar-a0-4-rotina-e-horas-a0-4-g-hora-ex2",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/grammar-a0-4-rotina-e-horas-a0-4-g-hora-ex2.mp3",
+      "durationMs": 2429,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "São oito menos um quarto da noite.",
+      "sourceKind": "grammar-example",
+      "sourceRef": "a0-4-g-hora#2"
+    },
+    {
+      "assetId": "grammar-a0-4-rotina-e-horas-a0-4-g-rotina-ex0",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/grammar-a0-4-rotina-e-horas-a0-4-g-rotina-ex0.mp3",
+      "durationMs": 1071,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Acordo às sete.",
+      "sourceKind": "grammar-example",
+      "sourceRef": "a0-4-g-rotina#0"
+    },
+    {
+      "assetId": "grammar-a0-4-rotina-e-horas-a0-4-g-rotina-ex1",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/grammar-a0-4-rotina-e-horas-a0-4-g-rotina-ex1.mp3",
+      "durationMs": 1357,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Almoço ao meio-dia.",
+      "sourceKind": "grammar-example",
+      "sourceRef": "a0-4-g-rotina#1"
+    },
+    {
+      "assetId": "vocab-a0-4-rotina-e-horas-a0-4-v-acordar",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/vocab-a0-4-rotina-e-horas-a0-4-v-acordar.mp3",
+      "durationMs": 1071,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Acordo às sete.",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-4-v-acordar"
+    },
+    {
+      "assetId": "vocab-a0-4-rotina-e-horas-a0-4-v-almoco",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/vocab-a0-4-rotina-e-horas-a0-4-v-almoco.mp3",
+      "durationMs": 429,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "almoço",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-4-v-almoco"
+    },
+    {
+      "assetId": "vocab-a0-4-rotina-e-horas-a0-4-v-casa",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/vocab-a0-4-rotina-e-horas-a0-4-v-casa.mp3",
+      "durationMs": 1000,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Estou em casa.",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-4-v-casa"
+    },
+    {
+      "assetId": "vocab-a0-4-rotina-e-horas-a0-4-v-escritorio",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/vocab-a0-4-rotina-e-horas-a0-4-v-escritorio.mp3",
+      "durationMs": 1429,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Estou no escritório.",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-4-v-escritorio"
+    },
+    {
+      "assetId": "vocab-a0-4-rotina-e-horas-a0-4-v-jantar",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/vocab-a0-4-rotina-e-horas-a0-4-v-jantar.mp3",
+      "durationMs": 1000,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Janto às oito.",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-4-v-jantar"
+    },
+    {
+      "assetId": "vocab-a0-4-rotina-e-horas-a0-4-v-meia",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/vocab-a0-4-rotina-e-horas-a0-4-v-meia.mp3",
+      "durationMs": 1214,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "São cinco e meia.",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-4-v-meia"
+    },
+    {
+      "assetId": "vocab-a0-4-rotina-e-horas-a0-4-v-noite",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/vocab-a0-4-rotina-e-horas-a0-4-v-noite.mp3",
+      "durationMs": 714,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Boa noite!",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-4-v-noite"
+    },
+    {
+      "assetId": "vocab-a0-4-rotina-e-horas-a0-4-v-pequeno-almoco",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/vocab-a0-4-rotina-e-horas-a0-4-v-pequeno-almoco.mp3",
+      "durationMs": 2143,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Tomo o pequeno-almoço às oito.",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-4-v-pequeno-almoco"
+    },
+    {
+      "assetId": "vocab-a0-4-rotina-e-horas-a0-4-v-quarto",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/vocab-a0-4-rotina-e-horas-a0-4-v-quarto.mp3",
+      "durationMs": 1429,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "São dez e um quarto.",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-4-v-quarto"
+    },
+    {
+      "assetId": "vocab-a0-4-rotina-e-horas-a0-4-v-trabalhar",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/vocab-a0-4-rotina-e-horas-a0-4-v-trabalhar.mp3",
+      "durationMs": 1286,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Estou a trabalhar.",
+      "sourceKind": "vocabulary",
+      "sourceRef": "a0-4-v-trabalhar"
+    }
+  ]
+}

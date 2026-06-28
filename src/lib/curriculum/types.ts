@@ -43,7 +43,7 @@ export type TextBlock =
   | { kind: "paragraph"; text: string }
   | { kind: "example"; pt: string; gloss?: string }
   | { kind: "rule"; text: string }
-  | { kind: "audio"; assetId: string; caption?: string }
+  | { kind: "audio"; assetId: string; text: string; caption?: string }
   | { kind: "image"; assetId: string; alt: string };
 
 export type LessonBody = {
@@ -68,7 +68,7 @@ export type GrammarPattern = {
   unitId: string;
   name: string;
   description: string;
-  examples: ReadonlyArray<{ pt: string; gloss: string }>;
+  examples: ReadonlyArray<{ pt: string; gloss: string; audioAssetId?: string }>;
 };
 
 export type ScenarioCategory =
