@@ -16,6 +16,7 @@ import {
 } from "@/lib/curriculum";
 import { getAssessmentStore } from "@/lib/assessment";
 import { RecallStatsTile } from "@/components/progress/RecallStatsTile";
+import { ScenarioOriginsTile } from "@/components/progress/ScenarioOriginsTile";
 
 const GAP_AREA_LABEL: Record<RemedialAnchorGapArea, string> = {
   vocab: "Vocabulary",
@@ -183,6 +184,10 @@ export function ProgressClient() {
 
       <section aria-label="Recall telemetry">
         <RecallStatsTile learnerId={user.id} />
+      </section>
+
+      <section aria-label="Scenario origins">
+        <ScenarioOriginsTile learnerId={user.id} />
       </section>
 
       {remediationChains.length > 0 ? (
