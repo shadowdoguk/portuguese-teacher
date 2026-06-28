@@ -1,5 +1,20 @@
 ## Agent skills
 
+### Session start
+
+At the **start of every session**, before opening an issue or touching code:
+
+1. Read [`PROGRESS.md`](./PROGRESS.md) — the living tracker. It has the current focus, the in-progress branch/PR, the issue queue, the decisions log, and the conventions reminder.
+2. Skim [`HANDOFF.md`](./HANDOFF.md) — the point-in-time snapshot from the previous session. It tells you what landed, what's queued, what's still pending.
+3. Read [`CONTEXT.md`](./CONTEXT.md) — domain glossary and conventions. Use the glossary terms; don't invent synonyms.
+4. Skim [`docs/adr/`](./docs/adr/) — existing architectural decisions. Surface relevant ADRs in any plan rather than re-deciding.
+5. Run `pnpm progress:check` — confirms the tracker agrees with the live GitHub issue list. If it fails, update PROGRESS.md (or close the missing issue) before continuing.
+6. `git checkout main && git pull` and `git status` — confirm a clean working tree on `main` before branching.
+
+A new session that ignores this list will start with stale assumptions and will duplicate work or contradict the decisions log.
+
+
+
 ### Issue tracker
 
 Issues for this repo live in **GitHub Issues** for
