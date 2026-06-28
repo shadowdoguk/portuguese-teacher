@@ -58,3 +58,4 @@ export {
   MockMiniMaxTTS,
 } from "./mock";
 export * from "./types";
+export * from "./fallbacks";
