@@ -12,6 +12,7 @@ export type SrsItemRef = {
   unitId: string;
   audioAssetId?: string;
   imageAssetId?: string;
+  sourceScenarioId?: string;
 };
 
 export type SrsReviewRecord = {

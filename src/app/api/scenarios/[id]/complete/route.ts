@@ -6,6 +6,7 @@ import {
   type ScenarioProgress,
   type ScenarioRepository,
 } from "@/lib/scenarios";
+import { getScenarioById } from "@/lib/scenarios/library";
 
 export const runtime = "nodejs";
 
@@ -27,6 +28,7 @@ export type ScenarioCompleteResponse = {
   ok: true;
   progress: ScenarioProgress;
   completion: ScenarioCompletion;
+  recordedSources: number;
 };
 
 export type ScenarioErrorResponse = { ok: false; error: string };
@@ -84,12 +86,15 @@ export async function POST(
     turnsTaken: body.turnsTaken,
     completedAt,
   };
+  const scenario = getScenarioById(scenarioId);
+  const vocabularyRefs = scenario?.vocabularyRefs ?? [];
   const repo = createScenarioRepository(prisma());
-  const result = await repo.recordCompletion(learnerId, completion);
+  const result = await repo.recordCompletion(learnerId, completion, { vocabularyRefs });
   const response: ScenarioCompleteResponse = {
     ok: true,
     progress: result.progress,
     completion,
+    recordedSources: result.recordedSources,
   };
   return NextResponse.json(response);
 }

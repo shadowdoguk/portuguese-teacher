@@ -7,6 +7,12 @@ import {
   type SrsReviewRecord,
 } from "./types";
 
+export type SrsItemSource = {
+  itemId: string;
+  sourceScenarioId: string;
+  recordedAt: number;
+};
+
 export type SrsRepository = {
   loadState(learnerId: string): Promise<SrsState>;
   upsertRecords(learnerId: string, records: ReadonlyArray<SrsReviewRecord>): Promise<void>;
@@ -19,6 +25,11 @@ export type SrsRepository = {
     event: SrsRecallEvent;
   }): Promise<{ record: SrsReviewRecord; event: SrsRecallEvent }>;
   loadRecentEvents(learnerId: string, limit: number): Promise<ReadonlyArray<SrsRecallEvent>>;
+  recordScenarioSources(
+    learnerId: string,
+    sources: ReadonlyArray<{ itemId: string; sourceScenarioId: string }>,
+  ): Promise<void>;
+  loadScenarioSources(learnerId: string): Promise<ReadonlyArray<SrsItemSource>>;
 };
 
 export function createSrsRepository(prisma: PrismaClient): SrsRepository {
@@ -119,6 +130,38 @@ export function createSrsRepository(prisma: PrismaClient): SrsRepository {
         take: limit,
       });
       return rows.map(rowToEvent);
+    },
+
+    async recordScenarioSources(learnerId, sources) {
+      for (const source of sources) {
+        await prisma.srsItemSource.upsert({
+          where: {
+            learnerId_itemId_sourceScenarioId: {
+              learnerId,
+              itemId: source.itemId,
+              sourceScenarioId: source.sourceScenarioId,
+            },
+          },
+          create: {
+            learnerId,
+            itemId: source.itemId,
+            sourceScenarioId: source.sourceScenarioId,
+          },
+          update: {},
+        });
+      }
+    },
+
+    async loadScenarioSources(learnerId) {
+      const rows = await prisma.srsItemSource.findMany({
+        where: { learnerId },
+        orderBy: { recordedAt: "desc" },
+      });
+      return rows.map((row) => ({
+        itemId: row.itemId,
+        sourceScenarioId: row.sourceScenarioId,
+        recordedAt: row.recordedAt.getTime(),
+      }));
     },
   };
 }
