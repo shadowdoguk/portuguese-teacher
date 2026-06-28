@@ -1,6 +1,6 @@
 # Session Handoff
 
-**Snapshot date:** 2026-06-28 (full queue drain — 16 PRs merged)
+**Snapshot date:** 2026-06-28 (Season 1 wrapped — 18 PRs merged; Phase 1 hardening shipped)
 **Repo:** `shadowdoguk/portuguese-teacher`
 
 > **This file is a point-in-time snapshot.** For the living, agent-picked-up
@@ -11,19 +11,31 @@
 
 ## TL;DR
 
-One giant session: 16 PRs merged from the foundational implementation queue.
-The repo went from "everything CI-blocked and CONFLICTING" to a clean `main`
-with the entire A0 stack, Voice Loop, SRS, Proficiency, Affective Filter,
-Conversational Practice, LLM Difficulty Pipeline, and live-harness wiring all
-merged. 354/354 tests pass; `pnpm typecheck`, `pnpm lint`, `pnpm build` all
-green. Follow-up issues remain (DB persistence, real TTS audio, E2E tests,
-observability) but no further foundational blockers.
+Season 1 of the Portuguese Teacher build is **complete**. Over two sessions
+the repo went from a CI-blocked bootstrap to a clean `main` with:
 
-## Session outcomes
+- **18 PRs merged** (16 foundational + 2 Phase-1 hardening).
+- **405/405 tests green** (`pnpm typecheck` / `pnpm lint` / `pnpm build` all green).
+- **A0 curriculum seeded**: 4 Units / 12 Lessons / 19 Exercises / 23 vocab / 4 scenarios.
+- **Runtime stack complete**: MiniMax wrappers, Voice Loop (Tier 1/2/3),
+  SRS, Proficiency assessments, Affective Filter, Conversational Practice,
+  LLM difficulty pipeline (ADR-0004), live MiniMax harness.
+- **Learner-facing flow wired**: sign-up → placement (or A0 skip) →
+  dashboard → review queue → proficiency assessment → remediation plan.
+- **Schema**: Prisma `Curriculum` + `Learner` + `Assessment` + `RemedialAnchor`
+  + `Scenario` rows; all idempotent via `pnpm seed`.
 
-### Implementation queue drained
+Season 2 starts now. The remaining work is: 2 more Phase-1 items
+(`#19` Pronunciation endpoint, `#25` TTS asset pipeline), state
+persistence (`#28`/`#30`/`#44`/`#46`), the bulk content authoring (A1/A2/B1
++ `#47` ≥100 scenarios), real-world audio capture/playback (`#33`/`#35`/`#37`/`#38`/`#39`),
+NFRs (`#10`–`#14`), and E2E validation (`#34`/`#36`/`#48`).
 
-Closed PRs (16) covering 14 distinct issues:
+## Season 1 outcomes
+
+### Foundational work (session-1, 16 PRs)
+
+Closed PRs covering 14 distinct issues:
 - #20/#3 — MiniMax AI client wrappers (LLM/ASR/TTS)
 - #55/#9 — Learner profile, dashboard, progress, settings UI
 - #61 (docs) — promote mock A/B harness report from tmp/ to docs/
@@ -32,50 +44,39 @@ Closed PRs (16) covering 14 distinct issues:
 - #64/#24 — A0 seed content (Unit A0.4 'Rotina e horas')
 - #65/#4 — HLR Spaced Repetition scheduler + review queue
 - #66/#8 — Proficiency assessments + Milestone gating
-- #67/#15 (partial) — Placement Lesson runtime + tests (AuthProvider wiring deferred)
+- #67/#15 (partial) — Placement Lesson runtime + tests
 - #68/#18 — Affective Filter proxy instrumentation
 - #69/#5 — Voice Loop (Tier 1/2/3) end-to-end
-- #70/#6 — LLM difficulty-control pipeline (generate → re-rank) + ADR-0004
+- #70/#6 — LLM difficulty-control pipeline + ADR-0004
 - #71/#41 — Expand CEFR vocab fixture + A1→A2 + A2→B1 corpora
 - #72/#42 — Wire live MiniMax LLM into A/B harness
-- #73/#40 — Wire `generateAndRerankTurn` into API route (Tier 1+2)
+- #73/#40 — Wire `generateAndRerankTurn` into API route
 - #74/#7 — Conversational Practice UI + scenario library
 
-### Cherry-pick strategy
+### Phase-1 hardening (session-2, 2 PRs)
 
-The previous session had stacked merge commits onto every PR branch as part
-of CI fix sync work, leaving each branch with 25–30 commits of which only 1–3
-were the actual implementation. Rather than rebase the polluted branches, this
-session cherry-picked the unique implementation commits onto clean branches
-off `main` and opened new PRs (#61–#74) for review/merge. The original PRs
-were closed as superseded (or auto-closed when their branches were deleted).
-
-### Schema integration work
-
-#7's Scenario type required fields not in the existing schema. To make the
-Scenario module typecheck against the in-memory seed + Prisma schema, we:
-- Extended `Scenario` type with `category`, `targetLevel`, `preTask`,
-  `expectedTurns`, `vocabularyRefs`, `grammarRefs`, `remedialAnchorRefs`,
-  `passingScore`.
-- Added corresponding columns to the Prisma `Scenario` model + migration
-  `20260628144146_extend_scenario_fields`.
-- Updated `prisma/seed.ts` to populate the new columns.
-- Updated `src/lib/curriculum/seed-a0.ts` A0.4 scenario with sensible defaults.
-- Updated `src/test/prisma-roundtrip.test.ts` to assert the rebuilt Curriculum
-  matches the in-memory fixture.
-
-### Cleanup
-
-- Removed duplicate devDep entries in `package.json` (`tsx`, `prisma`,
-  `@prisma/client` were each listed twice from prior merge sync work).
-- Fixed `progress:check` script — PROGRESS.md was 19 issues behind reality at
-  session start; fully reconciled at session end.
+- **#75/#15** — Placement Lesson integration: AuthProvider shape
+  (`setCurrentUnit`, `confirmPlacement`, `latestPlacementAttempt`),
+  sign-up form captures self-assessment + routes above-A0 to
+  `/placement`, full adaptive runner on the placement page (start →
+  items → outcome → accept/override/retake), dashboard "Placement
+  pending" CTA + "Starting from" Unit card, profile "Jump straight to
+  a Unit" grid + latest-attempt display.
+- **#76/#17** — Remedial Anchor routing runtime:
+  `resolveRemediationPlan(unitId, { learnerMastery, maxDepth,
+  affectiveFilterScore })` returns the ordered anchor chain filtered by
+  gap-area weakness × anchor weight, capped at `maxDepth` (default 5),
+  deduped at the output level; Affective Filter scaffolding flag at
+  HIGH score; `/progress` UI surfaces the chain for failed Milestones;
+  `pnpm anchors:suggest <unitId>` admin script; 14 new property tests
+  including a 50-anchor content-team pass that stays acyclic and
+  terminates in ≤ 5 steps.
 
 ## Git state
 
 | Branch | Status |
 | --- | --- |
-| `main` | clean; 17 new merge commits this session; 354/354 tests green |
+| `main` | clean; 18 new merge commits; 405/405 tests green |
 | All `-clean` branches | merged + deleted via `--delete-branch` |
 | Original polluted branches | closed as superseded, branches deleted |
 
@@ -83,55 +84,47 @@ Scenario module typecheck against the in-memory seed + Prisma schema, we:
 
 None.
 
-## Open issues (next session starts here)
+## Open issues (Season 2 starts here)
 
-**Placement integration** (depends on #15 partial):
-- **#15** — Place AuthProvider `setCurrentUnit` + `setConfirmedPlacement`;
-  replace `/placement` page with the runtime from #67; wire sign-up routing
-  to `/placement` for above-A0 learners; surface `currentUnitId` on
-  dashboard.
+**Phase 1 — runtime integration (2 remaining of 4)**
+- **#19** Pronunciation Score phoneme-distance endpoint (depends on #3 + #5)
+- **#25** Build-time TTS asset pipeline using MiniMax TTS mocks (depends on #2 + #3)
 
-**SRS persistence + integration** (depends on #4 — now on main):
+**Phase 2 — state persistence (depends on #4, #7, #26)**
 - **#28** Per-recall telemetry backend hookup
-- **#29** Audio + image rendering on the review card
-- **#30** DB persistence for SRS state (replace localStorage) — now unblocked by #26
+- **#30** DB persistence for SRS state (replace localStorage)
+- **#44** Persist scenario completions to Prisma DB
+- **#46** SRS injection of scenario vocabulary
+
+**Phase 3 — content (the bulk)**
+- A1 / A2 / B1 curriculum authoring (currently 4 of ~30 Units seeded)
+- **#47** Expand scenario library to ≥ 100 scenarios
 - **#31** SRS injection into Unit's Practice Exercise order
 
-**Voice Loop subsystems** (depends on #5 — now on main):
+**Phase 4 — Voice Loop real-world wiring**
 - **#33** Tier 1 + Tier 2 audio capture
-- **#34** Playwright E2E across Chromium + Safari + Firefox
-- **#35** SC-5 Sampling Buffer 1% audio capture
-- **#36** Per-stage Voice Loop latency SLI dashboards
-- **#37** Pronunciation Score wiring
+- **#39** Real MiniMax TTS playback in the browser
 - **#38** ASR LM biasing per current Unit vocabulary
-- **#39** Real MiniMax TTS playback
+- **#37** Pronunciation Score wiring
+- **#35** SC-5 Sampling Buffer 1% audio capture
 
-**Scenarios** (depends on #7 — now on main):
-- **#44** Persist scenario completions to Prisma DB
-- **#45** Real MiniMax TTS audio for scenario briefings
-- **#46** SRS injection of scenario vocabulary
-- **#47** Expand to ≥ 100 scenarios across full curriculum
-- **#48** Adaptive scenario difficulty
-
-**Curriculum** (depends on #2 — now on main):
-- **#17** Remedial Anchor routing
-- **#19** Pronunciation Score phoneme-distance endpoint
-- **#25** Build-time TTS asset pipeline
-
-**Observability / sampling**:
-- **#13** ASR accuracy regression test suite
-- **#16** SC-5 Sampling Buffer infra
-
-**NFRs**:
-- **#10** Accessibility (WCAG 2.2 AA) audit
+**Phase 5 — NFRs**
+- **#10** Accessibility (WCAG 2.2 AA)
 - **#11** Performance budgets + Lighthouse CI
 - **#12** Observability + graceful degradation
-- **#14** Cross-device compatibility smoke tests
+- **#13** ASR accuracy regression test suite
+- **#14** Cross-device smoke tests
+- **#16** SC-5 Sampling Buffer infra
 
-## Still pending (human)
+**Phase 6 — E2E validation**
+- **#34** Playwright E2E across Chromium + Safari + Firefox
+- **#36** Per-stage Voice Loop latency SLI dashboards
+- **#48** Adaptive scenario difficulty
 
-- **§10 sign-off** on ADR-0003 + amended requirements doc — Product,
-  Pedagogy, Engineering leads.
+## Still pending (human / external)
+
+- **§10 sign-off** on ADR-0003 + amended requirements doc (Product,
+  Pedagogy, Engineering leads).
 - **Live MiniMax LLM credentials** for #42's ≥75% in-band acceptance target.
 
 ## Key references
@@ -152,6 +145,8 @@ None.
 | Proficiency | `src/lib/assessment/`, `src/test/assessment.test.ts` |
 | Affective Filter | `src/lib/affective/`, `src/test/affective-*.test.ts` |
 | Scenarios | `src/lib/scenarios/`, `src/test/scenarios-*.test.ts` |
+| Anchor routing | `src/lib/curriculum/graph.ts`, `src/test/anchor-routing.test.ts` |
+| Admin scripts | `scripts/anchors-suggest.ts`, `scripts/progress-check.mjs` |
 | Project status snapshot | [`README.md` § Status](./README.md#status) |
 | Workflow conventions | [`AGENTS.md`](./AGENTS.md) |
 | Research synthesis | [`docs/research/language-acquisition-findings.md`](./docs/research/language-acquisition-findings.md) |
@@ -167,12 +162,12 @@ None.
 - Do not commit secrets or `.env` files; `.env.example` is the convention
 - New domain terms go into `CONTEXT.md` in the same change
 
-## First action for a new session
+## First action for Season 2
 
 ```bash
 git checkout main && git pull
-# Confirm: 354/354 tests pass; typecheck/lint/build green.
-# Next up: #15 (Placement integration) — AuthProvider shape, /placement
-# page replacement, sign-up routing. Or pick the SRS persistence follow-up
-# (#30) since it has the cleanest dep story.
+# Confirm: 405/405 tests pass; typecheck/lint/build green.
+# Pick up #19 (Pronunciation Score phoneme-distance endpoint) to finish
+# Phase 1 — only #19 + #25 remain after that, then move into Phase 2
+# state persistence (#30 is the cleanest next pick).
 ```
