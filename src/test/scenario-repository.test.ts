@@ -106,4 +106,57 @@ describe("ScenarioRepository", () => {
       pureSnapshot.byId[completion.scenarioId],
     );
   });
+
+  it("records vocabularyRefs as SrsItemSource rows when provided", async () => {
+    const repo = createScenarioRepository(prisma);
+    const learnerId = `learner-${Date.now()}-sources`;
+    const result = await repo.recordCompletion(
+      learnerId,
+      {
+        scenarioId: "s-cafe-1-pedir-basico",
+        passed: true,
+        stars: 3,
+        turnsTaken: 5,
+        completedAt: 1_700_000_000_000,
+      },
+      { vocabularyRefs: ["a0-3-v-pastel-nata", "a0-3-v-agua", "a0-3-v-cafe"] },
+    );
+    expect(result.recordedSources).toBe(3);
+
+    const sources = await prisma.srsItemSource.findMany({
+      where: { learnerId },
+    });
+    expect(sources).toHaveLength(3);
+    const scenarioIds = sources.map((s) => s.sourceScenarioId);
+    expect(new Set(scenarioIds)).toEqual(new Set(["s-cafe-1-pedir-basico"]));
+  });
+
+  it("is idempotent on repeated completion — source rows are upserted", async () => {
+    const repo = createScenarioRepository(prisma);
+    const learnerId = `learner-${Date.now()}-sources-idem`;
+    await repo.recordCompletion(
+      learnerId,
+      {
+        scenarioId: "s-cafe-1-pedir-basico",
+        passed: true,
+        stars: 2,
+        turnsTaken: 4,
+        completedAt: 1_700_000_000_000,
+      },
+      { vocabularyRefs: ["a0-3-v-pastel-nata"] },
+    );
+    await repo.recordCompletion(
+      learnerId,
+      {
+        scenarioId: "s-cafe-1-pedir-basico",
+        passed: true,
+        stars: 3,
+        turnsTaken: 3,
+        completedAt: 1_700_001_000_000,
+      },
+      { vocabularyRefs: ["a0-3-v-pastel-nata"] },
+    );
+    const sources = await prisma.srsItemSource.findMany({ where: { learnerId } });
+    expect(sources).toHaveLength(1);
+  });
 });
