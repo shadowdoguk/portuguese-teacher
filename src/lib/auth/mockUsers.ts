@@ -1,4 +1,4 @@
-import type { Learner } from "./types";
+import type { Learner, Level } from "./types";
 import { DEFAULT_NATIVE_LANGUAGE, DEFAULT_SELF_ASSESSMENT } from "./types";
 
 const DEMO_USER: Learner = {
@@ -13,6 +13,7 @@ const DEMO_USER: Learner = {
   nativeLanguage: DEFAULT_NATIVE_LANGUAGE,
   selfAssessmentLevel: DEFAULT_SELF_ASSESSMENT,
   goals: ["travel", "heritage"],
+  placementAttempts: [],
 };
 
 function delay<T>(value: T, ms = 240): Promise<T> {
@@ -25,6 +26,7 @@ export async function mockSignIn(email: string, _password: string): Promise<Lear
     nativeLanguage: DEMO_USER.nativeLanguage ?? DEFAULT_NATIVE_LANGUAGE,
     selfAssessmentLevel: DEMO_USER.selfAssessmentLevel ?? DEFAULT_SELF_ASSESSMENT,
     goals: DEMO_USER.goals ?? [],
+    placementAttempts: DEMO_USER.placementAttempts ?? [],
     email: email.trim() || DEMO_USER.email,
   });
 }
@@ -33,7 +35,9 @@ export async function mockSignUp(input: {
   name: string;
   email: string;
   password: string;
+  selfAssessmentLevel?: Level;
 }): Promise<Learner> {
+  const selfAssessmentLevel = input.selfAssessmentLevel ?? DEFAULT_SELF_ASSESSMENT;
   return delay<Learner>({
     ...DEMO_USER,
     name: input.name.trim() || DEMO_USER.name,
@@ -41,8 +45,10 @@ export async function mockSignUp(input: {
     id: `learner-${Date.now()}`,
     createdAt: new Date().toISOString(),
     nativeLanguage: DEFAULT_NATIVE_LANGUAGE,
-    selfAssessmentLevel: DEFAULT_SELF_ASSESSMENT,
+    selfAssessmentLevel,
+    level: selfAssessmentLevel === "A0" ? "A0" : selfAssessmentLevel,
     goals: [],
+    placementAttempts: [],
   });
 }
 

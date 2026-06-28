@@ -7,6 +7,10 @@ import { useSettings } from "@/lib/settings";
 import { Card } from "@/components/ui/Card";
 import { LEARNER_GOALS, LEVELS, type Level } from "@/lib/auth/types";
 import { formatStage, pluralize } from "@/lib/utils";
+import { indexCurriculum, getUnit } from "@/lib/curriculum";
+import { A0_CURRICULUM } from "@/lib/curriculum";
+
+const CURRICULUM_INDEX = indexCurriculum(A0_CURRICULUM);
 
 const NEXT_LESSON_BY_LEVEL: Record<Level, { unit: string; lesson: string; title: string; blurb: string; href: string }> = {
   A0: {
@@ -55,6 +59,26 @@ export function DashboardClient() {
   }, [user, settings.weeklyGoalMinutes]);
 
   const reviewDue = useMemo(() => deriveReviewDue(user?.level ?? "A0"), [user?.level]);
+
+  const placementStatus = useMemo(() => {
+    if (!user) return null;
+    const selfLevel = user.selfAssessmentLevel;
+    const needsPlacement = selfLevel !== undefined && selfLevel !== "A0";
+    const hasCurrentUnit = typeof user.currentUnitId === "string" && user.currentUnitId.length > 0;
+    if (needsPlacement && !hasCurrentUnit) {
+      return { kind: "pending" as const, selfLevel };
+    }
+    if (hasCurrentUnit) {
+      const unit = getUnit(CURRICULUM_INDEX, user.currentUnitId!);
+      return {
+        kind: "placed" as const,
+        unit,
+        unitId: user.currentUnitId!,
+        level: unit?.level,
+      };
+    }
+    return null;
+  }, [user]);
 
   if (!user) {
     return (
@@ -129,6 +153,50 @@ export function DashboardClient() {
           </Link>
         </Card>
       </section>
+
+      {placementStatus?.kind === "pending" ? (
+        <section
+          aria-label="Placement pending"
+          className="card-surface flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <span className="stage-stamp">Placement pending</span>
+            <h2 className="mt-1 text-display-sm font-display font-light text-pretty">
+              We haven&apos;t placed you yet.
+            </h2>
+            <p className="mt-1 text-sm text-ink-soft">
+              You self-assessed as <strong>{placementStatus.selfLevel}</strong>. A
+              short Placement Lesson confirms or revises your starting Unit.
+            </p>
+          </div>
+          <Link href="/placement" className="btn-primary inline-flex">
+            Start placement →
+          </Link>
+        </section>
+      ) : null}
+
+      {placementStatus?.kind === "placed" && placementStatus.unit ? (
+        <section
+          aria-label="Current Unit"
+          className="card-surface flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <span className="stage-stamp">Starting from</span>
+            <h2 className="mt-1 text-display-sm font-display font-light text-pretty">
+              {placementStatus.unit.title}
+            </h2>
+            <p className="mt-1 text-sm text-ink-soft">
+              {placementStatus.unit.description}
+            </p>
+            <p className="mt-1 text-xs text-ink-mute">
+              Level {placementStatus.level ?? user.level} · Unit {placementStatus.unitId}
+            </p>
+          </div>
+          <Link href="/profile" className="btn-ghost text-xs">
+            Change starting Unit →
+          </Link>
+        </section>
+      ) : null}
 
       <section className="grid gap-6 md:grid-cols-3">
         <Card eyebrow="Weekly goal" title={`${goalPct}% of this week`}>

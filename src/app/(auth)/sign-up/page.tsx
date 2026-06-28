@@ -4,12 +4,15 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth/useAuth";
+import { LEVELS, type Level } from "@/lib/auth/types";
+import { Select } from "@/components/ui/Select";
 
 export default function SignUpPage() {
   const router = useRouter();
   const { signUp } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selfAssessmentLevel, setSelfAssessmentLevel] = useState<Level>("A0");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -26,8 +29,12 @@ export default function SignUpPage() {
     setSubmitting(true);
     setError(null);
     try {
-      await signUp({ name, email, password });
-      router.push("/dashboard");
+      await signUp({ name, email, password, selfAssessmentLevel });
+      if (selfAssessmentLevel === "A0") {
+        router.push("/dashboard");
+      } else {
+        router.push("/placement");
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Something went wrong.");
     } finally {
@@ -55,6 +62,17 @@ export default function SignUpPage() {
           autoComplete="new-password"
           required
           hint="Six characters or more."
+        />
+
+        <Select
+          label="Current Portuguese level"
+          value={selfAssessmentLevel}
+          onChange={setSelfAssessmentLevel}
+          options={LEVELS.map((level) => ({
+            value: level,
+            label: `${level} — ${levelDescription(level)}`,
+          }))}
+          hint="If you select above A0, a short Placement Lesson confirms or revises your starting Unit."
         />
 
         {error ? (
@@ -106,4 +124,17 @@ function Field({
       {hint ? <span className="mt-1 block text-xs text-ink-mute">{hint}</span> : null}
     </label>
   );
+}
+
+function levelDescription(level: Level): string {
+  switch (level) {
+    case "A0":
+      return "Absolute beginner";
+    case "A1":
+      return "Daily life";
+    case "A2":
+      return "Connected sentences";
+    case "B1":
+      return "Conversational fluency";
+  }
 }
