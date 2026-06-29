@@ -9,6 +9,27 @@ const originalFetch = global.fetch;
 
 let fetchMock: ReturnType<typeof vi.fn>;
 
+/**
+ * Mock each endpoint explicitly. The ScenarioPlayer issues an SRS state
+ * fetch on mount, and (as of #45) the ScenarioBriefingPlayer also issues a
+ * TTS synthesis fetch. We route by URL so each fetch gets a fresh
+ * `Response` object — sharing one Response across calls would exhaust
+ * the body stream on the second `.json()` read.
+ */
+function mockEndpoint(
+  urlFragment: string,
+  body: unknown,
+  status = 200,
+): void {
+  fetchMock.mockImplementation((input: RequestInfo | URL) => {
+    const url = typeof input === "string" ? input : input.toString();
+    if (url.includes(urlFragment)) {
+      return Promise.resolve(jsonResponse(body, status));
+    }
+    return Promise.resolve(jsonResponse({ ok: true, items: [] }, 200));
+  });
+}
+
 beforeEach(() => {
   window.localStorage.clear();
   fetchMock = vi.fn();
@@ -144,18 +165,16 @@ describe("ScenarioPlayer — adaptive difficulty (#48)", () => {
 
   it("renders the all-known hint when the Learner has reviewed every item", async () => {
     seedUser("A0");
-    fetchMock.mockResolvedValue(
-      jsonResponse({
-        ok: true,
-        state: {
-          items: {
-            "a1-1-v-bilhete": { reviewCount: 3 },
-            "a1-1-v-passaporte": { reviewCount: 1 },
-          },
+    mockEndpoint("/api/srs/state", {
+      ok: true,
+      state: {
+        items: {
+          "a1-1-v-bilhete": { reviewCount: 3 },
+          "a1-1-v-passaporte": { reviewCount: 1 },
         },
-        sources: [],
-      }),
-    );
+      },
+      sources: [],
+    });
     const scenario = scenarioAt("A1", ["a1-1-v-bilhete", "a1-1-v-passaporte"]);
     render(
       <AuthProvider>
@@ -175,8 +194,10 @@ describe("ScenarioPlayer — adaptive difficulty (#48)", () => {
 
   it("falls back to all-unknown when the SRS state endpoint fails", async () => {
     seedUser("A0");
-    fetchMock.mockResolvedValue(
-      new Response(JSON.stringify({ ok: false, error: "boom" }), { status: 500 }),
+    mockEndpoint(
+      "/api/srs/state",
+      { ok: false, error: "boom" },
+      500,
     );
     const scenario = scenarioAt("A1", ["a1-1-v-bilhete"]);
     render(

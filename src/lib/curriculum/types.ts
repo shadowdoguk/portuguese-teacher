@@ -105,6 +105,18 @@ export type Scenario = {
   }>;
   successCriteria: ReadonlyArray<string>;
   passingScore: number;
+  /**
+   * Audio asset IDs for the pre-task briefing. The TTS pipeline
+   * (issue #26) generates these at build-time; the ScenarioPlayer
+   * reads them to play the briefing aloud (issue #45). All three are
+   * optional — when unset, the player falls back to deriving a
+   * deterministic asset ID from the scenario ID + field name so the
+   * v1 audio assets stay addressable even when seed data is missing
+   * the explicit IDs.
+   */
+  preTaskAudioAssetId?: string;
+  goalAudioAssetId?: string;
+  settingAudioAssetId?: string;
 };
 
 export type PracticeExercise = {

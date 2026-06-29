@@ -2,7 +2,7 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-29 (Session 5 closed — PR #87 (#19) + PR #88 (#38) + PR #89 (#13) all merged into main; main now at 721/721 tests + 9/9 axe + `pnpm perf:budget` clean + `pnpm asr:regress` clean (CI gate); 9 ready-for-agent issues remain)
+**Last updated:** 2026-06-29 (Session 6 in progress — #37 PR #90 open + #36 PR #91 open + #45 Real MiniMax TTS audio for scenario briefings on branch `feat/issue-45-scenario-briefing-tts` (local: 747/747 tests + 9/9 axe + perf:budget + asr:regress + build all green))
 
 ## Session 5 picks shipped
 
@@ -51,11 +51,14 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 
 ## In progress
 
-- _Empty — Session 5 closed; PR #87 + #88 + #89 merged into main. Main is at the new floor (721/721 tests + 9/9 axe + perf:budget + asr:regress + build all green)._
+- **#45** Real MiniMax TTS audio for scenario briefings — branch `feat/issue-45-scenario-briefing-tts` (local: 747/747 tests + 9/9 axe + perf:budget + asr:regress + build all green). PR open pending.
 
 ## Issues status
 
-### Closed (this session — Session 5)
+### Closed (this session — Session 6)
+- (none — branches green, PRs open pending review)
+
+### Closed (Session 5)
 - **#19** Pronunciation Score phoneme-distance endpoint — merged via #87
 - **#38** ASR language-model biasing per current Unit vocabulary — merged via #88
 - **#13** ASR accuracy regression test suite — merged via #89
@@ -102,6 +105,11 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 
 ## PRs
 
+### Open — Session 6 (CI-green locally, awaiting review/merge)
+- **feat/issue-45-scenario-briefing-tts** Real MiniMax TTS audio for scenario briefings (#45)
+- **#91** feat(observability): per-stage Voice Loop latency SLI dashboards + p95 alert (#36)
+- **#90** feat(voice-loop): Pronunciation Score wiring — formula regression pin + bias-side normalisation fix + route-level integration test (#37)
+
 ### Open — Session 4 picks (CI-green, awaiting review/merge)
 - **#85** feat(perf): per-route bundle budgets + LHCI on main + bundle analyzer (#11)
 
@@ -130,6 +138,9 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 - **#20** MiniMax wrappers · **#55** Learner UI · **#61** A/B docs · **#62** curriculum model · **#63** Prisma schema · **#64** A0 seed A0.4 · **#65** SRS · **#66** Proficiency · **#67** Placement runtime · **#68** Affective Filter · **#69** Voice Loop · **#70** Difficulty pipeline · **#71** Vocab fixture · **#72** Live harness · **#73** Rerank orchestrator · **#74** Practice UI.
 
 ## Decisions log
+
+- **2026-06-29 — Scenario briefing audio is one synthesized sentence with captions overlaid in canonical playback order (issue #45).** The ScenarioBriefingPlayer concatenates `goal + ". " + setting + ". " + preTask` into one TTS request (reusing the `useTeacherAudio` hook from #39) so the audio is a single, continuous utterance with natural sentence-boundary pauses. Captions render in three list items (`BRIEFING_FIELD_ORDER = ["goal", "setting", "preTask"]`) and the active field is highlighted via a `requestAnimationFrame` walk over `audio.currentTime` apportioning the total `durationMs` across the three segments. This is word-position-approximate, not word-perfect — the TTS engine doesn't expose word timestamps — but it puts the right caption in sync for the learner at this stage. Asset IDs are `scenario-<scenarioId>-<field>` when the seed doesn't set explicit IDs, and the pipeline (`walkScenarioBriefing` in `tts-pipeline.ts`) emits matching files at `pnpm assets:tts` time. Branch `feat/issue-45-scenario-briefing-tts`.
+- **2026-06-29 — Replay shortcut is `R` and is suppressed when the Learner is typing in an input/textarea (issue #45, a11y cross-ref #10).** The ScenarioBriefingPlayer's region carries `aria-keyshortcuts="R"` so assistive tech announces the shortcut, and the keydown handler ignores events whose target is `INPUT` / `TEXTAREA` / `[contenteditable]`. The replay button is the click equivalent for non-keyboard / accessibility-tool users; it stays disabled while the audio is `loading` / `idle` / `degraded` / `error`. Branch `feat/issue-45-scenario-briefing-tts`.
 
 - **2026-06-29 — ASR regression suite runs against a deterministic synthetic simulator (issue #13, v1 slice).** Without a real pt-PT audio corpus + live MiniMax creds, the v1 slice of the regression suite uses a deterministic ASR simulator (`src/lib/asr/simulator.ts`) seeded by `(bucket, utteranceId)` via Mulberry32 over a 50-utterance synthetic pt-PT corpus (`scripts/asr-regress-corpus.json`). The simulator models per-word verbatim rate (98 % clean, 94 % noisy), hotword biasing (→ 99.5 %), and a small substitution / deletion / insertion error pool. The runner's job is to verify (a) the corpus structure, (b) the WER math (back-pointer-tracked DP in `src/lib/asr/wer.ts`), (c) the hotword biasing seam, and (d) the regression alarm logic — not to catch production ASR drift directly. The production WER feed from #16/#35 (SC-5 Sampling Buffer) is the real production regression path; this is the minimum-viable CI gate that catches regressions in the wire format + the WER computation + the biasing seam deterministically. PR #89.
 - **2026-06-29 — Hotwords serialised as a JSON-encoded array on the multipart form (issue #38).** The MiniMax ASR API accepts a `hotwords` field on the multipart body. JSON-encoding the array server-side keeps the wire shape consistent regardless of how the caller assembles the list and sidesteps the `FormData.append` per-value-only constraint. Empty arrays drop the field entirely (no need to send `"hotwords": "[]"`). The mock applies a deterministic per-word confidence boost (0.95 → 0.98) when a transcribed word overlaps with the hotwords set, so the regression suite can verify the biasing seam without a live ASR endpoint. PR #88.
