@@ -2,11 +2,12 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-29 (Session 4 — fixed the PR #83 route-export build break (transcribeFromForm → src/lib/asr/transcribe), merged #83 and #84 into main; main now at 588/588 tests + 8/8 axe tests, 12 ready-for-agent issues remain; #11 Lighthouse CI up next)
+**Last updated:** 2026-06-29 (Session 4 — fixed the PR #83 route-export build break (transcribeFromForm → src/lib/asr/transcribe), merged #83 + #84 into main (588/588 + 8/8 axe), shipped #11 perf budgets + LHCI (PR #85, +19 tests on the branch); 607/607 on the #11 branch, 12 ready-for-agent issues remain)
 
 ## Session 4 picks shipped
 
 - **PR #83 build break fixed + merge** — `transcribeFromForm` (and `AsrTranscribeResponse` / `AsrTranscribeDeps`) extracted from the route file into `src/lib/asr/transcribe.ts`. Next.js route files only allow `GET`/`POST`/`runtime` + type exports; the extra value export `transcribeFromForm` was passing `tsc` and the test suite but failing `next build`'s route-type check. Rebased PR #84 onto the fix and re-ran CI; both green. `gh pr merge --squash --delete-branch` for #83 then #84. Main jumped 558 → 580 → 588; `pnpm test:a11y` added (8/8 green). Decisions log entry added for the route export-shape rule.
+- **#11 Per-route bundle budgets + LHCI on main + bundle analyzer (PR #85)** — `pnpm perf:budget` (`scripts/perf-budget.ts` + 19 unit tests at `scripts/perf-budget.test.ts`) reads `.next/app-build-manifest.json`, sums **gzipped** JS+CSS bytes per page route, asserts against `PER_ROUTE_BUDGETS` (100 kB public / 110 kB auth / 130 kB app), and compares against `.lighthouseci/bundle-baseline.json` flagging >10% regressions. Wired into `ci.yml`'s verify job so every PR gets a deterministic bundle alarm in ~50 ms. Lighthouse CI runs on every `main` push and nightly cron (`.github/workflows/lighthouse.yml` + `lighthouserc.json`) auditing the four public top-level routes; asserts Performance ≥ 0.95, FCP ≤ 1.5 s, LCP ≤ 2 s, TTI ≤ 2 s, CLS ≤ 0.1. `@next/bundle-analyzer@14.2.35` wired into `next.config.mjs` behind `ANALYZE=true` (`pnpm perf:analyze`). `docs/perf-budget.md` is the budget contract. 607/607 tests on the branch; baseline committed (14 routes, all under budget, /practice is heaviest at 116.6 kB gzipped).
 
 ## Session 3 picks shipped
 
@@ -43,7 +44,7 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 
 ## In progress
 
-- **#11** Performance budgets + Lighthouse CI — picking up this session.
+- **#11** (PR #85) Performance budgets + Lighthouse CI — `feat/issue-11-perf-budgets-lighthouse`, CI-green (607/607), awaiting review/merge.
 
 ## Issues status
 
@@ -80,7 +81,6 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 - **#19** Pronunciation Score phoneme-distance endpoint (work on stale `feat/issue-19-pronunciation-score-endpoint` branch — needs a PR)
 
 ### Open — Phase 5 NFRs
-- **#11** Performance budgets + Lighthouse CI
 - **#13** ASR accuracy regression test suite
 - **#14** Cross-device compatibility smoke tests
 - **#16** SC-5 Sampling Buffer infra (depends on #5, #13)
@@ -93,6 +93,9 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 - **#45** Real MiniMax TTS audio for scenario briefings
 
 ## PRs
+
+### Open — Session 4 picks (CI-green, awaiting review/merge)
+- **#85** feat(perf): per-route bundle budgets + LHCI on main + bundle analyzer (#11)
 
 ### Merged this session (Session 4)
 - **#83** feat(voice-loop): Tier 1 (Web Speech API) + Tier 2 (MediaRecorder) audio capture (#33)
@@ -115,6 +118,8 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 
 ## Decisions log
 
+- **2026-06-29 — Per-route bundle budgets use gzipped bytes (issue #11).** Next.js reports "First Load JS" as the gzipped size; matching the budgets to the same unit (and to what users actually download on a slow network) keeps the alarm actionable. `sumFileBytes` defaults to `gzip: true`; `scripts/perf-budget.test.ts` opts out via `{ gzip: false }` to keep the assertions deterministic on highly-compressible fixtures (`'x'.repeat(N)`). The committed baseline at `.lighthouseci/bundle-baseline.json` is gzipped bytes keyed by route. Tune `PER_ROUTE_BUDGETS` in `scripts/perf-budget.ts` if a route starts creeping toward its cap. PR #85.
+- **2026-06-29 — Bundle budget alarm runs on every PR; LHCI runs only on `main` + nightly.** `pnpm perf:budget` is deterministic and ~50 ms, so it's wired into `ci.yml`'s verify job as a required check. Lighthouse CI spins up Chromium and serves a real build (`pnpm start`), so it runs on `main` push + nightly cron (06:00 UTC) + `workflow_dispatch`. The "any regression > 10 % blocks merge" acceptance criterion is satisfied by the bundle alarm — LHCI provides the FCP/LCP/TTI/CLS gates. PR #85.
 - **2026-06-29 — Next.js route files only accept specific export fields (issue #33).** `transcribeFromForm` (and the response/dep types) were originally colocated with the route handler so jsdom's missing `Request` FormData polyfill wouldn't block the integration test. `tsc --noEmit` and the vitest run were happy with the extra value export, but `next build`'s route-type check rejected it: `"transcribeFromForm" is not a valid Route export field`. The fix was to extract the helper + types into `src/lib/asr/transcribe.ts` and have the route import them. Lesson: keep route files minimal (only `runtime`, `GET`/`POST`/`PUT`/`DELETE` handlers, and inline types). Helpers and shared types belong in `src/lib/`. This was the root cause of both PR #83 and PR #84 CI failures. PRs #83 and #84.
 - **2026-06-29 — Tier 1+2 audio capture uses dependency-injected browser APIs (issue #33).** `createWebSpeechSession` and `createMediaRecorderSession` in `src/lib/voice-loop/capture.ts` take `SpeechRecognition` / `MediaRecorder` / `AudioContext` / `getUserMedia` as constructor-time deps (no globals reach into the module). This makes the entire capture state machine unit-testable in jsdom with fake constructors — no `canvas` polyfill, no happy-dom shim. The state machine is `idle → requesting-permission → listening → idle`, with terminal `denied` / `unsupported` / `error` paths. Silence detection (Tier 2) uses an `AnalyserNode` (fftSize 1024, 80 ms poll) and arms a 600 ms `setTimeout`; default amplitude threshold 0.01 (overridable). The Tier 1 path sends the Web Speech API final transcript directly to the orchestrator; Tier 2 always goes through `POST /api/asr/transcribe` for the canonical transcript. The /api/asr/transcribe route extracts its logic into a pure `transcribeFromForm(form, deps)` helper so jsdom's `Request` FormData polyfill gap doesn't block the integration test (the helper takes the parsed `FormData` directly, while the route handles the request-level multipart parsing). `useVoiceCapture` polls the session state every 120 ms for cheap re-renders and auto-aborts on unmount. PR #83.
 - **2026-06-29 — `Card` gets a `titleAs` prop (issue #10).** Default stays `h3` for backward compatibility, but consumers that use Card as a top-level page section pass `titleAs="h2"` so the heading order stays `h1 → h2 → h3`. The first consumer is `PracticeSession` (the Live turn + i+1 difficulty Cards), but any future top-level Card can opt in the same way. Axe-core flagged the previous `h1 → h3` jump as a heading-order violation; the fix is mechanical and per-component. PR #84.
@@ -134,6 +139,7 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 
 - **§10 sign-off on ADR-0003 + amended requirements doc** — Product, Pedagogy, Engineering leads. Work proceeds in parallel since the spec is captured in code; this gates release, not development.
 - **Live MiniMax LLM credentials** for #42's ≥75% in-band acceptance target (ADR-0004 §8). Sandbox creds provisioning blocks the production-WER acceptance run; the harness + CLI are wired and tested with mocks.
+- **PR review + merge of #85** — the LHCI on `main` and bundle alarm on every PR unblock once this lands; the alarm becomes part of `verify` and the LHCI gate fires on the next `main` push.
 
 ## Conventions reminder
 
