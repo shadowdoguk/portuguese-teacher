@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
 import { getMiniMaxClients, isMockMode } from "@/lib/minimax";
 import { transcribeFromForm, type AsrTranscribeResponse } from "@/lib/asr/transcribe";
+import { unitBiasingVocabulary } from "@/lib/asr/biasing";
 
 export const runtime = "nodejs";
+
+let prismaSingleton: PrismaClient | null = null;
+function prisma(): PrismaClient {
+  if (!prismaSingleton) prismaSingleton = new PrismaClient();
+  return prismaSingleton;
+}
 
 export async function POST(request: Request): Promise<NextResponse<AsrTranscribeResponse>> {
   const contentType = request.headers.get("content-type") ?? "";
@@ -24,5 +32,6 @@ export async function POST(request: Request): Promise<NextResponse<AsrTranscribe
   return transcribeFromForm(form, {
     transcriber: (blob, options) => clients.asr.transcribe(blob, options),
     isMock: () => isMockMode() || clients.mock,
+    resolveBiasing: (unitId) => unitBiasingVocabulary(unitId, { prisma: prisma() }),
   });
 }

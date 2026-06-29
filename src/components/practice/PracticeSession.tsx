@@ -7,6 +7,7 @@ import { FeedbackOverlay } from "@/components/practice/FeedbackOverlay";
 import { TeacherBubble } from "@/components/practice/TeacherBubble";
 import { TierBadge } from "@/components/practice/TierBadge";
 import { useVoiceCapture, type UseVoiceCaptureResult } from "@/hooks/useVoiceCapture";
+import { useAuth } from "@/lib/auth/useAuth";
 import { useSettings } from "@/lib/settings";
 import {
   DEFAULT_DIFFICULTY_TARGET,
@@ -67,6 +68,9 @@ type AsrApiResponse =
       languageDetected: string;
       words: ReadonlyArray<{ word: string; confidence: number; startMs: number; endMs: number }>;
       mock: boolean;
+      lowConfidence: boolean;
+      biasingApplied: boolean;
+      biasingSize: number;
     }
   | {
       ok: false;
@@ -79,6 +83,8 @@ const PUSH_TO_TALK_KEY = " ";
 
 export function PracticeSession() {
   const { settings } = useSettings();
+  const { user } = useAuth();
+  const unitId = user?.currentUnitId;
   const [capabilities, setCapabilities] = useState<VoiceLoopTierCapabilities | null>(null);
   const [practiceMode, setPracticeMode] = useState<PracticeMode>("free-form");
   const [difficulty, setDifficulty] = useState<DifficultyState>(() =>
@@ -89,6 +95,10 @@ export function PracticeSession() {
   const [error, setError] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [pushToTalkHeld, setPushToTalkHeld] = useState(false);
+  const [lowConfidenceNotice, setLowConfidenceNotice] = useState<{
+    transcript: string;
+    confidence: number;
+  } | null>(null);
   const holdStateRef = useRef(false);
 
   useEffect(() => {
@@ -147,6 +157,7 @@ export function PracticeSession() {
       const form = new FormData();
       form.append("audio", audioBlob, "utterance.webm");
       form.append("lang", "pt-PT");
+      if (unitId) form.append("unitId", unitId);
       const res = await fetch("/api/asr/transcribe", {
         method: "POST",
         body: form,
@@ -155,9 +166,17 @@ export function PracticeSession() {
       if (!body.ok) {
         throw new Error(body.degradedReason ?? body.error ?? "ASR failed");
       }
+      if (body.lowConfidence) {
+        setLowConfidenceNotice({
+          transcript: body.text,
+          confidence: body.confidence,
+        });
+        throw new Error("lowConfidence");
+      }
+      setLowConfidenceNotice(null);
       return body.text;
     },
-    [],
+    [unitId],
   );
 
   const handleGrade = useCallback(
@@ -187,6 +206,7 @@ export function PracticeSession() {
 
   const startListening = useCallback(async () => {
     if (!useAudio) return;
+    setLowConfidenceNotice(null);
     try {
       await voiceCapture.start();
     } catch (err) {
@@ -203,6 +223,8 @@ export function PracticeSession() {
         try {
           transcript = await sendAudioCanonical(result.audioBlob);
         } catch (err) {
+          // Low-confidence has its own surface; don't double-render the generic error.
+          if (err instanceof Error && err.message === "lowConfidence") return;
           setError(err instanceof Error ? err.message : "ASR failed");
           return;
         }
@@ -328,6 +350,21 @@ export function PracticeSession() {
                 >
                   Microphone permission denied. Allow microphone access in your browser settings, or
                   use the text fallback below.
+                </p>
+              ) : null}
+              {lowConfidenceNotice ? (
+                <p
+                  className="text-sm text-terracotta-deep"
+                  data-testid="low-confidence"
+                  role="alert"
+                >
+                  We heard{" "}
+                  <span lang="pt-PT" className="font-display">
+                    &ldquo;{lowConfidenceNotice.transcript}&rdquo;
+                  </span>{" "}
+                  but it wasn&rsquo;t clear enough to score (confidence{" "}
+                  {(lowConfidenceNotice.confidence * 100).toFixed(0)}%). Press the mic to try again,
+                  or type your reply in the text fallback below.
                 </p>
               ) : null}
               <div

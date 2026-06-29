@@ -27,6 +27,18 @@ describe("MockMiniMaxASR", () => {
     expect(result.languageDetected).toBe("pt-PT");
     expect(result.words.length).toBeGreaterThan(0);
   });
+
+  it("boosts per-word + aggregate confidence when a transcribed word matches a hotword", async () => {
+    const asr = new MockMiniMaxASR();
+    const baseline = await asr.transcribe(new Blob(["x".repeat(10)]), { lang: "pt-PT" });
+    const biased = await asr.transcribe(new Blob(["x".repeat(10)]), {
+      lang: "pt-PT",
+      hotwords: ["mock"],
+    });
+    expect(biased.confidence).toBeGreaterThan(baseline.confidence);
+    const biasedMock = biased.words.find((w) => w.word === "mock");
+    expect(biasedMock?.confidence).toBeGreaterThan(0.95);
+  });
 });
 
 describe("MockMiniMaxTTS", () => {

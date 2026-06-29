@@ -52,6 +52,7 @@ function makeDeps(overrides: Partial<AsrTranscribeDeps> = {}): AsrTranscribeDeps
       overrides.transcriber ??
       (async (_audio: Blob, _options: AsrTranscribeOptions) => FAKE_RESULT),
     isMock: overrides.isMock ?? (() => true),
+    resolveBiasing: overrides.resolveBiasing,
   };
 }
 
@@ -129,6 +130,9 @@ describe("transcribeFromForm (pure logic)", () => {
       languageDetected: string;
       words: ReadonlyArray<{ word: string; confidence: number; startMs: number; endMs: number }>;
       mock: boolean;
+      lowConfidence: boolean;
+      biasingApplied: boolean;
+      biasingSize: number;
     };
     expect(body.ok).toBe(true);
     expect(body.text).toBe("olá");
@@ -137,6 +141,9 @@ describe("transcribeFromForm (pure logic)", () => {
     expect(body.words).toEqual([
       { word: "olá", confidence: 0.95, startMs: 0, endMs: 400 },
     ]);
+    expect(body.lowConfidence).toBe(false);
+    expect(body.biasingApplied).toBe(false);
+    expect(body.biasingSize).toBe(0);
   });
 
   it("emits a degradation event and returns degraded when the transcriber throws transiently", async () => {
@@ -191,6 +198,127 @@ describe("transcribeFromForm (pure logic)", () => {
     const res = await transcribeFromForm(form, deps);
     const body = (await res.json()) as { mock: boolean };
     expect(body.mock).toBe(false);
+  });
+});
+
+describe("transcribeFromForm — biasing + low-confidence", () => {
+  it("passes resolved hotwords to the transcriber when resolveBiasing returns present: true", async () => {
+    const capture: { options: AsrTranscribeOptions | null } = { options: null };
+    const deps = makeDeps({
+      transcriber: async (_audio, options) => {
+        capture.options = options;
+        return FAKE_RESULT;
+      },
+      resolveBiasing: async (unitId) => ({
+        unitId,
+        words: ["café", "leite"],
+        present: true,
+      }),
+    });
+    const form = new FormData();
+    form.append("audio", new Blob([new Uint8Array(2048)], { type: "audio/webm" }), "u.webm");
+    form.append("lang", "pt-PT");
+    form.append("unitId", "unit-cafe");
+    const res = await transcribeFromForm(form, deps);
+    expect(res.status).toBe(200);
+    expect(capture.options?.hotwords).toEqual(["café", "leite"]);
+    const body = (await res.json()) as {
+      biasingApplied: boolean;
+      biasingSize: number;
+    };
+    expect(body.biasingApplied).toBe(true);
+    expect(body.biasingSize).toBe(2);
+  });
+
+  it("does not pass hotwords when resolveBiasing returns present: false", async () => {
+    const capture: { options: AsrTranscribeOptions | null } = { options: null };
+    const deps = makeDeps({
+      transcriber: async (_audio, options) => {
+        capture.options = options;
+        return FAKE_RESULT;
+      },
+      resolveBiasing: async (unitId) => ({ unitId, words: [], present: false }),
+    });
+    const form = new FormData();
+    form.append("audio", new Blob([new Uint8Array(2048)], { type: "audio/webm" }), "u.webm");
+    form.append("lang", "pt-PT");
+    form.append("unitId", "unit-empty");
+    const res = await transcribeFromForm(form, deps);
+    expect(capture.options?.hotwords).toBeUndefined();
+    const body = (await res.json()) as {
+      biasingApplied: boolean;
+      biasingSize: number;
+    };
+    expect(body.biasingApplied).toBe(false);
+    expect(body.biasingSize).toBe(0);
+  });
+
+  it("does not pass hotwords when no unitId is in the form", async () => {
+    const capture: { options: AsrTranscribeOptions | null } = { options: null };
+    const resolveCalls: string[] = [];
+    const deps = makeDeps({
+      transcriber: async (_audio, options) => {
+        capture.options = options;
+        return FAKE_RESULT;
+      },
+      resolveBiasing: async (unitId) => {
+        resolveCalls.push(unitId);
+        return { unitId, words: ["café"], present: true };
+      },
+    });
+    const form = new FormData();
+    form.append("audio", new Blob([new Uint8Array(2048)], { type: "audio/webm" }), "u.webm");
+    form.append("lang", "pt-PT");
+    await transcribeFromForm(form, deps);
+    expect(resolveCalls).toEqual([]);
+    expect(capture.options?.hotwords).toBeUndefined();
+  });
+
+  it("ignores blank unitId strings and does not call resolveBiasing", async () => {
+    let resolveCalls = 0;
+    const capture: { options: AsrTranscribeOptions | null } = { options: null };
+    const deps = makeDeps({
+      transcriber: async (_audio, options) => {
+        capture.options = options;
+        return FAKE_RESULT;
+      },
+      resolveBiasing: async () => {
+        resolveCalls += 1;
+        return { unitId: "", words: ["x"], present: true };
+      },
+    });
+    const form = new FormData();
+    form.append("audio", new Blob([new Uint8Array(2048)], { type: "audio/webm" }), "u.webm");
+    form.append("lang", "pt-PT");
+    form.append("unitId", "   ");
+    await transcribeFromForm(form, deps);
+    expect(resolveCalls).toBe(0);
+    expect(capture.options?.hotwords).toBeUndefined();
+  });
+
+  it("flags lowConfidence=true when the aggregate confidence is below 0.6", async () => {
+    const deps = makeDeps({
+      transcriber: async () => ({ ...FAKE_RESULT, confidence: 0.42 }),
+    });
+    const form = new FormData();
+    form.append("audio", new Blob([new Uint8Array(2048)], { type: "audio/webm" }), "u.webm");
+    form.append("lang", "pt-PT");
+    const res = await transcribeFromForm(form, deps);
+    const body = (await res.json()) as { lowConfidence: boolean; confidence: number };
+    expect(body.lowConfidence).toBe(true);
+    expect(body.confidence).toBe(0.42);
+  });
+
+  it("flags lowConfidence=false at exactly 0.6", async () => {
+    const deps = makeDeps({
+      transcriber: async () => ({ ...FAKE_RESULT, confidence: 0.6 }),
+    });
+    const form = new FormData();
+    form.append("audio", new Blob([new Uint8Array(2048)], { type: "audio/webm" }), "u.webm");
+    form.append("lang", "pt-PT");
+    const res = await transcribeFromForm(form, deps);
+    const body = (await res.json()) as { lowConfidence: boolean };
+    expect(body.lowConfidence).toBe(false);
   });
 });
 

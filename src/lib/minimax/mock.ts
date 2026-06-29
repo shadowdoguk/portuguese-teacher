@@ -42,15 +42,21 @@ export class MockMiniMaxASR {
   ): Promise<AsrTranscribeResult> {
     const size = audio.size;
     const words = ["mock", "transcript", options.lang, String(size)];
+    const biasSet = new Set(
+      (options.hotwords ?? []).map((w) => w.toLowerCase().trim()).filter(Boolean),
+    );
+    const wordEntries = words.map((word, i) => {
+      const isBiased = biasSet.has(word.toLowerCase());
+      const confidence = isBiased ? 0.98 : 0.95;
+      return { word, start: i * 0.4, end: (i + 1) * 0.4, confidence };
+    });
+    const aggregate = wordEntries.length === 0
+      ? 0.95
+      : wordEntries.reduce((acc, w) => acc + w.confidence, 0) / wordEntries.length;
     return {
       text: words.join(" "),
-      words: words.map((word, i) => ({
-        word,
-        start: i * 0.4,
-        end: (i + 1) * 0.4,
-        confidence: 0.95,
-      })),
-      confidence: 0.95,
+      words: wordEntries,
+      confidence: aggregate,
       languageDetected: options.lang,
     };
   }
