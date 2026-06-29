@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "takenAt": "2026-06-29T08:45:17.690Z",
+  "buildId": "hYSkVnxDNWpFCk59kj0l-",
+  "entries": {
+    "/": {
+      "firstLoadJsBytes": 94139,
+      "firstLoadCssBytes": 0,
+      "totalAssetsBytes": 94139
+    },
+    "/accessibility": {
+      "firstLoadJsBytes": 87300,
+      "firstLoadCssBytes": 0,
+      "totalAssetsBytes": 87300
+    },
+    "/assess/[boundary]": {
+      "firstLoadJsBytes": 112338,
+      "firstLoadCssBytes": 0,
+      "totalAssetsBytes": 112338
+    },
+    "/confidence": {
+      "firstLoadJsBytes": 100317,
+      "firstLoadCssBytes": 0,
+      "totalAssetsBytes": 100317
+    },
+    "/dashboard": {
+      "firstLoadJsBytes": 107487,
+      "firstLoadCssBytes": 0,
+      "totalAssetsBytes": 107487
+    },
+    "/lesson/[lessonId]": {
+      "firstLoadJsBytes": 108883,
+      "firstLoadCssBytes": 0,
+      "totalAssetsBytes": 108883
+    },
+    "/log-in": {
+      "firstLoadJsBytes": 96762,
+      "firstLoadCssBytes": 0,
+      "totalAssetsBytes": 96762
+    },
+    "/placement": {
+      "firstLoadJsBytes": 107381,
+      "firstLoadCssBytes": 0,
+      "totalAssetsBytes": 107381
+    },
+    "/practice": {
+      "firstLoadJsBytes": 119432,
+      "firstLoadCssBytes": 0,
+      "totalAssetsBytes": 119432
+    },
+    "/profile": {
+      "firstLoadJsBytes": 106753,
+      "firstLoadCssBytes": 0,
+      "totalAssetsBytes": 106753
+    },
+    "/progress": {
+      "firstLoadJsBytes": 109794,
+      "firstLoadCssBytes": 0,
+      "totalAssetsBytes": 109794
+    },
+    "/review": {
+      "firstLoadJsBytes": 102145,
+      "firstLoadCssBytes": 0,
+      "totalAssetsBytes": 102145
+    },
+    "/settings": {
+      "firstLoadJsBytes": 93894,
+      "firstLoadCssBytes": 0,
+      "totalAssetsBytes": 93894
+    },
+    "/sign-up": {
+      "firstLoadJsBytes": 97506,
+      "firstLoadCssBytes": 0,
+      "totalAssetsBytes": 97506
+    }
+  }
+}
