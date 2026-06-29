@@ -298,3 +298,23 @@ model ScenarioProgress {
   @@id([learnerId, scenarioId])
   @@index([learnerId])
 }
+
+// Append-only Voice Loop latency sample. One row per stage emission from
+// `withLatencyMetric` (server-side: asr / llm / tts / rerank / pronunciation)
+// and from the client-side turn latency tracker (client.eos / client.upload /
+// client.total). Powers the per-stage SLI dashboards + the p95 > 1.5 s alert
+// (issue #36, ADR-0002 §"Latency budget").
+model VoiceLoopLatencySample {
+  id           String   @id @default(cuid())
+  stage        String   // LatencyStage
+  latencyMs    Int
+  occurredAt   DateTime @default(now())
+  ok           Boolean  @default(true)
+  learnerId    String?
+  tier         Int?
+  practiceMode String?
+
+  @@index([occurredAt])
+  @@index([stage, occurredAt])
+  @@index([learnerId, occurredAt])
+}

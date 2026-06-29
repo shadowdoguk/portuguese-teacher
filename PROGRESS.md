@@ -2,7 +2,7 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-29 (Session 6 in progress — #37 Pronunciation Score wiring on branch `feat/issue-37-pronunciation-score-wiring`; PR **#90** open; 750/750 tests + 9/9 axe + perf:budget + asr:regress + build all green locally)
+**Last updated:** 2026-06-29 (Session 6 close-out — #37 PR #90 merged into main; #36 PR #91 + #45 PR #92 staged for merge)
 
 ## Session 6 picks in flight
 
@@ -55,7 +55,7 @@ Content authoring is the biggest remaining block. After #37 lands, **#36** (per-
 
 ## In progress
 
-- **#37** Pronunciation Score wiring — branch `feat/issue-37-pronunciation-score-wiring`, PR **#90** open (local: 750/750 tests + 9/9 axe + perf:budget + asr:regress + build all green).
+- _Empty — #37 PR #90 + #36 PR #91 + #45 PR #92 staged for merge (Session 6 close-out)._
 
 ## Issues status
 

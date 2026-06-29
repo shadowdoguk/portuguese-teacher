@@ -19,12 +19,47 @@ export type SrsRecallObservabilityEvent = {
 
 export type VoiceLoopStage = "asr" | "llm" | "tts" | "rerank" | "pronunciation";
 
+/**
+ * Extended latency-stage taxonomy for the SLI dashboard (issue #36).
+ *
+ * The server-side stages (`asr | llm | tts | rerank | pronunciation`) are
+ * emitted by `withLatencyMetric` in `src/lib/minimax/types.ts`. The
+ * client-side stages (`client.eos | client.upload | client.total`) are
+ * emitted by the Voice Loop turn tracker on the browser; they're flushed
+ * to the same pipeline alongside the server-side events so the dashboard
+ * shows the end-to-end timing.
+ *
+ * `client.eos`   — Tier 1 end-of-speech detection window.
+ * `client.upload` — Tier 1/2 audio blob upload to `/api/asr/transcribe`.
+ * `client.total`  — End-of-Learner-speech → start-of-teacher-speech (the
+ *                    1.5 s p95 budget per ADR-0002 §"Latency budget").
+ */
+export type LatencyStage =
+  | VoiceLoopStage
+  | "client.eos"
+  | "client.upload"
+  | "client.total";
+
+export const LATENCY_STAGES: ReadonlyArray<LatencyStage> = [
+  "asr",
+  "llm",
+  "tts",
+  "rerank",
+  "pronunciation",
+  "client.eos",
+  "client.upload",
+  "client.total",
+];
+
 export type VoiceLoopLatencyEvent = {
   kind: "voice_loop_latency";
   occurredAt: number;
-  stage: VoiceLoopStage;
+  stage: LatencyStage;
   latencyMs: number;
+  ok?: boolean;
   learnerId?: string;
+  tier?: 1 | 2 | 3;
+  practiceMode?: "free-form" | "scenario" | "drill";
 };
 
 export type VoiceLoopErrorEvent = {

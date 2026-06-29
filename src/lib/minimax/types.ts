@@ -1,4 +1,5 @@
 import { getObservabilitySink } from "@/lib/observability/sink";
+import type { LatencyStage } from "@/lib/observability/sink";
 
 export type LlmRole = "system" | "user" | "assistant";
 
@@ -100,7 +101,7 @@ export type PronunciationScoreResult = {
 
 export type LatencyLog = {
   type: "minimax_latency";
-  endpoint: "llm" | "asr" | "tts" | "pronunciation";
+  endpoint: LatencyStage;
   durationMs: number;
   ok: boolean;
 };
@@ -122,13 +123,14 @@ const defaultLatencySink: LatencySink = (entry) => {
   getObservabilitySink().emit({
     kind: "voice_loop_latency",
     occurredAt: Date.now(),
-    stage: entry.endpoint,
+    stage: entry.endpoint as LatencyStage,
     latencyMs: entry.durationMs,
+    ok: entry.ok,
   });
 };
 
 export async function withLatencyMetric<T>(
-  endpoint: "llm" | "asr" | "tts" | "pronunciation",
+  endpoint: LatencyStage,
   fn: () => Promise<T>,
   sink: LatencySink = defaultLatencySink,
 ): Promise<T> {
