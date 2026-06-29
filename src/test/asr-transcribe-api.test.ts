@@ -5,11 +5,11 @@ import {
   resetObservabilitySink,
   setObservabilitySink,
 } from "@/lib/observability/sink";
+import { POST as postTranscribe } from "@/app/api/asr/transcribe/route";
 import {
-  POST as postTranscribe,
   transcribeFromForm,
   type AsrTranscribeDeps,
-} from "@/app/api/asr/transcribe/route";
+} from "@/lib/asr/transcribe";
 import type {
   AsrTranscribeResult,
   AsrTranscribeOptions,
