@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "takenAt": "2026-06-29T08:45:17.690Z",
-  "buildId": "hYSkVnxDNWpFCk59kj0l-",
+  "takenAt": "2026-06-29T13:36:00.000Z",
+  "buildId": "issue-36-voice-loop-sli",
   "entries": {
     "/": {
       "firstLoadJsBytes": 94139,
@@ -12,6 +12,11 @@
       "firstLoadJsBytes": 87300,
       "firstLoadCssBytes": 0,
       "totalAssetsBytes": 87300
+    },
+    "/dashboards/voice-loop-latency": {
+      "firstLoadJsBytes": 89500,
+      "firstLoadCssBytes": 0,
+      "totalAssetsBytes": 89500
     },
     "/assess/[boundary]": {
       "firstLoadJsBytes": 112338,
