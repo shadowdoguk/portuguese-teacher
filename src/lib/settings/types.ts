@@ -1,3 +1,6 @@
+import type { RetrievalMode } from "./retrieval";
+import { DEFAULT_RETRIEVAL_MODE, isRetrievalMode } from "./retrieval";
+
 export type CFTiming = "immediate" | "end-of-conversation";
 
 export type CaptionsPref = "on" | "off";
@@ -10,6 +13,7 @@ export type Settings = {
   captions: CaptionsPref;
   reducedMotion: ReducedMotionPref;
   textOnlyMode: boolean;
+  retrievalMode: RetrievalMode;
   voiceRecordingOptIn: boolean;
   confidenceCheckinOptIn: boolean;
   weeklyGoalMinutes: number;
@@ -21,6 +25,7 @@ export const DEFAULT_SETTINGS: Settings = {
   captions: "on",
   reducedMotion: "auto",
   textOnlyMode: false,
+  retrievalMode: DEFAULT_RETRIEVAL_MODE,
   voiceRecordingOptIn: false,
   confidenceCheckinOptIn: false,
   weeklyGoalMinutes: 105,
@@ -48,6 +53,10 @@ export function applySettingsPatch(base: Settings, patch: SettingsPatch): Settin
     ...patch,
     voiceSpeed:
       patch.voiceSpeed !== undefined ? clampVoiceSpeed(patch.voiceSpeed) : base.voiceSpeed,
+    retrievalMode:
+      patch.retrievalMode !== undefined && isRetrievalMode(patch.retrievalMode)
+        ? patch.retrievalMode
+        : base.retrievalMode,
     weeklyGoalMinutes:
       patch.weeklyGoalMinutes !== undefined
         ? clampWeeklyGoal(patch.weeklyGoalMinutes)

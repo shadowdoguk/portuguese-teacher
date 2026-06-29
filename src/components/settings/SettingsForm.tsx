@@ -9,6 +9,7 @@ import {
   type CFTiming,
   type CaptionsPref,
   type ReducedMotionPref,
+  type RetrievalMode,
 } from "@/lib/settings";
 import { Card } from "@/components/ui/Card";
 import { Toggle } from "@/components/ui/Toggle";
@@ -94,6 +95,20 @@ export function SettingsForm() {
             onChange={(next) => patchAndAck({ textOnlyMode: next })}
             label="Text-only mode"
             description="Replace audio input with text everywhere. Useful in quiet environments or for hearing accessibility."
+          />
+          <Select<RetrievalMode>
+            label="Review-card retrieval combination"
+            value={settings.retrievalMode}
+            onChange={(next) => patchAndAck({ retrievalMode: next })}
+            options={[
+              { value: "text", label: "Text only" },
+              { value: "text+audio", label: "Text + audio (default)" },
+              { value: "text+image", label: "Text + image" },
+              { value: "text+audio+image", label: "Text + audio + image" },
+            ]}
+            hint="Default: text+audio. Honours Zhang et al. (2021) multimodal retrieval; image assets are placeholders until the image pipeline lands."
+            disabled={settings.textOnlyMode}
+            data-testid="settings-retrieval-mode"
           />
         </div>
       </Card>
