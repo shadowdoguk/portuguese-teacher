@@ -35,6 +35,19 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 WORKDIR /app
 
+# libssl3 is required by the Prisma query engine. The @prisma/client
+# npm tarball ships both `libquery_engine-debian-openssl-1.1.x.so.node`
+# and `libquery_engine-debian-openssl-3.0.x.so.node`; the runtime
+# defaults to the 1.1.x variant and needs `libssl.so.1.1` to dlopen.
+# bookworm ships libssl3, so we symlink the .1.1 name to the .3 binary
+# and add a ld.so.conf.d entry so the loader finds it.
+RUN apt-get update && apt-get install -y --no-install-recommends libssl3 ca-certificates && \
+    ln -sf /usr/lib/x86_64-linux-gnu/libssl.so.3 /usr/lib/x86_64-linux-gnu/libssl.so.1.1 && \
+    ln -sf /usr/lib/x86_64-linux-gnu/libcrypto.so.3 /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 && \
+    echo "/usr/lib/x86_64-linux-gnu" > /etc/ld.so.conf.d/prisma-openssl.conf && \
+    ldconfig && \
+    rm -rf /var/lib/apt/lists/*
+
 # Non-root user.
 RUN groupadd --system --gid 1001 nodejs && \
     useradd --system --uid 1001 --gid nodejs nextjs
