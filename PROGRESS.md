@@ -2,7 +2,7 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-29 (Session 6 in progress — #37 Pronunciation Score wiring pinned on branch `feat/issue-37-pronunciation-score-wiring`; 749/749 tests + 9/9 axe + perf:budget + asr:regress + build all green locally)
+**Last updated:** 2026-06-29 (Session 6 in progress — #37 Pronunciation Score wiring on branch `feat/issue-37-pronunciation-score-wiring`; PR **#90** open; 750/750 tests + 9/9 axe + perf:budget + asr:regress + build all green locally)
 
 ## Session 6 picks in flight
 
@@ -55,7 +55,7 @@ Content authoring is the biggest remaining block. After #37 lands, **#36** (per-
 
 ## In progress
 
-- **#37** Pronunciation Score wiring — branch `feat/issue-37-pronunciation-score-wiring` (local: 749/749 tests + 9/9 axe + perf:budget + asr:regress + build all green). PR open pending.
+- **#37** Pronunciation Score wiring — branch `feat/issue-37-pronunciation-score-wiring`, PR **#90** open (local: 750/750 tests + 9/9 axe + perf:budget + asr:regress + build all green).
 
 ## Issues status
 
@@ -107,7 +107,7 @@ Content authoring is the biggest remaining block. After #37 lands, **#36** (per-
 ## PRs
 
 ### Open — Session 6 (CI-green locally, awaiting review/merge)
-- **#37** feat(voice-loop): Pronunciation Score wiring — formula regression pin + bias-side normalisation fix + route-level integration test
+- **#90** feat(voice-loop): Pronunciation Score wiring — formula regression pin + bias-side normalisation fix + route-level integration test (#37)
 
 ### Open — Session 4 picks (CI-green, awaiting review/merge)
 - **#85** feat(perf): per-route bundle budgets + LHCI on main + bundle analyzer (#11)
