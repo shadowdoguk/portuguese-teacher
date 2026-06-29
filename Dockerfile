@@ -29,12 +29,18 @@ RUN pnpm build
 # directory so the container can run `prisma migrate deploy` on
 # startup. Kept separate from the runner image so the production
 # image stays minimal (no devDeps).
-FROM deps AS migrate
+FROM node:22-bookworm-slim AS migrate
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
-COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/node_modules/.pnpm ./node_modules/.pnpm
-COPY --from=build /app/node_modules/.bin ./node_modules/.bin
-COPY --from=build /app/package.json ./package.json
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm install --frozen-lockfile --prod=false
+COPY prisma ./prisma
+RUN pnpm exec prisma generate
 
 # --- Stage 3: runner ---
 # Minimal runtime image. Carries the standalone server + static + public
@@ -89,12 +95,14 @@ EXPOSE 3000
 
 # Run Prisma migrations on container start, then hand off to the
 # Next.js standalone server. The migrate stage carries the prisma
-# CLI (not bundled in the standalone output) so `pnpm exec prisma
-# migrate deploy` runs against the configured DATABASE_URL.
+# CLI + node_modules so `pnpm exec prisma migrate deploy` runs
+# against the configured DATABASE_URL.
 COPY --from=migrate --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=migrate --chown=nextjs:nodejs /app/node_modules/.pnpm ./node_modules/.pnpm
-COPY --from=migrate --chown=nextjs:nodejs /app/node_modules/.bin ./node_modules/.bin
+COPY --from=migrate --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=migrate --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=migrate --chown=nextjs:nodejs /app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=migrate --chown=nextjs:nodejs /app/.npmrc ./.npmrc
+COPY --from=migrate --chown=nextjs:nodejs /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD node -e "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
