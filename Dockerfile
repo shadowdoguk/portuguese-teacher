@@ -60,6 +60,14 @@ COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=build --chown=nextjs:nodejs /app/public ./public
 
+# Delete the debian-openssl-1.1.x Prisma engine binary. The Prisma JS
+# runtime defaults to the 1.1.x variant on linux x64 (when present) and
+# dlopens libssl.so.1.1, which isn't on bookworm. Removing the 1.1.x
+# binary forces the runtime to load debian-openssl-3.0.x.so.node,
+# which links against the libssl3 we installed above. Issue: docker
+# deploy; tracked for removal once Prisma drops the 1.1.x engine.
+RUN find /app/node_modules/.pnpm -path "*/.prisma/client/libquery_engine-debian-openssl-1.1.x.so.node" -delete
+
 # Prisma schema (needed for `prisma migrate deploy` at container start;
 # @prisma/client + the engine binary are already in standalone/node_modules).
 COPY --from=build --chown=nextjs:nodejs /app/prisma/schema.prisma ./prisma/schema.prisma
