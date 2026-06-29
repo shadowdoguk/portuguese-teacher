@@ -1,11 +1,13 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { DegradationBanner } from "@/components/layout/DegradationBanner";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader variant="app" />
+      <DegradationBanner />
       <div className="container-edge grid flex-1 gap-10 py-10 lg:grid-cols-[220px_1fr]">
         <aside className="hidden lg:block">
           <SidebarNav />

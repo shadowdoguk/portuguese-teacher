@@ -1,3 +1,5 @@
+import { getObservabilitySink } from "@/lib/observability/sink";
+
 export type LlmRole = "system" | "user" | "assistant";
 
 export type LlmMessage = {
@@ -79,7 +81,23 @@ export type LatencyLog = {
 export type LatencySink = (entry: LatencyLog) => void;
 
 const defaultLatencySink: LatencySink = (entry) => {
-  console.log(JSON.stringify(entry));
+  if (typeof console !== "undefined") {
+    console.info(
+      `[observability] ${JSON.stringify({
+        source: "portuguese-teacher",
+        kind: "voice_loop_latency",
+        stage: entry.endpoint,
+        latencyMs: entry.durationMs,
+        ok: entry.ok,
+      })}`,
+    );
+  }
+  getObservabilitySink().emit({
+    kind: "voice_loop_latency",
+    occurredAt: Date.now(),
+    stage: entry.endpoint,
+    latencyMs: entry.durationMs,
+  });
 };
 
 export async function withLatencyMetric<T>(
