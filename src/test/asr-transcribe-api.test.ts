@@ -203,10 +203,10 @@ describe("transcribeFromForm (pure logic)", () => {
 
 describe("transcribeFromForm — biasing + low-confidence", () => {
   it("passes resolved hotwords to the transcriber when resolveBiasing returns present: true", async () => {
-    let receivedOptions: AsrTranscribeOptions | null = null;
+    const capture: { options: AsrTranscribeOptions | null } = { options: null };
     const deps = makeDeps({
       transcriber: async (_audio, options) => {
-        receivedOptions = options;
+        capture.options = options;
         return FAKE_RESULT;
       },
       resolveBiasing: async (unitId) => ({
@@ -221,7 +221,7 @@ describe("transcribeFromForm — biasing + low-confidence", () => {
     form.append("unitId", "unit-cafe");
     const res = await transcribeFromForm(form, deps);
     expect(res.status).toBe(200);
-    expect(receivedOptions?.hotwords).toEqual(["café", "leite"]);
+    expect(capture.options?.hotwords).toEqual(["café", "leite"]);
     const body = (await res.json()) as {
       biasingApplied: boolean;
       biasingSize: number;
@@ -231,10 +231,10 @@ describe("transcribeFromForm — biasing + low-confidence", () => {
   });
 
   it("does not pass hotwords when resolveBiasing returns present: false", async () => {
-    let receivedOptions: AsrTranscribeOptions | null = null;
+    const capture: { options: AsrTranscribeOptions | null } = { options: null };
     const deps = makeDeps({
       transcriber: async (_audio, options) => {
-        receivedOptions = options;
+        capture.options = options;
         return FAKE_RESULT;
       },
       resolveBiasing: async (unitId) => ({ unitId, words: [], present: false }),
@@ -244,7 +244,7 @@ describe("transcribeFromForm — biasing + low-confidence", () => {
     form.append("lang", "pt-PT");
     form.append("unitId", "unit-empty");
     const res = await transcribeFromForm(form, deps);
-    expect(receivedOptions?.hotwords).toBeUndefined();
+    expect(capture.options?.hotwords).toBeUndefined();
     const body = (await res.json()) as {
       biasingApplied: boolean;
       biasingSize: number;
@@ -254,11 +254,11 @@ describe("transcribeFromForm — biasing + low-confidence", () => {
   });
 
   it("does not pass hotwords when no unitId is in the form", async () => {
-    let receivedOptions: AsrTranscribeOptions | null = null;
+    const capture: { options: AsrTranscribeOptions | null } = { options: null };
     const resolveCalls: string[] = [];
     const deps = makeDeps({
       transcriber: async (_audio, options) => {
-        receivedOptions = options;
+        capture.options = options;
         return FAKE_RESULT;
       },
       resolveBiasing: async (unitId) => {
@@ -271,15 +271,15 @@ describe("transcribeFromForm — biasing + low-confidence", () => {
     form.append("lang", "pt-PT");
     await transcribeFromForm(form, deps);
     expect(resolveCalls).toEqual([]);
-    expect(receivedOptions?.hotwords).toBeUndefined();
+    expect(capture.options?.hotwords).toBeUndefined();
   });
 
   it("ignores blank unitId strings and does not call resolveBiasing", async () => {
     let resolveCalls = 0;
-    let receivedOptions: AsrTranscribeOptions | null = null;
+    const capture: { options: AsrTranscribeOptions | null } = { options: null };
     const deps = makeDeps({
       transcriber: async (_audio, options) => {
-        receivedOptions = options;
+        capture.options = options;
         return FAKE_RESULT;
       },
       resolveBiasing: async () => {
@@ -293,7 +293,7 @@ describe("transcribeFromForm — biasing + low-confidence", () => {
     form.append("unitId", "   ");
     await transcribeFromForm(form, deps);
     expect(resolveCalls).toBe(0);
-    expect(receivedOptions?.hotwords).toBeUndefined();
+    expect(capture.options?.hotwords).toBeUndefined();
   });
 
   it("flags lowConfidence=true when the aggregate confidence is below 0.6", async () => {
