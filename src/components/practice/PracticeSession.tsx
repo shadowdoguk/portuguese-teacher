@@ -4,8 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { FeedbackOverlay } from "@/components/practice/FeedbackOverlay";
+import { TeacherBubble } from "@/components/practice/TeacherBubble";
 import { TierBadge } from "@/components/practice/TierBadge";
 import { useVoiceCapture, type UseVoiceCaptureResult } from "@/hooks/useVoiceCapture";
+import { useSettings } from "@/lib/settings";
 import {
   DEFAULT_DIFFICULTY_TARGET,
   adjustFromRules,
@@ -76,6 +78,7 @@ type AsrApiResponse =
 const PUSH_TO_TALK_KEY = " ";
 
 export function PracticeSession() {
+  const { settings } = useSettings();
   const [capabilities, setCapabilities] = useState<VoiceLoopTierCapabilities | null>(null);
   const [practiceMode, setPracticeMode] = useState<PracticeMode>("free-form");
   const [difficulty, setDifficulty] = useState<DifficultyState>(() =>
@@ -462,7 +465,7 @@ export function PracticeSession() {
           {history
             .slice()
             .reverse()
-            .map((turn) => (
+            .map((turn, index) => (
               <article key={turn.turnId} className="card-surface space-y-4 p-6">
                 <header className="flex items-center justify-between">
                   <span className="stage-stamp">{turn.turnId}</span>
@@ -474,9 +477,15 @@ export function PracticeSession() {
                 <div className="grid gap-6 md:grid-cols-[1fr_1fr]">
                   <div>
                     <span className="stage-stamp">Teacher</span>
-                    <p className="mt-2 font-display text-xl text-ink" lang="pt-PT">
-                      {turn.teacherUtterance}
-                    </p>
+                    <TeacherBubble
+                      utterance={turn.teacherUtterance}
+                      voice={settings.ttsVoice}
+                      speed={settings.voiceSpeed}
+                      autoplay={index === 0}
+                      textOnly={settings.textOnlyMode}
+                      testId={`teacher-bubble-${turn.turnId}`}
+                      className="mt-2"
+                    />
                   </div>
                   <FeedbackOverlay turn={turn} />
                 </div>

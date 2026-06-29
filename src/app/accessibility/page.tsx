@@ -63,7 +63,9 @@ export default function AccessibilityPage() {
             Every audio-first interaction (microphone capture, TTS playback) has a text
             substitute. Tier 3 (text-only) is always reachable via the textarea fallback in
             Conversational Practice; the Review card media is opt-in via the{" "}
-            <code>retrievalMode</code> setting.
+            <code>retrievalMode</code> setting; the Conversational Practice page also has a
+            text-only mode toggle that suppresses TTS playback while keeping the written
+            utterance on screen.
           </p>
         </Card>
         <Card titleAs="h3" title="Captions &amp; transcripts">
@@ -71,7 +73,9 @@ export default function AccessibilityPage() {
             Teacher utterances are always rendered as text on the screen. TTS audio is
             supplementary; never the only channel. Captions track the teacher&apos;s text
             (per FR-WEB-5) and the Captions setting (<code>on</code> by default) is reachable
-            from the Settings page.
+            from the Settings page. Each teacher bubble also surfaces a manual replay button
+            (with an accessible <code>aria-label</code>) so users can re-hear an utterance
+            on demand.
           </p>
         </Card>
         <Card titleAs="h3" title="Focus &amp; keyboard">

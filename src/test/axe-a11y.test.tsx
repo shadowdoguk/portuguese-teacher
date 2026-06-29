@@ -55,6 +55,22 @@ describe("axe accessibility — core components", () => {
     cleanup();
   });
 
+  it("the teacher bubble (text-only mode) has no axe violations", async () => {
+    const { TeacherBubble } = await import("@/components/practice/TeacherBubble");
+    const { DEFAULT_TTS_VOICE } = await import("@/lib/settings");
+    const { container } = render(
+      <TeacherBubble
+        utterance="Olá! Tudo bem?"
+        voice={DEFAULT_TTS_VOICE}
+        textOnly
+      />,
+    );
+    const results = await runAxe(container);
+    summarise("TeacherBubble", results);
+    expect(results.violations.map((v) => v.id).sort()).toEqual([]);
+    cleanup();
+  });
+
   it("the tier badge has no axe violations", async () => {
     const { TierBadge } = await import("@/components/practice/TierBadge");
     const { container } = render(
