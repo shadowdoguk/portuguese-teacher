@@ -1,0 +1,8 @@
+# LHCI report HTML files — uploaded to temporary-public-storage in CI.
+*.html
+
+# LHCI's own manifest / runtime files
+!bundle-baseline.json
+manifest.json
+lighthouserc.json
+.running

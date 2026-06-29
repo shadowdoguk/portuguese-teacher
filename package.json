@@ -38,7 +38,12 @@
     "harness:live": "node scripts/run-ab-harness-live.mjs",
     "harness:mock": "vitest run -- ab-harness",
     "load:test": "node scripts/load-test-srs-events.mjs",
-    "test:a11y": "vitest run src/test/axe-a11y.test.tsx"
+    "test:a11y": "vitest run src/test/axe-a11y.test.tsx",
+    "perf:budget": "tsx scripts/perf-budget.ts",
+    "perf:budget:update": "tsx scripts/perf-budget.ts --update-baseline",
+    "perf:budget:test": "vitest run scripts/perf-budget.test.ts",
+    "perf:analyze": "ANALYZE=true next build",
+    "perf:lighthouse": "lhci autorun"
   },
   "dependencies": {
     "next": "14.2.18",
@@ -46,6 +51,8 @@
     "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@lhci/cli": "0.15.1",
+    "@next/bundle-analyzer": "14.2.35",
     "@prisma/client": "5.22.0",
     "@testing-library/jest-dom": "6.6.3",
     "@testing-library/react": "16.0.1",
@@ -65,6 +72,7 @@
     "tailwindcss": "3.4.14",
     "tsx": "4.19.2",
     "typescript": "5.6.3",
-    "vitest": "2.1.4"
+    "vitest": "2.1.4",
+    "webpack-bundle-analyzer": "4.10.1"
   }
 }
