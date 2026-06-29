@@ -6,10 +6,12 @@ import { useSettings } from "@/lib/settings";
 import {
   VOICE_SPEED_RANGE,
   WEEKLY_GOAL_RANGE,
+  TTS_VOICE_OPTIONS,
   type CFTiming,
   type CaptionsPref,
   type ReducedMotionPref,
   type RetrievalMode,
+  type SettingsPatch,
 } from "@/lib/settings";
 import { Card } from "@/components/ui/Card";
 import { Toggle } from "@/components/ui/Toggle";
@@ -38,7 +40,7 @@ export function SettingsForm() {
     );
   }
 
-  function patchAndAck<T>(patch: Partial<typeof settings>) {
+  function patchAndAck(patch: SettingsPatch) {
     update(patch);
     setSavedAt(new Date().toISOString());
   }
@@ -55,6 +57,18 @@ export function SettingsForm() {
           onChange={(next) => patchAndAck({ voiceSpeed: next })}
           formatValue={(v) => `${v.toFixed(2)}×`}
           hint={`Slow it down when an utterance is hard. Default 1.00×; range ${VOICE_SPEED_RANGE.min}–${VOICE_SPEED_RANGE.max}.`}
+        />
+        <Select
+          label="Teacher voice"
+          value={settings.ttsVoice.id}
+          onChange={(next) => patchAndAck({ ttsVoice: { id: next } })}
+          options={TTS_VOICE_OPTIONS.map((voice) => ({
+            value: voice.id,
+            label: voice.label,
+          }))}
+          hint="v1 ships one pt-PT female voice; more land as the MiniMax voice catalogue grows."
+          disabled={settings.textOnlyMode}
+          data-testid="settings-tts-voice"
         />
       </Card>
 

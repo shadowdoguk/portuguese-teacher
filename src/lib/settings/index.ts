@@ -6,15 +6,21 @@ export {
 export type { SettingsContextValue } from "./SettingsProvider";
 export {
   DEFAULT_SETTINGS,
+  DEFAULT_TTS_VOICE,
+  TTS_VOICE_OPTIONS,
   VOICE_SPEED_RANGE,
   WEEKLY_GOAL_RANGE,
   applySettingsPatch,
   clampVoiceSpeed,
   clampWeeklyGoal,
+  isTtsVoiceId,
+  normalizeTtsVoice,
 } from "./types";
 export type {
   Settings,
   SettingsPatch,
+  TtsVoice,
+  TtsVoiceId,
   CFTiming,
   CaptionsPref,
   ReducedMotionPref,
