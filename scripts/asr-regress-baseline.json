@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "fixture": "synthetic-v1",
+  "model": "synthetic-server",
+  "dialect": "pt-PT",
+  "buckets": {
+    "clean": {
+      "wer": 0.010752688172043012,
+      "utterances": 25,
+      "totalReferenceWords": 93,
+      "totalEdits": 1
+    },
+    "noisy": {
+      "wer": 0.04040404040404041,
+      "utterances": 25,
+      "totalReferenceWords": 99,
+      "totalEdits": 4
+    }
+  },
+  "regressionDelta": 0.01,
+  "notes": "Synthetic baseline. The mock ASR server applies ~2% WER on clean utterances and ~6% WER on noisy utterances. Hotword-biased words are transcribed verbatim, so the biasing seam shows up as a measurable WER delta on the test set."
+}

@@ -43,7 +43,10 @@
     "perf:budget:update": "tsx scripts/perf-budget.ts --update-baseline",
     "perf:budget:test": "vitest run scripts/perf-budget.test.ts",
     "perf:analyze": "ANALYZE=true next build",
-    "perf:lighthouse": "lhci autorun"
+    "perf:lighthouse": "lhci autorun",
+    "asr:regress": "tsx scripts/asr-regress.ts",
+    "asr:regress:update": "tsx scripts/asr-regress.ts --update-baseline",
+    "asr:regress:test": "vitest run src/test/asr-wer.test.ts src/test/asr-simulator.test.ts"
   },
   "dependencies": {
     "next": "14.2.18",
