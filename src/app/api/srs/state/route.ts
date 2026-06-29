@@ -10,9 +10,15 @@ function prisma(): PrismaClient {
   return prismaSingleton;
 }
 
+export type SrsScenarioSource = {
+  itemId: string;
+  sourceScenarioId: string;
+};
+
 export type SrsStateResponse = {
   ok: true;
   state: Awaited<ReturnType<SrsRepository["loadState"]>>;
+  sources: ReadonlyArray<SrsScenarioSource>;
 };
 
 export type SrsErrorResponse = { ok: false; error: string };
@@ -27,7 +33,14 @@ export async function GET(request: Request): Promise<NextResponse> {
     );
   }
   const repo = createSrsRepository(prisma());
-  const state = await repo.loadState(learnerId);
-  const body: SrsStateResponse = { ok: true, state };
+  const [state, rawSources] = await Promise.all([
+    repo.loadState(learnerId),
+    repo.loadScenarioSources(learnerId),
+  ]);
+  const sources: SrsScenarioSource[] = rawSources.map((source) => ({
+    itemId: source.itemId,
+    sourceScenarioId: source.sourceScenarioId,
+  }));
+  const body: SrsStateResponse = { ok: true, state, sources };
   return NextResponse.json(body);
 }

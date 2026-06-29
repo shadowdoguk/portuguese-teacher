@@ -254,6 +254,22 @@ model SrsRecallEvent {
   @@index([itemId])
 }
 
+// Per-(Learner, itemId, scenario) source tag. Records which scenario surfaced
+// a vocabulary item into the SRS queue. Composite PK so the same item can be
+// tagged from multiple scenarios (e.g. "caf\u00e9" appears in both "pedir" and
+// "reclamar"). Drives the review-card "from Caf\u00e9 \u2014 pedir um caf\u00e9" badge
+// and the dashboard widget (\u00a746).
+model SrsItemSource {
+  learnerId        String
+  itemId           String
+  sourceScenarioId String
+  recordedAt       DateTime @default(now())
+
+  @@id([learnerId, itemId, sourceScenarioId])
+  @@index([learnerId])
+  @@index([sourceScenarioId])
+}
+
 // One row per Learner × Scenario completion attempt. Stores the star rating
 // + turns-taken + timestamp. Replaces the prior localStorage ScenarioStoreSnapshot.
 model ScenarioCompletion {

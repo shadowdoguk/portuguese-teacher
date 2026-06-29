@@ -9,9 +9,14 @@ import {
 
 export type ScenarioRepository = {
   loadSnapshot(learnerId: string): Promise<ScenarioStoreSnapshot>;
-  recordCompletion(learnerId: string, completion: ScenarioCompletion): Promise<{
+  recordCompletion(
+    learnerId: string,
+    completion: ScenarioCompletion,
+    options?: { vocabularyRefs?: ReadonlyArray<string> },
+  ): Promise<{
     snapshot: ScenarioStoreSnapshot;
     progress: ScenarioProgress;
+    recordedSources: number;
   }>;
   loadHistory(learnerId: string, limit: number): Promise<ReadonlyArray<ScenarioCompletion>>;
 };
@@ -28,7 +33,7 @@ export function createScenarioRepository(prisma: PrismaClient): ScenarioReposito
       return { byId, lastUpdatedAt: 0 };
     },
 
-    async recordCompletion(learnerId, completion) {
+    async recordCompletion(learnerId, completion, options) {
       await prisma.scenarioCompletion.create({
         data: {
           learnerId,
@@ -68,7 +73,25 @@ export function createScenarioRepository(prisma: PrismaClient): ScenarioReposito
         attempts: updated.attempts,
       };
       const snapshot = recordCompletion(emptySnapshot(), completion);
-      return { snapshot, progress };
+
+      const refs = options?.vocabularyRefs ?? [];
+      let recordedSources = 0;
+      for (const itemId of refs) {
+        if (typeof itemId !== "string" || itemId.length === 0) continue;
+        await prisma.srsItemSource.upsert({
+          where: {
+            learnerId_itemId_sourceScenarioId: {
+              learnerId,
+              itemId,
+              sourceScenarioId: completion.scenarioId,
+            },
+          },
+          create: { learnerId, itemId, sourceScenarioId: completion.scenarioId },
+          update: {},
+        });
+        recordedSources += 1;
+      }
+      return { snapshot, progress, recordedSources };
     },
 
     async loadHistory(learnerId, limit) {

@@ -43,3 +43,17 @@ export function grammarRef(pattern: GrammarPattern, unitId: string): SrsItemRef 
 export function allReviewableRefs(curriculum: Curriculum = A0_CURRICULUM): SrsItemRef[] {
   return [...vocabularyRefsFromCurriculum(curriculum), ...grammarRefsFromCurriculum(curriculum)];
 }
+
+export type ScenarioSourceMap = ReadonlyMap<string, string>;
+
+export function applyScenarioSources(
+  refs: ReadonlyArray<SrsItemRef>,
+  sources: ScenarioSourceMap,
+): SrsItemRef[] {
+  if (sources.size === 0) return refs.slice();
+  return refs.map((ref) => {
+    const source = sources.get(ref.itemId);
+    if (!source) return ref;
+    return { ...ref, sourceScenarioId: source };
+  });
+}

@@ -6,6 +6,7 @@ import {
   AGAIN_RESET_HALF_LIFE_MS,
   RECALL_GRADES,
   allReviewableRefs,
+  applyScenarioSources,
   consoleRecallSink,
   countDue,
   dueQueue,
@@ -60,7 +61,8 @@ type Sink = (event: SrsRecallEvent) => void;
 type FetchError = { kind: "error"; message: string };
 
 export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink } = {}) {
-  const refs = useMemo(() => allReviewableRefs(), []);
+  const baseRefs = useMemo(() => allReviewableRefs(), []);
+  const [refs, setRefs] = useState<SrsItemRef[]>(baseRefs);
   const [state, setState] = useState<SrsState | null>(null);
   const [now, setNow] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
@@ -75,18 +77,31 @@ export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink 
         if (!res.ok) {
           throw new Error(`Failed to load SRS state (${res.status})`);
         }
-        const body = (await res.json()) as { ok: boolean; state: SrsState };
+        const body = (await res.json()) as {
+          ok: boolean;
+          state: SrsState;
+          sources: ReadonlyArray<{ itemId: string; sourceScenarioId: string }>;
+        };
         if (!body.ok) {
           throw new Error("SRS state response was not ok");
         }
         if (cancelled) return;
-        const enrolled = enrollMany(body.state, refs, Date.now());
+        const sourceMap = new Map<string, string>();
+        for (const source of body.sources ?? []) {
+          if (!sourceMap.has(source.itemId)) {
+            sourceMap.set(source.itemId, source.sourceScenarioId);
+          }
+        }
+        const taggedRefs = applyScenarioSources(baseRefs, sourceMap);
+        setRefs(taggedRefs);
+        const enrolled = enrollMany(body.state, taggedRefs, Date.now());
         setState(enrolled);
         setNow(Date.now());
         setError(null);
       } catch (err) {
         if (cancelled) return;
         setState(emptyState());
+        setRefs(baseRefs);
         setNow(Date.now());
         setError(err instanceof Error ? err.message : "Unknown error");
       }
@@ -95,7 +110,7 @@ export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink 
     return () => {
       cancelled = true;
     };
-  }, [refs]);
+  }, [baseRefs]);
 
   const queue = useMemo(() => {
     if (!state || now === 0) return [];
@@ -231,6 +246,17 @@ export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink 
           </span>
           <span>Half-life · {formatHalfLife(halfLifeMs)}</span>
         </div>
+
+        {head.ref.sourceScenarioId ? (
+          <p
+            className="rounded-md bg-paper-warm/60 px-3 py-1.5 text-xs text-ink-soft"
+            data-testid="srs-source-badge"
+            data-source-scenario-id={head.ref.sourceScenarioId}
+          >
+            <span className="stage-stamp mr-2">From scenario</span>
+            <span className="font-mono text-ink">{head.ref.sourceScenarioId}</span>
+          </p>
+        ) : null}
 
         <div className="grid gap-6 sm:grid-cols-[1.1fr_1fr]">
           <div>
