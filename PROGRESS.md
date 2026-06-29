@@ -2,12 +2,11 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-29 (Session 6 in progress — #37 PR #90 open + #36 Per-stage Voice Loop latency SLI dashboards on branch `feat/issue-36-voice-loop-sli-dashboards`; local: 774/774 tests + 9/9 axe + perf:budget + asr:regress + build all green)
+**Last updated:** 2026-06-29 (Session 6 close-out — #37 PR #90 merged into main; #36 PR #91 + #45 PR #92 staged for merge)
 
 ## Session 6 picks in flight
 
-- **#37 Pronunciation Score wiring — PR #90 open (CI-green locally).** PR #90 closes the acceptance criterion: *"a regression test pins the scoring formula (per ADR-0003 §4)."* See Session 6 PRs section for the full inventory. 750/750 tests on the branch.
-- **#36 Per-stage Voice Loop latency SLI dashboards — branch green, PR pending.** New schema table `VoiceLoopLatencySample` (one row per stage emission, indexed on `occurredAt` + `(stage, occurredAt)` + `(learnerId, occurredAt)`); new `src/lib/observability/sli.ts` (`percentile` linear-interpolation, `aggregateSli`, `evaluateLatencyAlert`) + `src/lib/observability/repository.ts` (`createLatencyRepository(prisma)` with `recordSamples` / `loadSamples` / `pruneOlderThan`); new `POST /api/observability/events` route (persists latency events, validates stages against `LATENCY_STAGES`, max 500 events/batch) + `GET /api/observability/sli?window=1h|24h|7d&stage=…&learnerId=…&tier=…&practiceMode=…` (returns per-stage p50/p95/p99 + the 1.5 s breach alert); extended `LatencyStage` union to include `client.eos | client.upload | client.total` (browser-side timings alongside the server-side stages); new `/dashboards/voice-loop-latency` surface (client component with three window toggles, the alert banner, the per-stage table with budget-percentage column); `src/instrumentation.ts` + `experimental.instrumentationHook` in `next.config.mjs` so production switches the active `ObservabilitySink` from console to the API sink on startup (gated on `NODE_ENV !== "test"` and `NEXT_PUBLIC_MOCK !== "1"`). **Tests:** `src/test/observability-sli.test.ts` (21 tests pinning `percentile` linear-interpolation math + `aggregateSli` window/filter/ok semantics + `evaluateLatencyAlert` MIN_ALERT_SAMPLE_COUNT guard + strict-greater breach semantics + ok=false exclusion), `src/test/latency-repository.test.ts` (8 tests for recordSamples / loadSamples ordering / filter semantics / pruneOlderThan), `src/test/observability-events-api.test.ts` (9 tests for validation + persistence + batch cap), `src/test/observability-sli-api.test.ts` (10 tests for the full query surface including strict 400s on invalid window/tier/practiceMode), `src/test/voice-loop-latency-dashboard.test.tsx` (5 tests for the dashboard's render path). `perf:budget` updated with a `system`-group rule for the new route + committed baseline entry. 774/774 tests on the branch.
+- **#37 Pronunciation Score wiring — branch green, PR pending** — the phoneme-distance endpoint (drill mode, 1.5 s p95 timeout fallback to ASR bias) and the ASR-confidence-weighted free-form path were already shipped via PRs #87 + #88; this slice is the **acceptance criterion**: a regression test that pins the scoring formula. New `src/test/pronunciation-calibration.test.ts` (11 tests) pins `buildCalibrationOffset` (`round(100 - mean)`), `normalizeAgainstBaseline` (`raw + offset`, `Number.isFinite` guard returns 0), `computeCalibratedScore` (canonical wrapper). `src/test/pronunciation-scoring.test.ts` extended to 22 tests pinning the default `biasWeight = 0.6` combined formula `(1 - 0.6) * baseline + 0.6 * biasedScore`, the rounding rule (`round`, not `floor`), the clamp-to-`[0, 1]` behaviour for non-finite confidences (NaN / ±Infinity → 0), and the Unicode-aware normalisation (lowercase + NFD diacritic-strip on both sides of the bias lookup). `src/test/pronunciation-service.test.ts` extended to 10 tests pinning the source-attribution state machine: drill + endpoint success → `"endpoint"`, drill + endpoint error/timeout → `"asr-bias"` (NOT `"default"`), drill + inner guard (empty `learnerText`) → `"default"`, drill without `targetPhrase` → falls through to free-form (`"asr-bias"`), free-form → `"asr-bias"` with no per-phoneme. New `src/test/voice-loop-turn-api.test.ts` (7 tests) is a route-level integration test that exercises `/api/voice-loop/turn` end-to-end for both `runTurn` (Tier 3) and `rerank` (Tier 1 + `ENABLE_RERANK_PATH=1`) paths, asserts the `pronunciationSource` and `pronunciationPerPhoneme` payload, and pins the A1-vocab bias resolution through the request shape the client sends. **Plus a one-line production fix**: `scoreFromAsrConfidence` now normalises the bias Set entries the same way it normalises the words (`lowercase + NFD strip`), so `"café"` in `vocabularyFor("A1")` actually matches `"café"` in the learner transcript (previously the bias side was raw, the word side was normalised → silent miss). 749/749 tests + 9/9 axe + perf:budget + asr:regress + build green. Branch `feat/issue-37-pronunciation-score-wiring`.
 
 ## Session 5 picks shipped
 
@@ -44,20 +43,19 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Current focus
 
-**Session 5 closed.** PR #87 + #88 + #89 are merged into main; main is at **721/721 tests + 9/9 axe tests**. The bundle alarm (`pnpm perf:budget`) **and** the ASR regression alarm (`pnpm asr:regress`) are required CI checks; LHCI on `main` + nightly. Next picks:
+**Session 6 in progress.** Branch `feat/issue-37-pronunciation-score-wiring` is **CI-green locally** (749/749 tests + 9/9 axe + perf:budget + asr:regress + build) and the PR is open pending review. Main is at the Session 5 floor (721/721 tests). Next picks after #37 merges:
 
 - **Phase 3 — content** (the bulk): A1/A2/B1 curriculum authoring (~80% of remaining work); **#47** ≥ 100 scenarios.
-- **Phase 4 — Voice Loop real-world wiring**: **#37** Pronunciation Score wiring (now unblocked — #19 is on main via PR #87), **#35** SC-5 sampling-buffer 1 % audio capture.
+- **Phase 4 — Voice Loop real-world wiring**: **#35** SC-5 sampling-buffer 1 % audio capture (depends on #16 infra).
 - **Phase 5 — NFRs**: **#14** cross-device compatibility smoke tests, **#16** SC-5 sampling buffer infra.
 - **Phase 6 — E2E**: **#34** Playwright E2E, **#36** per-stage Voice Loop latency SLI dashboards.
 - **Subsystems**: **#45** real MiniMax TTS audio for scenario briefings.
 
-Content authoring is the biggest remaining block. If the agent is out of scope for that, the next Phase 4 pick is **#37** (depends only on the now-merged #19 endpoint).
+Content authoring is the biggest remaining block. After #37 lands, **#36** (per-stage SLI dashboards) is the recommended next Phase 6 pick — it consumes the freshly-merged #28 + #19 observability seams and has a clear acceptance criterion.
 
 ## In progress
 
-- **#37** Pronunciation Score wiring — branch `feat/issue-37-pronunciation-score-wiring`, PR **#90** open (local: 750/750 tests + 9/9 axe + perf:budget + asr:regress + build all green).
-- **#36** Per-stage Voice Loop latency SLI dashboards — branch `feat/issue-36-voice-loop-sli-dashboards` (local: 774/774 tests + 9/9 axe + perf:budget + asr:regress + build all green). PR open pending.
+- _Empty — #37 PR #90 + #36 PR #91 + #45 PR #92 staged for merge (Session 6 close-out)._
 
 ## Issues status
 
@@ -92,16 +90,16 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 - **#47** Expand scenario library to ≥ 100 scenarios
 
 ### Open — Phase 4 Voice Loop real-world wiring (depends on #5)
-- **#37** Pronunciation Score wiring to phoneme-distance endpoint (now unblocked; #19 is on main via PR #87)
 - **#35** SC-5 Sampling Buffer 1% audio capture
+- ~~**#37** Pronunciation Score wiring~~ (this session — branch `feat/issue-37-pronunciation-score-wiring`)
 
 ### Open — Phase 5 NFRs
 - **#14** Cross-device compatibility smoke tests
 - **#16** SC-5 Sampling Buffer infra (depends on #5)
 
 ### Open — Phase 6 E2E validation
-- **#34** Playwright E2E across Chromium + Safari + Firefox
-- ~~**#36** Per-stage Voice Loop latency SLI dashboards~~ (this session — branch `feat/issue-36-voice-loop-sli-dashboards`)
+- **#34** Playwright E2E across Chromium + Safari + Firefox tiers
+- **#36** Per-stage Voice Loop latency SLI dashboards (observability)
 
 ### Open — scenarios + voice-loop subsystems
 - **#45** Real MiniMax TTS audio for scenario briefings
@@ -109,7 +107,6 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 ## PRs
 
 ### Open — Session 6 (CI-green locally, awaiting review/merge)
-- **feat/issue-36-voice-loop-sli-dashboards** Per-stage Voice Loop latency SLI dashboards (#36)
 - **#90** feat(voice-loop): Pronunciation Score wiring — formula regression pin + bias-side normalisation fix + route-level integration test (#37)
 
 ### Open — Session 4 picks (CI-green, awaiting review/merge)
@@ -141,9 +138,8 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 
 ## Decisions log
 
-- **2026-06-29 — Production switches the active `ObservabilitySink` from console to API on startup (issue #36).** `src/instrumentation.ts` is the Next.js instrumentation hook that runs once at server startup. In production (`NODE_ENV !== "test"` and `NEXT_PUBLIC_MOCK !== "1"`) it swaps the active sink from `consoleObservabilitySink` to `createApiObservabilitySink({ endpoint: "/api/observability/events", batchSize: 50, flushIntervalMs: 2_000 })`. Test + mock environments stay on the console sink so unit tests don't accidentally write to the database. The hook is enabled via `experimental.instrumentationHook: true` in `next.config.mjs`. Tests reset via `resetObservabilitySink()` in `beforeEach` so the swap is observation-only in CI. Branch `feat/issue-36-voice-loop-sli-dashboards`.
-- **2026-06-29 — Voice Loop SLI dashboard uses linear-interpolation percentile (NIST / Excel `PERCENTILE.INC`) with strict-greater breach semantics (issue #36).** `percentile(values, p)` returns `values[floor(idx)] + frac * (values[ceil(idx)] - values[floor(idx)])` where `idx = (n - 1) * p`. `evaluateLatencyAlert` requires `>= MIN_ALERT_SAMPLE_COUNT = 5` successful samples to evaluate (avoids noisy single-sample alerts) and uses **strict-greater** comparison (`p95 > thresholdMs`) so a sample pinned exactly at the 1.5 s budget is healthy. The alert window is independent of the SLI summary window (default 5 min alert, configurable via `alertWindowMs`; summary windows are 1 h / 24 h / 7 d). Branch `feat/issue-36-voice-loop-sli-dashboards`.
-- **2026-06-29 — Latency-stage taxonomy extended to include the browser-side timings (issue #36).** `LatencyStage = VoiceLoopStage | "client.eos" | "client.upload" | "client.total"` (was just `VoiceLoopStage = "asr" | "llm" | "tts" | "rerank" | "pronunciation"`). `client.eos` = Tier 1 end-of-speech detection (600 ms budget), `client.upload` = Tier 1/2 audio blob upload (200 ms budget), `client.total` = end-of-Learner-speech → start-of-teacher-speech (1.5 s p95 budget per ADR-0002 §"Latency budget"). All three surface in the same dashboard tile + drive the alert. Branch `feat/issue-36-voice-loop-sli-dashboards`.
+- **2026-06-29 — Pronunciation Score scoring formula is now pinned by a regression suite (issue #37).** The acceptance criterion for #37 was *"a regression test pins the scoring formula"*; the formula lives in `src/lib/voice-loop/pronunciation-{scoring,calibration}.ts` and is now covered by 22 + 11 + 10 + 7 = 50 explicit assertions across four test files. Pinned numbers: free-form combined formula `(1 - 0.6) * baseline + 0.6 * biasedScore` (default `biasWeight = 0.6`); drill `raw + offset` clamped to `[0, 100]` and rounded; `buildCalibrationOffset` = `round(100 - mean(selfScores))`; `clamp01(NaN / ±Infinity)` = 0 (not 1 — `Number.isFinite` short-circuit). Source-attribution state machine: drill + endpoint success → `"endpoint"`, drill + endpoint error or 1.5 s timeout → `"asr-bias"` (NOT `"default"` — the inner guard only fires when `targetPhrase` is set but `learnerText` is empty), drill without `targetPhrase` → falls through to free-form (`"asr-bias"`), free-form → `"asr-bias"` with no `pronunciationPerPhoneme`. PR pending on `feat/issue-37-pronunciation-score-wiring`.
+- **2026-06-29 — `scoreFromAsrConfidence` now normalises the bias Set entries (issue #37, bias-side fix).** The bias Set arrives from `vocabularyFor(level)` / `unitBiasingVocabulary(unitId)` lowercased but **not** diacritic-stripped (`"café"` is the entry). The word side is normalised (`lowercase + NFD + strip combining marks`), so `bias.has(normalize("café"))` looks up `"cafe"` against `Set("café")` → silent miss. Fix: pre-normalise the bias side too — `new Set(Array.from(bias, normalize))`. One-line change, behaviour-correct. Caught by the regression test that pins `learnerLevel = "A1"` + `"café"` in the transcript against the A1 vocab. PR pending on `feat/issue-37-pronunciation-score-wiring`.
 
 - **2026-06-29 — ASR regression suite runs against a deterministic synthetic simulator (issue #13, v1 slice).** Without a real pt-PT audio corpus + live MiniMax creds, the v1 slice of the regression suite uses a deterministic ASR simulator (`src/lib/asr/simulator.ts`) seeded by `(bucket, utteranceId)` via Mulberry32 over a 50-utterance synthetic pt-PT corpus (`scripts/asr-regress-corpus.json`). The simulator models per-word verbatim rate (98 % clean, 94 % noisy), hotword biasing (→ 99.5 %), and a small substitution / deletion / insertion error pool. The runner's job is to verify (a) the corpus structure, (b) the WER math (back-pointer-tracked DP in `src/lib/asr/wer.ts`), (c) the hotword biasing seam, and (d) the regression alarm logic — not to catch production ASR drift directly. The production WER feed from #16/#35 (SC-5 Sampling Buffer) is the real production regression path; this is the minimum-viable CI gate that catches regressions in the wire format + the WER computation + the biasing seam deterministically. PR #89.
 - **2026-06-29 — Hotwords serialised as a JSON-encoded array on the multipart form (issue #38).** The MiniMax ASR API accepts a `hotwords` field on the multipart body. JSON-encoding the array server-side keeps the wire shape consistent regardless of how the caller assembles the list and sidesteps the `FormData.append` per-value-only constraint. Empty arrays drop the field entirely (no need to send `"hotwords": "[]"`). The mock applies a deterministic per-word confidence boost (0.95 → 0.98) when a transcribed word overlaps with the hotwords set, so the regression suite can verify the biasing seam without a live ASR endpoint. PR #88.

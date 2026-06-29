@@ -135,4 +135,138 @@ describe("createPronunciationService", () => {
     expect(result.source).toBe("asr-bias");
     expect(result.score).toBe(0);
   });
+
+  // Source attribution pins (ADR-0002 §"Pronunciation Score" — drill vs free-form).
+  // Drill mode + targetPhrase + learnerText → source: "endpoint".
+  // Drill mode + targetPhrase + empty learnerText → source: "default" (the
+  //   inner drill guard short-circuits before calling the endpoint).
+  // Drill mode WITHOUT targetPhrase → falls through to free-form
+  //   (source: "asr-bias"); the initial `practiceMode === "drill" && input.targetPhrase`
+  //   guard fails, so resolveFreeForm runs.
+  // Drill mode + endpoint error/timeout → falls back to ASR bias
+  //   (source: "asr-bias").
+  // Free-form mode → source: "asr-bias" in all cases.
+  it("falls through to source='asr-bias' for drill mode when targetPhrase is missing", async () => {
+    const stub = new StubPronunciation();
+    const service = createPronunciationService({
+      client: stubAsClient(stub),
+      runtime: runtimeFor(stub),
+      vocabBias: new Set(["olá"]),
+    });
+    const result = await service.resolve({
+      learnerText: "olá",
+      learnerAsrConfidence: 0.9,
+      learnerAsrWords: [{ word: "olá", confidence: 0.9 }],
+      practiceMode: "drill",
+      tier: 1,
+      difficultyTarget: 1.0,
+      learnerUtteranceId: "u5",
+    });
+    expect(result.source).toBe("asr-bias");
+    // baseline=90, biasedScore=90, combined=90.
+    expect(result.score).toBe(90);
+  });
+
+  it("returns source='default' for drill mode when learnerText is empty (inner guard)", async () => {
+    const stub = new StubPronunciation();
+    const service = createPronunciationService({
+      client: stubAsClient(stub),
+      runtime: runtimeFor(stub),
+    });
+    const result = await service.resolve({
+      targetPhrase: "olá",
+      practiceMode: "drill",
+      tier: 1,
+      difficultyTarget: 1.0,
+      learnerUtteranceId: "u6",
+    });
+    expect(result.source).toBe("default");
+    expect(result.score).toBe(0);
+  });
+
+  it("falls back to source='asr-bias' when the endpoint errors mid-call", async () => {
+    const failingStub = {
+      score: async () => {
+        throw new Error("network unreachable");
+      },
+    };
+    const service = createPronunciationService({
+      client: failingStub as unknown as MiniMaxPronunciation,
+      runtime: new PronunciationRuntime({
+        client: failingStub as unknown as MiniMaxPronunciation,
+        logger: () => undefined,
+      }),
+    });
+    const result = await service.resolve({
+      learnerText: "olá",
+      learnerAsrConfidence: 0.85,
+      targetPhrase: "olá",
+      practiceMode: "drill",
+      tier: 1,
+      difficultyTarget: 1.0,
+      learnerUtteranceId: "u7",
+    });
+    expect(result.source).toBe("asr-bias");
+    // baseline = 0.85 * 100 = 85 (no bias vocabulary set).
+    expect(result.score).toBe(85);
+  });
+
+  it("attaches per-phoneme when source='endpoint'", async () => {
+    const stub = new StubPronunciation();
+    const service = createPronunciationService({
+      client: stubAsClient(stub),
+      runtime: runtimeFor(stub),
+    });
+    const result = await service.resolve({
+      learnerText: "olá",
+      targetPhrase: "olá mundo",
+      practiceMode: "drill",
+      tier: 1,
+      difficultyTarget: 1.0,
+      learnerUtteranceId: "u8",
+    });
+    expect(result.source).toBe("endpoint");
+    expect(result.perPhoneme).toBeDefined();
+  });
+
+  it("omits per-phoneme when source='asr-bias' (free-form has no phoneme breakdown)", async () => {
+    const stub = new StubPronunciation();
+    const service = createPronunciationService({
+      client: stubAsClient(stub),
+      runtime: runtimeFor(stub),
+      vocabBias: new Set(["olá"]),
+    });
+    const result = await service.resolve({
+      learnerText: "olá mundo",
+      learnerAsrConfidence: 0.9,
+      learnerAsrWords: [
+        { word: "olá", confidence: 0.9 },
+        { word: "mundo", confidence: 0.9 },
+      ],
+      practiceMode: "free-form",
+      tier: 3,
+      difficultyTarget: 1.0,
+      learnerUtteranceId: "u9",
+    });
+    expect(result.source).toBe("asr-bias");
+    expect(result.perPhoneme).toBeUndefined();
+  });
+
+  it("omits per-phoneme when source='default' (no signal collected)", async () => {
+    const stub = new StubPronunciation();
+    const service = createPronunciationService({
+      client: stubAsClient(stub),
+      runtime: runtimeFor(stub),
+    });
+    const result = await service.resolve({
+      practiceMode: "drill",
+      targetPhrase: "olá",
+      learnerText: "",
+      tier: 1,
+      difficultyTarget: 1.0,
+      learnerUtteranceId: "u10",
+    });
+    expect(result.source).toBe("default");
+    expect(result.perPhoneme).toBeUndefined();
+  });
 });
