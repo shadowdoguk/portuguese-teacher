@@ -8,7 +8,13 @@
   },
   "packageManager": "pnpm@10.0.0",
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "unrs-resolver", "@prisma/client", "@prisma/engines", "prisma"]
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "unrs-resolver",
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma"
+    ]
   },
   "scripts": {
     "dev": "next dev",
@@ -31,7 +37,8 @@
     "anchors:suggest": "tsx scripts/anchors-suggest.ts",
     "harness:live": "node scripts/run-ab-harness-live.mjs",
     "harness:mock": "vitest run -- ab-harness",
-    "load:test": "node scripts/load-test-srs-events.mjs"
+    "load:test": "node scripts/load-test-srs-events.mjs",
+    "test:a11y": "vitest run src/test/axe-a11y.test.tsx"
   },
   "dependencies": {
     "next": "14.2.18",
@@ -47,6 +54,7 @@
     "@types/react-dom": "18.3.1",
     "@vitejs/plugin-react": "4.3.3",
     "autoprefixer": "10.4.20",
+    "axe-core": "^4.12.1",
     "eslint": "8.57.1",
     "eslint-config-next": "14.2.18",
     "jsdom": "25.0.1",

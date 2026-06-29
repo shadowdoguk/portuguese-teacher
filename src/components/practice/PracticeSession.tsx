@@ -280,9 +280,10 @@ export function PracticeSession() {
         <TierBadge capabilities={capabilities} />
       </header>
 
-      <section className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+      <section className="grid gap-6 lg:grid-cols-[1.4fr_1fr]" aria-label="Live turn and difficulty">
         <Card
           eyebrow="Live turn"
+          titleAs="h2"
           title={
             pending
               ? "Awaiting teacher…"
@@ -422,7 +423,11 @@ export function PracticeSession() {
           ) : null}
         </Card>
 
-        <Card eyebrow="i+1 difficulty" title={`Target ${difficulty.target.toFixed(2)}`}>
+        <Card
+          eyebrow="i+1 difficulty"
+          titleAs="h2"
+          title={`Target ${difficulty.target.toFixed(2)}`}
+        >
           <p className="text-sm text-ink-soft">
             {difficulty.consecutiveSuccesses === 0
               ? "Recent comprehension is uneven — difficulty stays put."
