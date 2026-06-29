@@ -30,7 +30,8 @@
     "assets:check": "tsx scripts/check-tts-assets.ts",
     "anchors:suggest": "tsx scripts/anchors-suggest.ts",
     "harness:live": "node scripts/run-ab-harness-live.mjs",
-    "harness:mock": "vitest run -- ab-harness"
+    "harness:mock": "vitest run -- ab-harness",
+    "load:test": "node scripts/load-test-srs-events.mjs"
   },
   "dependencies": {
     "next": "14.2.18",
