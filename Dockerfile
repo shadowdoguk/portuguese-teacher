@@ -25,6 +25,17 @@ COPY public ./public
 RUN pnpm exec prisma generate
 RUN pnpm build
 
+# Stage 2.5: migrations image. Carries the prisma CLI + the prisma
+# directory so the container can run `prisma migrate deploy` on
+# startup. Kept separate from the runner image so the production
+# image stays minimal (no devDeps).
+FROM deps AS migrate
+WORKDIR /app
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/node_modules/.pnpm ./node_modules/.pnpm
+COPY --from=build /app/node_modules/.bin ./node_modules/.bin
+COPY --from=build /app/package.json ./package.json
+
 # --- Stage 3: runner ---
 # Minimal runtime image. Carries the standalone server + static + public
 # assets. The DB is mounted at runtime (SQLite file or Postgres URL).
@@ -76,7 +87,16 @@ COPY --from=build --chown=nextjs:nodejs /app/prisma/migrations ./prisma/migratio
 USER nextjs
 EXPOSE 3000
 
+# Run Prisma migrations on container start, then hand off to the
+# Next.js standalone server. The migrate stage carries the prisma
+# CLI (not bundled in the standalone output) so `pnpm exec prisma
+# migrate deploy` runs against the configured DATABASE_URL.
+COPY --from=migrate --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=migrate --chown=nextjs:nodejs /app/node_modules/.pnpm ./node_modules/.pnpm
+COPY --from=migrate --chown=nextjs:nodejs /app/node_modules/.bin ./node_modules/.bin
+COPY --from=migrate --chown=nextjs:nodejs /app/package.json ./package.json
+
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD node -e "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node server.js"]
