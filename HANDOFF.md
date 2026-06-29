@@ -1,6 +1,6 @@
 # Session Handoff
 
-**Snapshot date:** 2026-06-29 (Session 4 closed — PR #83 + #84 + #85 + #86 all merged into main)
+**Snapshot date:** 2026-06-29 (Session 5 closed — PR #87 + #88 + #89 all merged into main)
 **Repo:** `shadowdoguk/portuguese-teacher`
 
 > **This file is a point-in-time snapshot.** For the living, agent-picked-up
@@ -11,90 +11,86 @@
 
 ## TL;DR
 
-Session 4 of the Portuguese Teacher build is **fully closed** — the 4-PR wave
-(#83 voice capture, #84 a11y, #85 perf budgets + LHCI, #86 real TTS playback)
-is on `main`. The merge wave was straightforward for #83/#84 (after the
-`transcribeFromForm` route-export-shape fix), required one rebase of #86 onto
-the #85 merge tip (PROGRESS.md conflict on the docs), and went out clean.
+Session 5 of the Portuguese Teacher build is **fully closed** — the 3-PR wave
+(#87 pronunciation endpoint, #88 ASR LM biasing, #89 ASR regression suite)
+is on `main`. The morning PR was a stale-branch rebase; the midday + afternoon
+PRs were new work. All checks green on main.
 
-- **38 PRs total** on `main` (16 Season 1 + #75, #76 + #19, #25, #30, #44
-  + #77–#82 from Season 2 + #83, #84, #85, #86 from Season 3/4). **0 open PRs.**
-- **638/638 tests green on main** + **9/9 axe-core tests** + the
-  `pnpm perf:budget` bundle alarm is a required CI check on every PR.
-- **Voice capture + playback live in the browser:** Tier 1 Web Speech + Tier 2
-  MediaRecorder capture (issue #33), real MiniMax TTS playback through
-  `<TeacherBubble>` (issue #39) with `useTeacherAudio` state machine + manual
-  replay button + degraded-state badge with Retry.
-- **Performance budgets enforced:** per-route First Load JS caps (100 kB
-  public / 110 kB auth / 130 kB app, gzipped) + >10 % regression alarm
-  against the committed baseline + Lighthouse CI on every `main` push +
-  nightly cron (issue #11).
-- **A11y gate in CI:** `pnpm test:a11y` (vitest + axe-core) covers all the
-  top-level components plus the new `<TeacherBubble>` and the
-  `/accessibility` statement page.
+- **41 PRs total** on `main** (38 from Sessions 1–4 + #87, #88, #89).
+- **721/721 tests green on main** + **9/9 axe-core tests**.
+- **Two required CI alarms** on every PR: `pnpm perf:budget` (per-route bundle
+  caps, gzipped) + `pnpm asr:regress` (clean WER ≤ 5 %, noisy WER ≤ 10 %, >1 % regression blocked).
+- **Voice Loop fully wired in the browser:** Tier 1 Web Speech + Tier 2
+  MediaRecorder capture (#33), MiniMax TTS playback (#39), real phoneme-distance
+  endpoint (#19), Unit-vocabulary LM biasing on every ASR call (#38),
+  low-confidence retry prompt with `role="alert"` (#38), micro-averaged WER
+  regression alarm (#13).
 
-## Session 4 picks shipped (4 PRs, all merged)
+## Session 5 picks shipped (3 PRs, all merged)
 
-- **#83 / #33** — Tier 1 (Web Speech API) + Tier 2 (MediaRecorder) audio
-  capture (merged earlier in session after a `transcribeFromForm` →
-  `src/lib/asr/transcribe.ts` route-export-shape fix).
-- **#84 / #10** — WCAG 2.2 AA audit + axe-core + accessibility statement.
-  `pnpm test:a11y` added, `Card` got a configurable `titleAs` prop, the
-  `/accessibility` page now exists, manual audit checklist in
-  `docs/a11y/manual-audit-checklist.md`.
-- **#85 / #11** — per-route bundle budgets + LHCI on `main` + nightly +
-  bundle analyzer. `pnpm perf:budget` reads `.next/app-build-manifest.json`,
-  sums gzipped JS+CSS per route, asserts against `PER_ROUTE_BUDGETS`, flags
-  >10 % regressions against `.lighthouseci/bundle-baseline.json`. Wired
-  into `ci.yml`'s verify job. `.github/workflows/lighthouse.yml` boots
-  `pnpm start` and audits the four public top-level routes.
-- **#86 / #39** — real MiniMax TTS playback in the browser. New
-  `/api/tts/synthesize` route + `synthesizeFromBody` helper in
-  `src/lib/tts/synthesize.ts`. `useTeacherAudio` hook with
-  `idle → loading → ready → playing → paused → ended` + terminal
-  `degraded` / `error` paths. `<TeacherBubble>` renders the utterance,
-  autoplays the most recent turn, exposes a manual replay button with a
-  state-aware `aria-label`, and surfaces a Retry-able degradation badge
-  when MiniMax TTS is down. New `ttsVoice` setting + Settings picker.
+- **#87 / #19** — Pronunciation Score phoneme-distance endpoint. Rebase of
+  the stale `feat/issue-19-pronunciation-score-endpoint` onto current main
+  (one PROGRESS.md docs conflict, resolved by adopting main's version +
+  fresh Session 5 entry). Surfaced one tsc regression: the branch's
+  `withLatencyMetric(endpoint: … | "pronunciation", …)` passed
+  `entry.endpoint` into the `voice_loop_latency` event's `stage` field,
+  which narrowed to `VoiceLoopStage = "asr" | "llm" | "tts" | "rerank"`
+  and rejected the new value. Fixed by extending the union — surgical,
+  intent-correct.
 
-## Session 4 housekeeping
+- **#88 / #38** — ASR LM biasing per current Unit vocabulary. New
+  `unitBiasingVocabulary(unitId, prisma)` in `src/lib/asr/biasing.ts`;
+  `AsrTranscribeOptions.hotwords` + `MiniMaxASR` JSON-encodes the biasing
+  list onto the multipart form; `transcribeFromForm` gained a
+  `resolveBiasing` hook + `biasingApplied` / `biasingSize` response fields;
+  `LOW_CONFIDENCE_THRESHOLD = 0.6` exported from `biasing.ts`; new
+  `lowConfidence` flag wired to a `role="alert"` retry prompt in
+  `PracticeSession`. /practice bundle 119.8 → 120.2 kB gzipped.
 
-- **PR #83 build break fixed** — `transcribeFromForm` extracted from the
-  route file into `src/lib/asr/transcribe.ts`. Next.js route files only
-  accept `GET`/`POST`/`runtime` + type exports; the extra value export
-  passed `tsc` and the test suite but failed `next build`'s route-type
-  check. The same pattern was used for `synthesizeFromBody` → `src/lib/tts/`
-  on #86.
-- **Merge waves** — 4 PRs merged in dep order: #83 → #84 (Season 3 closer)
-  → #85 → #86 (one rebase for the PROGRESS.md conflict between #85 and
-  #86). Main jumped 558 → 588 → 619 → 638; the LHCI gate fires on the
-  next `main` push.
-- **Tracker reconciled** — issues #33, #10, #11, #39 all closed on the
-  tracker. Open count: 18 → 11.
+- **#89 / #13** — ASR accuracy regression suite (NFR-1). New
+  `src/lib/asr/wer.ts` (back-pointer-tracked DP WER math, Unicode-aware
+  tokenisation, micro-averaged bucket summary); new `src/lib/asr/simulator.ts`
+  (deterministic Mulberry32-seeded pt-PT simulator); `scripts/asr-regress-corpus.json`
+  (50 synthetic pt-PT utterances); `scripts/asr-regress-baseline.json`
+  (committed WER baseline); `scripts/asr-regress.ts` CLI (exits non-zero on
+  >1 % regression or any absolute threshold breach); wired into `ci.yml`
+  as a required check. Baseline: clean WER **1.08 %**, noisy WER **4.04 %**.
+
+## Session 5 housekeeping
+
+- **Stale-branch rebase** — `feat/issue-19-pronunciation-score-endpoint`
+  was branched off Session 2 (17+ commits of divergence). Single PROGRESS.md
+  conflict resolved cleanly; the feature commit applied in one piece.
+- **Type-narrowing fix** — the `VoiceLoopStage` extension is a one-character
+  edit to a union type. `VoiceLoopStage = "asr" | "llm" | "tts" | "rerank"`
+  → `"asr" | "llm" | "tts" | "rerank" | "pronunciation"`.
+- **Deterministic simulator** — Mulberry32 + FNV-1a seed = reproducible
+  transcripts across runs. No real ASR endpoint required for the regression
+  alarm.
+- **CI guards doubled** — `perf:budget` (already there from #11) + the new
+  `asr:regress`. Both required checks on every PR.
 
 ## Git state
 
 | Branch | Status |
 | --- | --- |
-| `main` | clean; 4 new merge commits this session; 638/638 tests green + 9/9 axe + `pnpm perf:budget` clean |
+| `main` | clean; 3 new merge commits this session; 721/721 tests + 9/9 axe + `pnpm perf:budget` + `pnpm asr:regress` + `next build` all green |
 
 ## Open PRs
 
-_None — all Season 3/4 PRs (#83, #84, #85, #86) merged into main._
+_None — all Session 5 PRs (#87, #88, #89) merged into main._
 
-## Open issues (11 ready-for-agent + A1/A2/B1 curriculum design)
+## Open issues (8 ready-for-agent + A1/A2/B1 curriculum design)
 
 **Phase 3 — content (the bulk)**
 - A1 / A2 / B1 curriculum authoring (currently 4 of ~30 Units seeded)
 - **#47** Expand scenario library to ≥ 100 scenarios
 
 **Phase 4 — Voice Loop real-world wiring**
-- **#38** ASR language-model biasing per current Unit vocabulary
-- **#37** Pronunciation Score wiring (depends on the #19 endpoint, on a stale branch)
+- **#37** Pronunciation Score wiring to phoneme-distance endpoint — *now unblocked* (#19 is on main)
 - **#35** SC-5 Sampling Buffer 1% audio capture
 
 **Phase 5 — NFRs**
-- **#13** ASR accuracy regression test suite
 - **#14** Cross-device compatibility smoke tests
 - **#16** SC-5 Sampling Buffer infra
 
@@ -104,9 +100,6 @@ _None — all Season 3/4 PRs (#83, #84, #85, #86) merged into main._
 
 **Subsystems**
 - **#45** Real MiniMax TTS audio for scenario briefings
-
-**Stale branch (no PR)**
-- **#19** Pronunciation Score phoneme-distance endpoint — on `feat/issue-19-pronunciation-score-endpoint`, needs a PR
 
 ## Still pending (human / external)
 
@@ -120,19 +113,20 @@ _None — all Season 3/4 PRs (#83, #84, #85, #86) merged into main._
 - **Authenticated LHCI runs** for `/dashboard`, `/review`, etc. (needs a
   learner fixture + cookie). Captured in `docs/perf-budget.md`'s
   'Lighthouse CI' section.
+- **Real pt-PT audio corpus + live MiniMax creds** for #13's production
+  WER feed (the SC-5 Sampling Buffer from #16/#35 is the v1.1 follow-up;
+  the v1 slice ships the deterministic simulator).
 
 ## First action for next session
 
 ```bash
 git checkout main && git pull
-# Confirm: 638/638 tests pass on main + pnpm perf:budget clean +
-# pnpm test:a11y clean (9/9).
-# Pick the next Phase 3 content track — the curriculum authoring is the
-# biggest remaining block. If authoring is out of scope for the agent,
-# recommended: #19 (cheapest — just needs a PR for the existing
-# feat/issue-19-pronunciation-score-endpoint branch) or #13 ASR accuracy
-# regression suite (pairs naturally with #38 LM biasing that's next in
-# Phase 4).
+# Confirm: 721/721 tests + 9/9 axe + pnpm perf:budget + pnpm asr:regress +
+# next build all green on main.
+# Pick the next Phase 4 item — #37 is now unblocked (depends only on the
+# merged #19 endpoint). Or pick a Phase 5 NFR (#14 or #16).
+# Recommended: #37 — completes the Phase 4 voice-loop block and uses
+# the #19 + #38 seams that just landed.
 ```
 
 ## Key references
@@ -149,9 +143,10 @@ git checkout main && git pull
 | Curriculum model | `src/lib/curriculum/`, `prisma/schema.prisma`, `prisma/seed.ts` |
 | Voice Loop | `src/lib/voice-loop/`, `src/test/voice-loop.test.ts` |
 | Voice capture (Tier 1+2) | `src/lib/voice-loop/capture.ts`, `src/hooks/useVoiceCapture.ts`, `src/test/voice-capture.test.ts` |
-| Teacher audio (Tier 3 — playback) | `src/lib/tts/synthesize.ts`, `src/hooks/useTeacherAudio.ts`, `src/components/practice/TeacherBubble.tsx`, `src/test/teacher-bubble.test.tsx` |
-| ASR transcribe route | `src/app/api/asr/transcribe/route.ts`, `src/lib/asr/transcribe.ts`, `src/test/asr-transcribe-api.test.ts` |
-| TTS synthesize route | `src/app/api/tts/synthesize/route.ts`, `src/lib/tts/synthesize.ts`, `src/test/tts-synthesize-api.test.ts` |
+| ASR transcribe + biasing | `src/lib/asr/transcribe.ts`, `src/lib/asr/biasing.ts`, `src/app/api/asr/transcribe/route.ts` |
+| Teacher audio (Tier 3 — playback) | `src/lib/tts/synthesize.ts`, `src/hooks/useTeacherAudio.ts`, `src/components/practice/TeacherBubble.tsx` |
+| Pronunciation Score runtime | `src/lib/voice-loop/pronunciation-{service,runtime,scoring,calibration}.ts`, `src/lib/minimax/pronunciation.ts` |
+| ASR regression suite | `src/lib/asr/wer.ts`, `src/lib/asr/simulator.ts`, `scripts/asr-regress.ts`, `scripts/asr-regress-{corpus,baseline}.json` |
 | SRS | `src/lib/srs/`, `src/test/srs*.test.ts` |
 | Lesson player + SRS interleaving | `src/lib/lesson/player.ts`, `src/components/lesson/LessonPlayer.tsx` |
 | Review card + media | `src/lib/srs/media.ts`, `src/components/review/ReviewCardMedia.tsx` |
@@ -172,7 +167,7 @@ git checkout main && git pull
 | A11y statement | `src/app/accessibility/page.tsx` |
 | A11y axe scan | `src/test/axe-a11y.test.tsx`, `pnpm test:a11y` |
 | A11y manual audit checklist | `docs/a11y/manual-audit-checklist.md` |
-| Admin scripts | `scripts/anchors-suggest.ts`, `scripts/progress-check.mjs`, `scripts/load-test-srs-events.mjs` |
+| Admin scripts | `scripts/anchors-suggest.ts`, `scripts/progress-check.mjs`, `scripts/load-test-srs-events.mjs`, `scripts/asr-regress.ts` |
 | Project status snapshot | [`README.md` § Status](./README.md#status) |
 | Workflow conventions | [`AGENTS.md`](./AGENTS.md) |
 | Research synthesis | [`docs/research/language-acquisition-findings.md`](./docs/research/language-acquisition-findings.md) |
@@ -185,7 +180,8 @@ git checkout main && git pull
 - The 5-state triage vocabulary + 2 categories apply to every issue
 - `pnpm typecheck` / `pnpm lint` / `pnpm test` / `pnpm build` must all pass before commit
 - `pnpm test:a11y` must pass for any UI-affecting change
-- `pnpm perf:budget` must pass before commit (now wired into CI as a required check)
+- `pnpm perf:budget` must pass before commit (CI required check)
+- `pnpm asr:regress` must pass before commit (CI required check)
 - One logical unit per commit; commit messages match the repo style
 - Do not commit secrets or `.env` files; `.env.example` is the convention
 - New domain terms go into `CONTEXT.md` in the same change
