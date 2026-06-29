@@ -69,3 +69,6 @@ jobs:
 
       - name: Performance budget alarm
         run: pnpm perf:budget
+
+      - name: ASR accuracy regression suite
+        run: pnpm asr:regress
