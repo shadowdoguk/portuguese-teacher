@@ -2,7 +2,7 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-29 (Session 4 — fixed the PR #83 route-export build break (transcribeFromForm → src/lib/asr/transcribe), merged #83 + #84 into main (588/588 + 8/8 axe), shipped #11 perf budgets + LHCI (PR #85, +19 tests on the branch); 607/607 on the #11 branch, 12 ready-for-agent issues remain)
+**Last updated:** 2026-06-29 (Session 4 closed — PR #83 + #84 + #85 + #86 all merged into main; main now at 638/638 tests + 9/9 axe tests + the `pnpm perf:budget` alarm is a required check in CI; 11 ready-for-agent issues remain)
 
 ## Session 4 picks shipped
 
@@ -33,11 +33,11 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Current focus
 
-**Season 3 merged.** PR #83 (#33 voice capture) + PR #84 (#10 a11y) are on main; 588/588 tests + 8/8 axe tests. Next up is **#11 Performance budgets + Lighthouse CI** (chosen as the natural pair to the just-landed #10 a11y — same test environment, same CI gate pattern; unblocks re-enabling the color-contrast axe rule currently disabled in vitest because jsdom can't resolve computed background colours).
+**Session 4 closed.** PR #83 + #84 + #85 + #86 are merged into main; main is at **638/638 tests + 9/9 axe tests**. The bundle alarm (`pnpm perf:budget`) is a required CI check; LHCI on `main` + nightly. Next picks:
 
 - **Phase 3 — content** (the bulk): A1/A2/B1 curriculum authoring (~80% of remaining work); **#47** ≥ 100 scenarios.
-- **Phase 4 — Voice Loop real-world wiring**: **#39** real MiniMax TTS playback in the browser, **#38** ASR language-model biasing per current Unit vocabulary, **#37** pronunciation score wiring (depends on the #19 endpoint, which is on a stale branch and needs a PR first), **#35** SC-5 sampling-buffer 1 % audio capture. (#33 is the only Phase 4 issue done this session.)
-- **Phase 5 — NFRs**: **#11** performance budgets + Lighthouse CI, **#13** ASR accuracy regression test suite, **#14** cross-device compatibility smoke tests, **#16** SC-5 sampling buffer infra. (#10 is the only Phase 5 issue done this session.)
+- **Phase 4 — Voice Loop real-world wiring**: **#38** ASR language-model biasing per current Unit vocabulary, **#37** pronunciation score wiring (depends on the #19 endpoint, which is on a stale branch and needs a PR first), **#35** SC-5 sampling-buffer 1 % audio capture. (#33 and #39 are the two Phase 4 issues done in Session 4.)
+- **Phase 5 — NFRs**: **#13** ASR accuracy regression test suite, **#14** cross-device compatibility smoke tests, **#16** SC-5 sampling buffer infra. (#10 and #11 are the two Phase 5 issues done in Session 4.)
 - **Phase 6 — E2E**: **#34** Playwright E2E, **#36** per-stage Voice Loop latency SLI dashboards.
 - **Subsystems**: **#45** real MiniMax TTS audio for scenario briefings.
 
@@ -45,8 +45,7 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 
 ## In progress
 
-- **#11** (PR #85) Performance budgets + Lighthouse CI — `feat/issue-11-perf-budgets-lighthouse`, CI-green (607/607), awaiting review/merge.
-- **#39** (PR #86) Real MiniMax TTS playback in the browser — `feat/issue-39-tts-playback`, CI-green (619/619 + 10/10 axe), awaiting review/merge.
+- _Empty — Session 4 PRs all merged; main is at the new floor (638/638 tests)._
 
 ## Issues status
 
@@ -143,8 +142,7 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 
 - **§10 sign-off on ADR-0003 + amended requirements doc** — Product, Pedagogy, Engineering leads. Work proceeds in parallel since the spec is captured in code; this gates release, not development.
 - **Live MiniMax LLM credentials** for #42's ≥75% in-band acceptance target (ADR-0004 §8). Sandbox creds provisioning blocks the production-WER acceptance run; the harness + CLI are wired and tested with mocks.
-<<<<<<< HEAD
-- **PR review + merge of #85 + #86** — both CI-green and awaiting review. Main jumps 588 → 607 (perf alarm merges) → 619 (TTS playback merges) once approved.
+- **Authenticated LHCI runs for `/dashboard`, `/review`, etc.** — needs a learner fixture + cookie. The follow-up is captured in `docs/perf-budget.md`'s 'Lighthouse CI' section.
 
 ## Conventions reminder
 
