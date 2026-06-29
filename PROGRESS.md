@@ -2,7 +2,13 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-29 (Session 5 — PR #87 (#19) + PR #88 (#38) merged into main (699/699 tests); #13 ASR accuracy regression suite branch ready (721/721 tests, all checks green, PR pending))
+**Last updated:** 2026-06-29 (Session 5 closed — PR #87 (#19) + PR #88 (#38) + PR #89 (#13) all merged into main; main now at 721/721 tests + 9/9 axe + `pnpm perf:budget` clean + `pnpm asr:regress` clean (CI gate); 9 ready-for-agent issues remain)
+
+## Session 5 picks shipped
+
+- **PR #87 (#19) Pronunciation Score phoneme-distance endpoint — merged** — rebase of `feat/issue-19-pronunciation-score-endpoint` onto current main (the only conflict was a stale PROGRESS.md, resolved by adopting main's version + a fresh Session 5 entry). Surfaced one tsc regression: `withLatencyMetric(endpoint: … | "pronunciation", …)` passed `entry.endpoint` into the `voice_loop_latency` event's `stage` field, which narrowed to `VoiceLoopStage = "asr" | "llm" | "tts" | "rerank"` and rejected the new value. Fixed by extending the union — the surgical fix and the right intent of #19 (the phoneme-distance endpoint sits between LLM and TTS in the Drill path). Main jumped 681/681 tests + 9/9 axe.
+- **PR #88 (#38) ASR LM biasing per current Unit vocabulary — merged** — new `unitBiasingVocabulary(unitId, prisma)` helper in `src/lib/asr/biasing.ts` (tokenises + lower-cases + dedupes `VocabularyItem.pt` + `VocabularyItem.examplePt` + `GrammarPattern.examples[].pt`); `AsrTranscribeOptions.hotwords` + `MiniMaxASR` JSON-encodes the biasing list onto the multipart form; `transcribeFromForm` carries a `resolveBiasing` hook + `biasingApplied`/`biasingSize` response fields; new `lowConfidence` flag (LOW_CONFIDENCE_THRESHOLD = 0.6) wired to a `role="alert"` retry prompt in `PracticeSession` with the heard transcript + confidence %. PracticeSession passes `user.currentUnitId` (from `useAuth()`) as the `unitId` form field. 699/699 tests + 9/9 axe. /practice bundle: 119.8 → 120.2 kB gzipped.
+- **PR #89 (#13) ASR accuracy regression suite (NFR-1) — merged** — new `src/lib/asr/wer.ts` (back-pointer-tracked DP WER math, Unicode-aware tokenisation, micro-averaged bucket summary); new `src/lib/asr/simulator.ts` (deterministic pt-PT ASR simulator seeded by `(bucket, utteranceId)` via Mulberry32, models 98 %/94 % per-word verbatim rates + hotword biasing boost to 99.5 % + small substitution/deletion/insertion pool); `scripts/asr-regress-corpus.json` (50 synthetic pt-PT utterances, 25 clean + 25 noisy); `scripts/asr-regress-baseline.json` (committed WER baseline); `scripts/asr-regress.ts` CLI (compares against baseline + absolute NFR-1 thresholds, exits non-zero on >1 % regression or any threshold breach); wired into `ci.yml` as a required check. Baseline: clean WER **1.08 %**, noisy WER **4.04 %** — both well under the 5 % / 10 % thresholds. 721/721 tests + 9/9 axe.
 
 ## Session 4 picks shipped
 
@@ -33,23 +39,28 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Current focus
 
-**Session 4 closed.** PR #83 + #84 + #85 + #86 are merged into main; main is at **638/638 tests + 9/9 axe tests**. The bundle alarm (`pnpm perf:budget`) is a required CI check; LHCI on `main` + nightly. Next picks:
+**Session 5 closed.** PR #87 + #88 + #89 are merged into main; main is at **721/721 tests + 9/9 axe tests**. The bundle alarm (`pnpm perf:budget`) **and** the ASR regression alarm (`pnpm asr:regress`) are required CI checks; LHCI on `main` + nightly. Next picks:
 
 - **Phase 3 — content** (the bulk): A1/A2/B1 curriculum authoring (~80% of remaining work); **#47** ≥ 100 scenarios.
-- **Phase 4 — Voice Loop real-world wiring**: **#38** ASR language-model biasing per current Unit vocabulary, **#37** pronunciation score wiring (depends on the #19 endpoint, which is on a stale branch and needs a PR first), **#35** SC-5 sampling-buffer 1 % audio capture. (#33 and #39 are the two Phase 4 issues done in Session 4.)
-- **Phase 5 — NFRs**: **#13** ASR accuracy regression test suite, **#14** cross-device compatibility smoke tests, **#16** SC-5 sampling buffer infra. (#10 and #11 are the two Phase 5 issues done in Session 4.)
+- **Phase 4 — Voice Loop real-world wiring**: **#37** Pronunciation Score wiring (now unblocked — #19 is on main via PR #87), **#35** SC-5 sampling-buffer 1 % audio capture.
+- **Phase 5 — NFRs**: **#14** cross-device compatibility smoke tests, **#16** SC-5 sampling buffer infra.
 - **Phase 6 — E2E**: **#34** Playwright E2E, **#36** per-stage Voice Loop latency SLI dashboards.
 - **Subsystems**: **#45** real MiniMax TTS audio for scenario briefings.
 
-Content authoring is the biggest remaining block. If the agent is out of scope for that, pick the next Phase 4 voice-loop item or one of the Phase 5 NFRs.
+Content authoring is the biggest remaining block. If the agent is out of scope for that, the next Phase 4 pick is **#37** (depends only on the now-merged #19 endpoint).
 
 ## In progress
 
-- **#13** ASR accuracy regression suite — branch `feat/issue-13-asr-regression-suite` ready (721/721 tests + 9/9 axe + `pnpm perf:budget` clean + `pnpm asr:regress` clean + `next build` clean); PR pending. New `pnpm asr:regress` CLI runs a deterministic pt-PT ASR simulator over a synthetic corpus (25 clean + 25 noisy utterances), computes micro-averaged WER per bucket via a back-pointer-tracked edit-distance algorithm in `src/lib/asr/wer.ts`, compares against a committed baseline (`scripts/asr-regress-baseline.json`), and exits non-zero on any absolute threshold breach (5 % clean / 10 % noisy per NFR-1) or >1 % regression vs baseline. Wired into `ci.yml` as a required check.
+- _Empty — Session 5 closed; PR #87 + #88 + #89 merged into main. Main is at the new floor (721/721 tests + 9/9 axe + perf:budget + asr:regress + build all green)._
 
 ## Issues status
 
-### Closed (this session — Session 4)
+### Closed (this session — Session 5)
+- **#19** Pronunciation Score phoneme-distance endpoint — merged via #87
+- **#38** ASR language-model biasing per current Unit vocabulary — merged via #88
+- **#13** ASR accuracy regression test suite — merged via #89
+
+### Closed (Session 4)
 - **#33** Tier 1 (Web Speech API) + Tier 2 (MediaRecorder) audio capture — merged via #83
 - **#10** Accessibility (WCAG 2.2 AA) audit and fixes — merged via #84
 
@@ -75,15 +86,12 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 - **#47** Expand scenario library to ≥ 100 scenarios
 
 ### Open — Phase 4 Voice Loop real-world wiring (depends on #5)
-- **#38** ASR language-model biasing per current Unit vocabulary
-- **#37** Pronunciation Score wiring to phoneme-distance endpoint (depends on the #19 endpoint, which is on a stale branch and needs a PR first)
+- **#37** Pronunciation Score wiring to phoneme-distance endpoint (now unblocked; #19 is on main via PR #87)
 - **#35** SC-5 Sampling Buffer 1% audio capture
-- **#19** Pronunciation Score phoneme-distance endpoint (work on stale `feat/issue-19-pronunciation-score-endpoint` branch — needs a PR)
 
 ### Open — Phase 5 NFRs
-- **#13** ASR accuracy regression test suite
 - **#14** Cross-device compatibility smoke tests
-- **#16** SC-5 Sampling Buffer infra (depends on #5, #13)
+- **#16** SC-5 Sampling Buffer infra (depends on #5)
 
 ### Open — Phase 6 E2E validation
 - **#34** Playwright E2E across Chromium + Safari + Firefox
@@ -96,6 +104,11 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 
 ### Open — Session 4 picks (CI-green, awaiting review/merge)
 - **#85** feat(perf): per-route bundle budgets + LHCI on main + bundle analyzer (#11)
+
+### Merged this session (Session 5)
+- **#87** feat(voice-loop): Pronunciation Score phoneme-distance endpoint + ASR-bias free-form path (#19)
+- **#88** feat(voice-loop): ASR language-model biasing per current Unit vocabulary (#38)
+- **#89** feat(asr): ASR accuracy regression suite (#13)
 
 ### Merged this session (Session 4)
 - **#83** feat(voice-loop): Tier 1 (Web Speech API) + Tier 2 (MediaRecorder) audio capture (#33)
@@ -118,7 +131,7 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 
 ## Decisions log
 
-- **2026-06-29 — ASR regression suite runs against a deterministic synthetic simulator (issue #13, v1 slice).** Without a real pt-PT audio corpus + live MiniMax creds, the v1 slice of the regression suite uses a deterministic ASR simulator (`src/lib/asr/simulator.ts`) seeded by `(bucket, utteranceId)` via Mulberry32 over a 50-utterance synthetic pt-PT corpus (`scripts/asr-regress-corpus.json`). The simulator models per-word verbatim rate (98 % clean, 94 % noisy), hotword biasing (→ 99.5 %), and a small substitution / deletion / insertion error pool. The runner's job is to verify (a) the corpus structure, (b) the WER math (back-pointer-tracked DP in `src/lib/asr/wer.ts`), (c) the hotword biasing seam, and (d) the regression alarm logic — not to catch production ASR drift directly. The production WER feed from #16/#35 (SC-5 Sampling Buffer) is the real production regression path; this is the minimum-viable CI gate that catches regressions in the wire format + the WER computation + the biasing seam deterministically. PR #89 (pending).
+- **2026-06-29 — ASR regression suite runs against a deterministic synthetic simulator (issue #13, v1 slice).** Without a real pt-PT audio corpus + live MiniMax creds, the v1 slice of the regression suite uses a deterministic ASR simulator (`src/lib/asr/simulator.ts`) seeded by `(bucket, utteranceId)` via Mulberry32 over a 50-utterance synthetic pt-PT corpus (`scripts/asr-regress-corpus.json`). The simulator models per-word verbatim rate (98 % clean, 94 % noisy), hotword biasing (→ 99.5 %), and a small substitution / deletion / insertion error pool. The runner's job is to verify (a) the corpus structure, (b) the WER math (back-pointer-tracked DP in `src/lib/asr/wer.ts`), (c) the hotword biasing seam, and (d) the regression alarm logic — not to catch production ASR drift directly. The production WER feed from #16/#35 (SC-5 Sampling Buffer) is the real production regression path; this is the minimum-viable CI gate that catches regressions in the wire format + the WER computation + the biasing seam deterministically. PR #89.
 - **2026-06-29 — Hotwords serialised as a JSON-encoded array on the multipart form (issue #38).** The MiniMax ASR API accepts a `hotwords` field on the multipart body. JSON-encoding the array server-side keeps the wire shape consistent regardless of how the caller assembles the list and sidesteps the `FormData.append` per-value-only constraint. Empty arrays drop the field entirely (no need to send `"hotwords": "[]"`). The mock applies a deterministic per-word confidence boost (0.95 → 0.98) when a transcribed word overlaps with the hotwords set, so the regression suite can verify the biasing seam without a live ASR endpoint. PR #88.
 - **2026-06-29 — Low-confidence threshold lives at 0.6 and surfaces as `role="alert"` (issue #38).** Per ADR-0002 §"Low-confidence handling": "Reject utterances whose confidence < 0.6 and prompt the Learner to retry, or fall through to text input." The threshold is exported from `src/lib/asr/biasing.ts` as `LOW_CONFIDENCE_THRESHOLD` so the call site (and future test suites) reference the same constant. The `PracticeSession` surfaces a single retry prompt with the heard transcript + confidence %, rather than auto-falling through to text — the Learner stays in control of the input modality. The `stopListeningAndSend` catch block suppresses the generic `setError("lowConfidence")` so the alert surface doesn't double-render. PR #88 (pending).
 - **2026-06-29 — Per-route bundle budgets use gzipped bytes (issue #11).** Next.js reports "First Load JS" as the gzipped size; matching the budgets to the same unit (and to what users actually download on a slow network) keeps the alarm actionable. `sumFileBytes` defaults to `gzip: true`; `scripts/perf-budget.test.ts` opts out via `{ gzip: false }` to keep the assertions deterministic on highly-compressible fixtures (`'x'.repeat(N)`). The committed baseline at `.lighthouseci/bundle-baseline.json` is gzipped bytes keyed by route. Tune `PER_ROUTE_BUDGETS` in `scripts/perf-budget.ts` if a route starts creeping toward its cap. PR #85.
