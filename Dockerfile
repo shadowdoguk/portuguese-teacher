@@ -35,18 +35,26 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 WORKDIR /app
 
-# libssl3 is required by the Prisma query engine. The @prisma/client
-# npm tarball ships both `libquery_engine-debian-openssl-1.1.x.so.node`
-# and `libquery_engine-debian-openssl-3.0.x.so.node`; the runtime
-# defaults to the 1.1.x variant and needs `libssl.so.1.1` to dlopen.
-# bookworm ships libssl3, so we symlink the .1.1 name to the .3 binary
-# and add a ld.so.conf.d entry so the loader finds it.
-RUN apt-get update && apt-get install -y --no-install-recommends libssl3 ca-certificates && \
-    ln -sf /usr/lib/x86_64-linux-gnu/libssl.so.3 /usr/lib/x86_64-linux-gnu/libssl.so.1.1 && \
-    ln -sf /usr/lib/x86_64-linux-gnu/libcrypto.so.3 /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 && \
-    echo "/usr/lib/x86_64-linux-gnu" > /etc/ld.so.conf.d/prisma-openssl.conf && \
+# libssl1.1 (OpenSSL 1.1) is required by the Prisma query engine
+# debian-openssl-1.1.x.so.node binary that ships in @prisma/client.
+# The Prisma JS runtime defaults to the 1.1.x variant on linux x64
+# (when both are present in the @prisma/client tarball). bookworm ships
+# only OpenSSL 3, which isn't ABI-compatible with 1.1, so we extract
+# libssl1.1 from the Debian bullseye archive (the last Debian release
+# with OpenSSL 1.1).
+#
+# This stays until Prisma's query engine drops the 1.1.x build
+# (tracked in a follow-up issue); the symlink shim was tried first
+# and failed because the 1.1.x binary needs the actual OPENSSL_1_1_0
+# symbol version.
+ARG OPENSSL11_URL=https://snapshot.debian.org/archive/debian/20230611T210152Z/pool/main/o/openssl/libssl1.1_1.1.1n-0+deb11u5_amd64.deb
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && \
+    curl -fsSL -o /tmp/libssl1.1.deb "${OPENSSL11_URL}" && \
+    dpkg -x /tmp/libssl1.1.deb /tmp/libssl1.1 && \
+    cp /tmp/libssl1.1/usr/lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/x86_64-linux-gnu/ && \
+    cp /tmp/libssl1.1/usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/x86_64-linux-gnu/ && \
     ldconfig && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /tmp/libssl1.1.deb /tmp/libssl1.1 /var/lib/apt/lists/*
 
 # Non-root user.
 RUN groupadd --system --gid 1001 nodejs && \
@@ -59,14 +67,6 @@ RUN groupadd --system --gid 1001 nodejs && \
 COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=build --chown=nextjs:nodejs /app/public ./public
-
-# Delete the debian-openssl-1.1.x Prisma engine binary. The Prisma JS
-# runtime defaults to the 1.1.x variant on linux x64 (when present) and
-# dlopens libssl.so.1.1, which isn't on bookworm. Removing the 1.1.x
-# binary forces the runtime to load debian-openssl-3.0.x.so.node,
-# which links against the libssl3 we installed above. Issue: docker
-# deploy; tracked for removal once Prisma drops the 1.1.x engine.
-RUN find /app/node_modules/.pnpm -path "*/.prisma/client/libquery_engine-debian-openssl-1.1.x.so.node" -delete
 
 # Prisma schema (needed for `prisma migrate deploy` at container start;
 # @prisma/client + the engine binary are already in standalone/node_modules).
