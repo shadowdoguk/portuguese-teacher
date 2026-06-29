@@ -32,6 +32,14 @@ export type AsrWord = {
 
 export type AsrTranscribeOptions = {
   lang: "pt-PT" | "en";
+  /**
+   * Optional language-model biasing vocabulary (LM hotwords). When supplied,
+   * the ASR endpoint biases its decoder toward these tokens so they are
+   * transcribed with higher accuracy. Sourced from the Learner's current
+   * Unit's VocabularyItem + GrammarPattern sets — see
+   * `src/lib/asr/biasing.ts`.
+   */
+  hotwords?: ReadonlyArray<string>;
   signal?: AbortSignal;
 };
 

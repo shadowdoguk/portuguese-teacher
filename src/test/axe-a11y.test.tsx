@@ -48,7 +48,15 @@ function summarise(label: string, results: AxeResults): void {
 describe("axe accessibility — core components", () => {
   it("the practice session page (Tier 3 fallback) has no axe violations", async () => {
     const { PracticeSession } = await import("@/components/practice/PracticeSession");
-    const { container } = render(<PracticeSession />);
+    const { AuthProvider } = await import("@/lib/auth/AuthProvider");
+    const { SettingsProvider } = await import("@/lib/settings");
+    const { container } = render(
+      <AuthProvider>
+        <SettingsProvider>
+          <PracticeSession />
+        </SettingsProvider>
+      </AuthProvider>,
+    );
     const results = await runAxe(container);
     summarise("PracticeSession", results);
     expect(results.violations.map((v) => v.id).sort()).toEqual([]);

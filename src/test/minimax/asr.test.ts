@@ -29,6 +29,58 @@ describe("MiniMaxASR", () => {
     expect(calls[0]?.url).toBe("https://asr.example/v1/asr/transcriptions");
     const body = calls[0]?.init.body as FormData;
     expect(body.get("lang")).toBe("pt-PT");
+    expect(body.get("hotwords")).toBeNull();
+  });
+
+  it("serialises hotwords as a JSON-encoded array when supplied", async () => {
+    const calls: Array<{ url: string; init: RequestInit }> = [];
+    const fakeFetch: typeof fetch = async (input, init) => {
+      calls.push({ url: String(input), init: init ?? {} });
+      return new Response(
+        JSON.stringify({
+          text: "café",
+          words: [{ word: "café", start: 0, end: 0.4, confidence: 0.98 }],
+          confidence: 0.98,
+          language_detected: "pt-PT",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    };
+    const asr = new MiniMaxASR({
+      baseUrl: "https://asr.example",
+      apiKey: "test-key",
+      fetch: fakeFetch,
+    });
+    await asr.transcribe(new Blob(["fake-audio"]), {
+      lang: "pt-PT",
+      hotwords: ["café", "leite"],
+    });
+    const body = calls[0]?.init.body as FormData;
+    expect(body.get("hotwords")).toBe(JSON.stringify(["café", "leite"]));
+  });
+
+  it("omits the hotwords form field when the array is empty", async () => {
+    const calls: Array<{ url: string; init: RequestInit }> = [];
+    const fakeFetch: typeof fetch = async (input, init) => {
+      calls.push({ url: String(input), init: init ?? {} });
+      return new Response(
+        JSON.stringify({
+          text: "ok",
+          words: [{ word: "ok", start: 0, end: 0.4, confidence: 0.95 }],
+          confidence: 0.95,
+          language_detected: "pt-PT",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    };
+    const asr = new MiniMaxASR({
+      baseUrl: "https://asr.example",
+      apiKey: "test-key",
+      fetch: fakeFetch,
+    });
+    await asr.transcribe(new Blob(["fake-audio"]), { lang: "pt-PT", hotwords: [] });
+    const body = calls[0]?.init.body as FormData;
+    expect(body.get("hotwords")).toBeNull();
   });
 
   it("throws MiniMaxError on non-2xx", async () => {

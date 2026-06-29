@@ -27,6 +27,12 @@ export class MiniMaxASR {
       const form = new FormData();
       form.append("audio", audio, "utterance.webm");
       form.append("lang", options.lang);
+      if (options.hotwords && options.hotwords.length > 0) {
+        // The MiniMax ASR API expects a JSON-encoded array string on the
+        // `hotwords` field. Encoding server-side keeps the wire shape
+        // consistent regardless of how the caller assembles the list.
+        form.append("hotwords", JSON.stringify(options.hotwords));
+      }
       const response = await this.fetchImpl(`${this.config.baseUrl}/v1/asr/transcriptions`, {
         method: "POST",
         headers: {
