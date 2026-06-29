@@ -3,6 +3,7 @@ import {
   MOCK_PT_VOICE,
   MockMiniMaxASR,
   MockMiniMaxLLM,
+  MockMiniMaxPronunciation,
   MockMiniMaxTTS,
   getMiniMaxClients,
   isMockMode,
@@ -37,6 +38,44 @@ describe("MockMiniMaxTTS", () => {
   });
 });
 
+describe("MockMiniMaxPronunciation", () => {
+  it("returns 100 for identical reference and observed", async () => {
+    const client = new MockMiniMaxPronunciation();
+    const result = await client.score({ reference: "olá", observed: "olá", lang: "pt-PT" });
+    expect(result.score).toBe(100);
+    expect(result.perPhoneme.length).toBeGreaterThan(0);
+  });
+
+  it("returns 0 when observed is empty", async () => {
+    const client = new MockMiniMaxPronunciation();
+    const result = await client.score({ reference: "olá", observed: "", lang: "pt-PT" });
+    expect(result.score).toBe(0);
+  });
+
+  it("returns a partial score when tokens are reordered", async () => {
+    const client = new MockMiniMaxPronunciation();
+    const result = await client.score({
+      reference: "olá mundo",
+      observed: "mundo olá",
+      lang: "pt-PT",
+    });
+    expect(result.score).toBeGreaterThan(0);
+    expect(result.score).toBeLessThan(100);
+  });
+
+  it("emits per-phoneme entries with timestamps", async () => {
+    const client = new MockMiniMaxPronunciation();
+    const result = await client.score({
+      reference: "olá",
+      observed: "olá",
+      lang: "pt-PT",
+    });
+    expect(result.perPhoneme.length).toBe(3);
+    expect(result.perPhoneme[0]?.start).toBe(0);
+    expect(result.perPhoneme[2]?.end).toBeGreaterThan(result.perPhoneme[2]?.start ?? 0);
+  });
+});
+
 describe("getMiniMaxClients", () => {
   it("returns mocks when NEXT_PUBLIC_MOCK=1", () => {
     process.env.NEXT_PUBLIC_MOCK = "1";
@@ -45,6 +84,7 @@ describe("getMiniMaxClients", () => {
     expect(clients.llm).toBeInstanceOf(MockMiniMaxLLM);
     expect(clients.asr).toBeInstanceOf(MockMiniMaxASR);
     expect(clients.tts).toBeInstanceOf(MockMiniMaxTTS);
+    expect(clients.pronunciation).toBeInstanceOf(MockMiniMaxPronunciation);
   });
 
   it("throws a clear error when real-mode env vars are missing", () => {
@@ -52,6 +92,21 @@ describe("getMiniMaxClients", () => {
     delete process.env.MINIMAX_LLM_BASE_URL;
     delete process.env.MINIMAX_LLM_API_KEY;
     expect(() => getMiniMaxClients()).toThrow(/MINIMAX_LLM_BASE_URL/);
+  });
+
+  it("throws when pronunciation env vars are missing in real mode", () => {
+    process.env.NEXT_PUBLIC_MOCK = "0";
+    process.env.MINIMAX_LLM_BASE_URL = "https://llm.example";
+    process.env.MINIMAX_LLM_API_KEY = "k";
+    process.env.MINIMAX_ASR_BASE_URL = "https://asr.example";
+    process.env.MINIMAX_ASR_API_KEY = "k";
+    process.env.MINIMAX_TTS_BASE_URL = "https://tts.example";
+    process.env.MINIMAX_TTS_API_KEY = "k";
+    delete process.env.MINIMAX_PRONUNCIATION_BASE_URL;
+    delete process.env.MINIMAX_PRONUNCIATION_API_KEY;
+    expect(() => getMiniMaxClients()).toThrow(/MINIMAX_PRONUNCIATION_BASE_URL/);
+    delete process.env.MINIMAX_LLM_BASE_URL;
+    delete process.env.MINIMAX_LLM_API_KEY;
   });
 });
 

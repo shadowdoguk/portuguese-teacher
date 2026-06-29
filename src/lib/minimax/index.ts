@@ -4,8 +4,10 @@ import {
   MOCK_PT_VOICE,
   MockMiniMaxASR,
   MockMiniMaxLLM,
+  MockMiniMaxPronunciation,
   MockMiniMaxTTS,
 } from "./mock";
+import { MiniMaxPronunciation } from "./pronunciation";
 import { MiniMaxTTS } from "./tts";
 
 export const isMockMode = (): boolean => process.env.NEXT_PUBLIC_MOCK === "1";
@@ -14,6 +16,7 @@ export type MiniMaxClients = {
   llm: MiniMaxLLM | MockMiniMaxLLM;
   asr: MiniMaxASR | MockMiniMaxASR;
   tts: MiniMaxTTS | MockMiniMaxTTS;
+  pronunciation: MiniMaxPronunciation | MockMiniMaxPronunciation;
   mock: boolean;
 };
 
@@ -23,6 +26,7 @@ export function getMiniMaxClients(): MiniMaxClients {
       llm: new MockMiniMaxLLM(),
       asr: new MockMiniMaxASR(),
       tts: new MockMiniMaxTTS(),
+      pronunciation: new MockMiniMaxPronunciation(),
       mock: true,
     };
   }
@@ -32,10 +36,16 @@ export function getMiniMaxClients(): MiniMaxClients {
   const asrApiKey = required("MINIMAX_ASR_API_KEY");
   const ttsBaseUrl = required("MINIMAX_TTS_BASE_URL");
   const ttsApiKey = required("MINIMAX_TTS_API_KEY");
+  const pronunciationBaseUrl = required("MINIMAX_PRONUNCIATION_BASE_URL");
+  const pronunciationApiKey = required("MINIMAX_PRONUNCIATION_API_KEY");
   return {
     llm: new MiniMaxLLM({ baseUrl: llmBaseUrl, apiKey: llmApiKey }),
     asr: new MiniMaxASR({ baseUrl: asrBaseUrl, apiKey: asrApiKey }),
     tts: new MiniMaxTTS({ baseUrl: ttsBaseUrl, apiKey: ttsApiKey }),
+    pronunciation: new MiniMaxPronunciation({
+      baseUrl: pronunciationBaseUrl,
+      apiKey: pronunciationApiKey,
+    }),
     mock: false,
   };
 }
@@ -51,10 +61,11 @@ function required(name: string): string {
   return value;
 }
 
-export { MiniMaxLLM, MiniMaxASR, MiniMaxTTS, MOCK_PT_VOICE };
+export { MiniMaxLLM, MiniMaxASR, MiniMaxPronunciation, MiniMaxTTS, MOCK_PT_VOICE };
 export {
   MockMiniMaxLLM,
   MockMiniMaxASR,
+  MockMiniMaxPronunciation,
   MockMiniMaxTTS,
 } from "./mock";
 export * from "./types";

@@ -17,7 +17,7 @@ export type SrsRecallObservabilityEvent = {
   dueAt: number;
 };
 
-export type VoiceLoopStage = "asr" | "llm" | "tts" | "rerank";
+export type VoiceLoopStage = "asr" | "llm" | "tts" | "rerank" | "pronunciation";
 
 export type VoiceLoopLatencyEvent = {
   kind: "voice_loop_latency";
