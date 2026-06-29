@@ -179,6 +179,19 @@ describe("recordProbeHit + availability", () => {
     expect(availability.upPercent).toBeCloseTo(66.7, 1);
     expect(availability.sampleCount).toBeGreaterThanOrEqual(3);
   });
+
+  it("honours the caller-supplied `now` parameter on every transition", () => {
+    const t0 = 1_700_000_000_000;
+    recordServiceStatus("llm", "down", "stub outage", t0);
+    recordServiceStatus("llm", "ok", "recovered", t0 + 5_000);
+    recordServiceStatus("llm", "degraded", "slow", t0 + 10_000);
+    const early = getServiceAvailability("llm", 60_000, t0 + 30_000);
+    expect(early.sampleCount).toBe(3);
+    expect(early.upPercent).toBeCloseTo(33.3, 1);
+    const later = getServiceAvailability("llm", 5_000, t0 + 30_000);
+    expect(later.sampleCount).toBe(0);
+    expect(later.upPercent).toBe(100);
+  });
 });
 
 describe("withLatencyMetric default sink → ObservabilitySink", () => {

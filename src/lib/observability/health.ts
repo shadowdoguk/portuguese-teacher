@@ -42,10 +42,10 @@ export function recordServiceStatus(
   service: ServiceId,
   status: DegradationStatus | "ok",
   detail: string | null = null,
+  now: number = Date.now(),
 ): void {
   const s = ensure();
   const prev = s.status.get(service);
-  const now = Date.now();
   if (prev && prev.status === status) {
     if (detail && detail !== prev.detail) {
       s.status.set(service, { status, lastChangedAt: now, detail });
@@ -101,7 +101,7 @@ export function getServiceAvailability(
 }
 
 export function recordProbeHit(service: ServiceId, ok: boolean, region: string, now: number = Date.now()): void {
-  recordServiceStatus(service, ok ? "ok" : "down", `probe:${region}`);
+  recordServiceStatus(service, ok ? "ok" : "down", `probe:${region}`, now);
   getObservabilitySink().emit({
     kind: "degradation",
     occurredAt: now,
