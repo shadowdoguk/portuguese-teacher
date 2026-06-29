@@ -40,7 +40,13 @@ export function scoreFromAsrConfidence(input: AsrScoringInput): number {
     return Math.round(baseline);
   }
 
-  const biased = input.words.filter((w) => bias.has(normalize(w.word)));
+  // Normalise both sides of the bias lookup. Words are lowercased + diacritic-stripped
+  // (see normalize below). Bias entries arrive raw from `vocabularyFor(level)` /
+  // `unitBiasingVocabulary(unitId)`, which lowercase but don't strip diacritics —
+  // so a learner saying "café" would never hit a bias entry of "café" without
+  // normalising the bias side too. Issue #37 regression pin.
+  const normalizedBias = new Set(Array.from(bias, normalize));
+  const biased = input.words.filter((w) => normalizedBias.has(normalize(w.word)));
   if (biased.length === 0) {
     return Math.round(baseline);
   }

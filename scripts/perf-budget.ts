@@ -90,6 +90,7 @@ const ROUTE_GROUP_RULES: Array<{ prefix: string; group: RouteGroupKey; route: st
   { prefix: "/(auth)/log-in", group: "auth", route: "/log-in" },
   { prefix: "/(auth)/sign-up", group: "auth", route: "/sign-up" },
   { prefix: "/accessibility/", group: "public", route: "/accessibility" },
+  { prefix: "/dashboards/", group: "system", route: "/dashboards/voice-loop-latency" },
   { prefix: "/page", group: "public", route: "/" },
 ];
 

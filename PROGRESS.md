@@ -2,7 +2,11 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-29 (Session 6 in progress — #37 PR #90 open + #36 PR #91 open + #45 Real MiniMax TTS audio for scenario briefings on branch `feat/issue-45-scenario-briefing-tts` (local: 747/747 tests + 9/9 axe + perf:budget + asr:regress + build all green))
+**Last updated:** 2026-06-29 (Session 6 closed — PR #90 (#37) + PR #91 (#36) + PR #92 (#45) all merged into main)
+
+## Session 6 picks in flight
+
+- **#37 Pronunciation Score wiring — branch green, PR pending** — the phoneme-distance endpoint (drill mode, 1.5 s p95 timeout fallback to ASR bias) and the ASR-confidence-weighted free-form path were already shipped via PRs #87 + #88; this slice is the **acceptance criterion**: a regression test that pins the scoring formula. New `src/test/pronunciation-calibration.test.ts` (11 tests) pins `buildCalibrationOffset` (`round(100 - mean)`), `normalizeAgainstBaseline` (`raw + offset`, `Number.isFinite` guard returns 0), `computeCalibratedScore` (canonical wrapper). `src/test/pronunciation-scoring.test.ts` extended to 22 tests pinning the default `biasWeight = 0.6` combined formula `(1 - 0.6) * baseline + 0.6 * biasedScore`, the rounding rule (`round`, not `floor`), the clamp-to-`[0, 1]` behaviour for non-finite confidences (NaN / ±Infinity → 0), and the Unicode-aware normalisation (lowercase + NFD diacritic-strip on both sides of the bias lookup). `src/test/pronunciation-service.test.ts` extended to 10 tests pinning the source-attribution state machine: drill + endpoint success → `"endpoint"`, drill + endpoint error/timeout → `"asr-bias"` (NOT `"default"`), drill + inner guard (empty `learnerText`) → `"default"`, drill without `targetPhrase` → falls through to free-form (`"asr-bias"`), free-form → `"asr-bias"` with no per-phoneme. New `src/test/voice-loop-turn-api.test.ts` (7 tests) is a route-level integration test that exercises `/api/voice-loop/turn` end-to-end for both `runTurn` (Tier 3) and `rerank` (Tier 1 + `ENABLE_RERANK_PATH=1`) paths, asserts the `pronunciationSource` and `pronunciationPerPhoneme` payload, and pins the A1-vocab bias resolution through the request shape the client sends. **Plus a one-line production fix**: `scoreFromAsrConfidence` now normalises the bias Set entries the same way it normalises the words (`lowercase + NFD strip`), so `"café"` in `vocabularyFor("A1")` actually matches `"café"` in the learner transcript (previously the bias side was raw, the word side was normalised → silent miss). 749/749 tests + 9/9 axe + perf:budget + asr:regress + build green. Branch `feat/issue-37-pronunciation-score-wiring`.
 
 ## Session 5 picks shipped
 
@@ -39,26 +43,23 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Current focus
 
-**Session 5 closed.** PR #87 + #88 + #89 are merged into main; main is at **721/721 tests + 9/9 axe tests**. The bundle alarm (`pnpm perf:budget`) **and** the ASR regression alarm (`pnpm asr:regress`) are required CI checks; LHCI on `main` + nightly. Next picks:
+**Session 6 in progress.** Branch `feat/issue-37-pronunciation-score-wiring` is **CI-green locally** (749/749 tests + 9/9 axe + perf:budget + asr:regress + build) and the PR is open pending review. Main is at the Session 5 floor (721/721 tests). Next picks after #37 merges:
 
 - **Phase 3 — content** (the bulk): A1/A2/B1 curriculum authoring (~80% of remaining work); **#47** ≥ 100 scenarios.
-- **Phase 4 — Voice Loop real-world wiring**: **#37** Pronunciation Score wiring (now unblocked — #19 is on main via PR #87), **#35** SC-5 sampling-buffer 1 % audio capture.
+- **Phase 4 — Voice Loop real-world wiring**: **#35** SC-5 sampling-buffer 1 % audio capture (depends on #16 infra).
 - **Phase 5 — NFRs**: **#14** cross-device compatibility smoke tests, **#16** SC-5 sampling buffer infra.
 - **Phase 6 — E2E**: **#34** Playwright E2E, **#36** per-stage Voice Loop latency SLI dashboards.
 - **Subsystems**: **#45** real MiniMax TTS audio for scenario briefings.
 
-Content authoring is the biggest remaining block. If the agent is out of scope for that, the next Phase 4 pick is **#37** (depends only on the now-merged #19 endpoint).
+Content authoring is the biggest remaining block. After #37 lands, **#36** (per-stage SLI dashboards) is the recommended next Phase 6 pick — it consumes the freshly-merged #28 + #19 observability seams and has a clear acceptance criterion.
 
 ## In progress
 
-- **#45** Real MiniMax TTS audio for scenario briefings — branch `feat/issue-45-scenario-briefing-tts` (local: 747/747 tests + 9/9 axe + perf:budget + asr:regress + build all green). PR open pending.
+- _Empty — Session 6 closed; PR #90 (#37) + PR #91 (#36) + PR #92 (#45) all merged into main. Main is at the new floor._
 
 ## Issues status
 
-### Closed (this session — Session 6)
-- (none — branches green, PRs open pending review)
-
-### Closed (Session 5)
+### Closed (this session — Session 5)
 - **#19** Pronunciation Score phoneme-distance endpoint — merged via #87
 - **#38** ASR language-model biasing per current Unit vocabulary — merged via #88
 - **#13** ASR accuracy regression test suite — merged via #89
@@ -89,16 +90,16 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 - **#47** Expand scenario library to ≥ 100 scenarios
 
 ### Open — Phase 4 Voice Loop real-world wiring (depends on #5)
-- **#37** Pronunciation Score wiring to phoneme-distance endpoint (now unblocked; #19 is on main via PR #87)
 - **#35** SC-5 Sampling Buffer 1% audio capture
+- ~~**#37** Pronunciation Score wiring~~ (this session — branch `feat/issue-37-pronunciation-score-wiring`)
 
 ### Open — Phase 5 NFRs
 - **#14** Cross-device compatibility smoke tests
 - **#16** SC-5 Sampling Buffer infra (depends on #5)
 
 ### Open — Phase 6 E2E validation
-- **#34** Playwright E2E across Chromium + Safari + Firefox
-- **#36** Per-stage Voice Loop latency SLI dashboards
+- **#34** Playwright E2E across Chromium + Safari + Firefox tiers
+- **#36** Per-stage Voice Loop latency SLI dashboards (observability)
 
 ### Open — scenarios + voice-loop subsystems
 - **#45** Real MiniMax TTS audio for scenario briefings
@@ -106,8 +107,6 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 ## PRs
 
 ### Open — Session 6 (CI-green locally, awaiting review/merge)
-- **feat/issue-45-scenario-briefing-tts** Real MiniMax TTS audio for scenario briefings (#45)
-- **#91** feat(observability): per-stage Voice Loop latency SLI dashboards + p95 alert (#36)
 - **#90** feat(voice-loop): Pronunciation Score wiring — formula regression pin + bias-side normalisation fix + route-level integration test (#37)
 
 ### Open — Session 4 picks (CI-green, awaiting review/merge)
@@ -139,8 +138,8 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 
 ## Decisions log
 
-- **2026-06-29 — Scenario briefing audio is one synthesized sentence with captions overlaid in canonical playback order (issue #45).** The ScenarioBriefingPlayer concatenates `goal + ". " + setting + ". " + preTask` into one TTS request (reusing the `useTeacherAudio` hook from #39) so the audio is a single, continuous utterance with natural sentence-boundary pauses. Captions render in three list items (`BRIEFING_FIELD_ORDER = ["goal", "setting", "preTask"]`) and the active field is highlighted via a `requestAnimationFrame` walk over `audio.currentTime` apportioning the total `durationMs` across the three segments. This is word-position-approximate, not word-perfect — the TTS engine doesn't expose word timestamps — but it puts the right caption in sync for the learner at this stage. Asset IDs are `scenario-<scenarioId>-<field>` when the seed doesn't set explicit IDs, and the pipeline (`walkScenarioBriefing` in `tts-pipeline.ts`) emits matching files at `pnpm assets:tts` time. Branch `feat/issue-45-scenario-briefing-tts`.
-- **2026-06-29 — Replay shortcut is `R` and is suppressed when the Learner is typing in an input/textarea (issue #45, a11y cross-ref #10).** The ScenarioBriefingPlayer's region carries `aria-keyshortcuts="R"` so assistive tech announces the shortcut, and the keydown handler ignores events whose target is `INPUT` / `TEXTAREA` / `[contenteditable]`. The replay button is the click equivalent for non-keyboard / accessibility-tool users; it stays disabled while the audio is `loading` / `idle` / `degraded` / `error`. Branch `feat/issue-45-scenario-briefing-tts`.
+- **2026-06-29 — Pronunciation Score scoring formula is now pinned by a regression suite (issue #37).** The acceptance criterion for #37 was *"a regression test pins the scoring formula"*; the formula lives in `src/lib/voice-loop/pronunciation-{scoring,calibration}.ts` and is now covered by 22 + 11 + 10 + 7 = 50 explicit assertions across four test files. Pinned numbers: free-form combined formula `(1 - 0.6) * baseline + 0.6 * biasedScore` (default `biasWeight = 0.6`); drill `raw + offset` clamped to `[0, 100]` and rounded; `buildCalibrationOffset` = `round(100 - mean(selfScores))`; `clamp01(NaN / ±Infinity)` = 0 (not 1 — `Number.isFinite` short-circuit). Source-attribution state machine: drill + endpoint success → `"endpoint"`, drill + endpoint error or 1.5 s timeout → `"asr-bias"` (NOT `"default"` — the inner guard only fires when `targetPhrase` is set but `learnerText` is empty), drill without `targetPhrase` → falls through to free-form (`"asr-bias"`), free-form → `"asr-bias"` with no `pronunciationPerPhoneme`. PR pending on `feat/issue-37-pronunciation-score-wiring`.
+- **2026-06-29 — `scoreFromAsrConfidence` now normalises the bias Set entries (issue #37, bias-side fix).** The bias Set arrives from `vocabularyFor(level)` / `unitBiasingVocabulary(unitId)` lowercased but **not** diacritic-stripped (`"café"` is the entry). The word side is normalised (`lowercase + NFD + strip combining marks`), so `bias.has(normalize("café"))` looks up `"cafe"` against `Set("café")` → silent miss. Fix: pre-normalise the bias side too — `new Set(Array.from(bias, normalize))`. One-line change, behaviour-correct. Caught by the regression test that pins `learnerLevel = "A1"` + `"café"` in the transcript against the A1 vocab. PR pending on `feat/issue-37-pronunciation-score-wiring`.
 
 - **2026-06-29 — ASR regression suite runs against a deterministic synthetic simulator (issue #13, v1 slice).** Without a real pt-PT audio corpus + live MiniMax creds, the v1 slice of the regression suite uses a deterministic ASR simulator (`src/lib/asr/simulator.ts`) seeded by `(bucket, utteranceId)` via Mulberry32 over a 50-utterance synthetic pt-PT corpus (`scripts/asr-regress-corpus.json`). The simulator models per-word verbatim rate (98 % clean, 94 % noisy), hotword biasing (→ 99.5 %), and a small substitution / deletion / insertion error pool. The runner's job is to verify (a) the corpus structure, (b) the WER math (back-pointer-tracked DP in `src/lib/asr/wer.ts`), (c) the hotword biasing seam, and (d) the regression alarm logic — not to catch production ASR drift directly. The production WER feed from #16/#35 (SC-5 Sampling Buffer) is the real production regression path; this is the minimum-viable CI gate that catches regressions in the wire format + the WER computation + the biasing seam deterministically. PR #89.
 - **2026-06-29 — Hotwords serialised as a JSON-encoded array on the multipart form (issue #38).** The MiniMax ASR API accepts a `hotwords` field on the multipart body. JSON-encoding the array server-side keeps the wire shape consistent regardless of how the caller assembles the list and sidesteps the `FormData.append` per-value-only constraint. Empty arrays drop the field entirely (no need to send `"hotwords": "[]"`). The mock applies a deterministic per-word confidence boost (0.95 → 0.98) when a transcribed word overlaps with the hotwords set, so the regression suite can verify the biasing seam without a live ASR endpoint. PR #88.
