@@ -2,7 +2,11 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-29 (Session 3 — fixed PR #78 CI flake, merged the 6-PR Season 2 wave (#77–#82, 441 → 558 tests on main), shipped #33 voice capture (PR #83, +22) and #10 WCAG 2.2 AA audit (PR #84, +7); 587/587 on the #10 branch, 558/558 on main, 12 ready-for-agent issues remain)
+**Last updated:** 2026-06-29 (Session 4 — fixed the PR #83 route-export build break (transcribeFromForm → src/lib/asr/transcribe), merged #83 and #84 into main; main now at 588/588 tests + 8/8 axe tests, 12 ready-for-agent issues remain; #11 Lighthouse CI up next)
+
+## Session 4 picks shipped
+
+- **PR #83 build break fixed + merge** — `transcribeFromForm` (and `AsrTranscribeResponse` / `AsrTranscribeDeps`) extracted from the route file into `src/lib/asr/transcribe.ts`. Next.js route files only allow `GET`/`POST`/`runtime` + type exports; the extra value export `transcribeFromForm` was passing `tsc` and the test suite but failing `next build`'s route-type check. Rebased PR #84 onto the fix and re-ran CI; both green. `gh pr merge --squash --delete-branch` for #83 then #84. Main jumped 558 → 580 → 588; `pnpm test:a11y` added (8/8 green). Decisions log entry added for the route export-shape rule.
 
 ## Session 3 picks shipped
 
@@ -27,7 +31,7 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Current focus
 
-**Season 2 closed; Season 3 in flight.** The 6-PR Season 2 wave is on main, the #33 voice-capture PR and the #10 a11y PR are open and waiting for review. The next pick is whichever Season 3 issue you choose — the candidates are split into three phases:
+**Season 3 merged.** PR #83 (#33 voice capture) + PR #84 (#10 a11y) are on main; 588/588 tests + 8/8 axe tests. Next up is **#11 Performance budgets + Lighthouse CI** (chosen as the natural pair to the just-landed #10 a11y — same test environment, same CI gate pattern; unblocks re-enabling the color-contrast axe rule currently disabled in vitest because jsdom can't resolve computed background colours).
 
 - **Phase 3 — content** (the bulk): A1/A2/B1 curriculum authoring (~80% of remaining work); **#47** ≥ 100 scenarios.
 - **Phase 4 — Voice Loop real-world wiring**: **#39** real MiniMax TTS playback in the browser, **#38** ASR language-model biasing per current Unit vocabulary, **#37** pronunciation score wiring (depends on the #19 endpoint, which is on a stale branch and needs a PR first), **#35** SC-5 sampling-buffer 1 % audio capture. (#33 is the only Phase 4 issue done this session.)
@@ -39,20 +43,21 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 
 ## In progress
 
-- **#33** (PR #83) Tier 1+2 audio capture — `feat/issue-33-voice-capture`, CI-green, awaiting review/merge.
-- **#10** (PR #84) WCAG 2.2 AA — `feat/issue-10-a11y-audit`, CI-green, awaiting review/merge.
+- **#11** Performance budgets + Lighthouse CI — picking up this session.
 
 ## Issues status
 
-### Closed (this session)
+### Closed (this session — Session 4)
+- **#33** Tier 1 (Web Speech API) + Tier 2 (MediaRecorder) audio capture — merged via #83
+- **#10** Accessibility (WCAG 2.2 AA) audit and fixes — merged via #84
+
+### Closed (Session 3)
 - **#28** Per-recall telemetry backend hookup — merged via #77
 - **#12** Observability + graceful degradation — merged via #78 (with the `now` flake fix)
 - **#46** SRS injection of scenario vocabulary — merged via #79
 - **#31** SRS injection into Unit's Practice Exercise order — merged via #80
 - **#29** Audio + image rendering on the review card — merged via #81
 - **#48** Adaptive scenario difficulty from Learner profile — merged via #82
-- **#33** Tier 1 (Web Speech API) + Tier 2 (MediaRecorder) audio capture — code on PR #83 (CI green)
-- **#10** Accessibility (WCAG 2.2 AA) audit and fixes — code on PR #84 (CI green)
 
 ### Closed earlier (Session 2)
 - **#15** Placement Lesson integration — via #75
@@ -89,7 +94,7 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 
 ## PRs
 
-### Open — Season 3 picks (CI-green, awaiting review/merge)
+### Merged this session (Session 4)
 - **#83** feat(voice-loop): Tier 1 (Web Speech API) + Tier 2 (MediaRecorder) audio capture (#33)
 - **#84** feat(a11y): WCAG 2.2 AA audit + axe-core + accessibility statement (#10)
 
@@ -110,6 +115,7 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 
 ## Decisions log
 
+- **2026-06-29 — Next.js route files only accept specific export fields (issue #33).** `transcribeFromForm` (and the response/dep types) were originally colocated with the route handler so jsdom's missing `Request` FormData polyfill wouldn't block the integration test. `tsc --noEmit` and the vitest run were happy with the extra value export, but `next build`'s route-type check rejected it: `"transcribeFromForm" is not a valid Route export field`. The fix was to extract the helper + types into `src/lib/asr/transcribe.ts` and have the route import them. Lesson: keep route files minimal (only `runtime`, `GET`/`POST`/`PUT`/`DELETE` handlers, and inline types). Helpers and shared types belong in `src/lib/`. This was the root cause of both PR #83 and PR #84 CI failures. PRs #83 and #84.
 - **2026-06-29 — Tier 1+2 audio capture uses dependency-injected browser APIs (issue #33).** `createWebSpeechSession` and `createMediaRecorderSession` in `src/lib/voice-loop/capture.ts` take `SpeechRecognition` / `MediaRecorder` / `AudioContext` / `getUserMedia` as constructor-time deps (no globals reach into the module). This makes the entire capture state machine unit-testable in jsdom with fake constructors — no `canvas` polyfill, no happy-dom shim. The state machine is `idle → requesting-permission → listening → idle`, with terminal `denied` / `unsupported` / `error` paths. Silence detection (Tier 2) uses an `AnalyserNode` (fftSize 1024, 80 ms poll) and arms a 600 ms `setTimeout`; default amplitude threshold 0.01 (overridable). The Tier 1 path sends the Web Speech API final transcript directly to the orchestrator; Tier 2 always goes through `POST /api/asr/transcribe` for the canonical transcript. The /api/asr/transcribe route extracts its logic into a pure `transcribeFromForm(form, deps)` helper so jsdom's `Request` FormData polyfill gap doesn't block the integration test (the helper takes the parsed `FormData` directly, while the route handles the request-level multipart parsing). `useVoiceCapture` polls the session state every 120 ms for cheap re-renders and auto-aborts on unmount. PR #83.
 - **2026-06-29 — `Card` gets a `titleAs` prop (issue #10).** Default stays `h3` for backward compatibility, but consumers that use Card as a top-level page section pass `titleAs="h2"` so the heading order stays `h1 → h2 → h3`. The first consumer is `PracticeSession` (the Live turn + i+1 difficulty Cards), but any future top-level Card can opt in the same way. Axe-core flagged the previous `h1 → h3` jump as a heading-order violation; the fix is mechanical and per-component. PR #84.
 - **2026-06-29 — A11y posture: `pnpm test:a11y` is the gate, Lighthouse covers color contrast.** The jsdom test env can't resolve computed background colours, so the axe `color-contrast` rule is disabled in vitest and a Lighthouse pass covers it (the repo's Phase 5 NFRs include #11 Performance budgets + Lighthouse CI — that will be the next hook for the colour-contrast rule). All other axe rules (wcag2a, wcag2aa, wcag22aa, best-practice) run on every PR. PR #84.
@@ -128,7 +134,6 @@ Content authoring is the biggest remaining block. If the agent is out of scope f
 
 - **§10 sign-off on ADR-0003 + amended requirements doc** — Product, Pedagogy, Engineering leads. Work proceeds in parallel since the spec is captured in code; this gates release, not development.
 - **Live MiniMax LLM credentials** for #42's ≥75% in-band acceptance target (ADR-0004 §8). Sandbox creds provisioning blocks the production-WER acceptance run; the harness + CLI are wired and tested with mocks.
-- **PR review + merge of #83 + #84** — the next picks unblock once these land; main will jump to 587/587.
 
 ## Conventions reminder
 
