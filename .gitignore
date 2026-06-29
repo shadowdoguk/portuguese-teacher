@@ -32,6 +32,9 @@ yarn-error.log*
 prisma/dev.db
 prisma/dev.db-journal
 prisma/migrations/dev.db*
+# Prisma resolves `file:./prisma/dev.db` from inside prisma/, which lands here.
+prisma/prisma/dev.db
+prisma/prisma/dev.db-journal
 
 # Local env files
 .env
