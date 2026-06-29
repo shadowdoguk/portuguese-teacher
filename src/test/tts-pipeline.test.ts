@@ -150,6 +150,168 @@ describe("discoverTtsSources", () => {
     const sorted = [...ids].sort();
     expect(ids).toEqual(sorted);
   });
+
+  it("walks every scenario briefing (goal, setting, preTask) — issue #45", () => {
+    const curriculum: Curriculum = {
+      dialect: "pt-PT",
+      entryUnitId: "u1",
+      milestones: [],
+      units: [
+        {
+          id: "u1",
+          level: "A0",
+          order: 1,
+          title: "Unit 1",
+          description: "",
+          prerequisiteUnitIds: [],
+          remedialAnchors: [],
+          vocabulary: [],
+          grammar: [],
+          lessons: [],
+          scenarios: [
+            {
+              id: "sc-cafe",
+              unitId: "u1",
+              category: "cafe-restaurant",
+              targetLevel: "A0",
+              goal: "Entrar num café e pedir uma bebida.",
+              setting: "Balcão de um café em Lisboa.",
+              roles: { learner: "Cliente", teacher: "Empregado" },
+              preTask: "Que horas são? Que saudação?",
+              expectedTurns: 3,
+              vocabularyRefs: [],
+              grammarRefs: [],
+              remedialAnchorRefs: [],
+              successCriteria: ["Cumprimenta o empregado."],
+              passingScore: 0.6,
+            },
+          ],
+        },
+      ],
+    };
+    const sources = discoverTtsSources(curriculum);
+    const briefings = sources.filter((s) => s.sourceKind === "scenario-briefing");
+    expect(briefings).toHaveLength(3);
+    // All three fields are emitted (issue #45 acceptance: "every
+    // scenario has audio for preTask, goal, and setting"). The pipeline
+    // sorts by (unitId, assetId) so we test the set, not the order —
+    // the player's canonical playback order lives in
+    // `BRIEFING_FIELD_ORDER` and is covered by scenario-briefing-audio.test.ts.
+    expect(briefings.map((b) => b.sourceRef).sort()).toEqual([
+      "sc-cafe#goal",
+      "sc-cafe#preTask",
+      "sc-cafe#setting",
+    ]);
+    // Deterministic asset IDs when the scenario doesn't set them explicitly.
+    expect(briefings.map((b) => b.assetId).sort()).toEqual([
+      "scenario-sc-cafe-goal",
+      "scenario-sc-cafe-preTask",
+      "scenario-sc-cafe-setting",
+    ]);
+    // Each briefing carries the correct text.
+    const byRef = new Map(briefings.map((b) => [b.sourceRef, b.text]));
+    expect(byRef.get("sc-cafe#goal")).toBe("Entrar num café e pedir uma bebida.");
+    expect(byRef.get("sc-cafe#setting")).toBe("Balcão de um café em Lisboa.");
+    expect(byRef.get("sc-cafe#preTask")).toBe("Que horas são? Que saudação?");
+  });
+
+  it("honours explicit scenario preTaskAudioAssetId / goalAudioAssetId / settingAudioAssetId", () => {
+    const curriculum: Curriculum = {
+      dialect: "pt-PT",
+      entryUnitId: "u1",
+      milestones: [],
+      units: [
+        {
+          id: "u1",
+          level: "A0",
+          order: 1,
+          title: "Unit 1",
+          description: "",
+          prerequisiteUnitIds: [],
+          remedialAnchors: [],
+          vocabulary: [],
+          grammar: [],
+          lessons: [],
+          scenarios: [
+            {
+              id: "sc-explicit",
+              unitId: "u1",
+              category: "directions",
+              targetLevel: "A0",
+              goal: "Pedir indicações.",
+              setting: "Rua em Lisboa.",
+              roles: { learner: "Turista", teacher: "Passante" },
+              preTask: "Onde fica a estação?",
+              expectedTurns: 3,
+              vocabularyRefs: [],
+              grammarRefs: [],
+              remedialAnchorRefs: [],
+              successCriteria: ["Pergunta a direção."],
+              passingScore: 0.6,
+              preTaskAudioAssetId: "sc-explicit-preTask-briefing",
+              goalAudioAssetId: "sc-explicit-goal-briefing",
+              settingAudioAssetId: "sc-explicit-setting-briefing",
+            },
+          ],
+        },
+      ],
+    };
+    const briefings = discoverTtsSources(curriculum).filter(
+      (s) => s.sourceKind === "scenario-briefing",
+    );
+    expect(briefings.map((b) => b.assetId).sort()).toEqual([
+      "sc-explicit-goal-briefing",
+      "sc-explicit-preTask-briefing",
+      "sc-explicit-setting-briefing",
+    ]);
+  });
+
+  it("skips scenario briefings with empty copy (issue #45 acceptance)", () => {
+    const curriculum: Curriculum = {
+      dialect: "pt-PT",
+      entryUnitId: "u1",
+      milestones: [],
+      units: [
+        {
+          id: "u1",
+          level: "A0",
+          order: 1,
+          title: "Unit 1",
+          description: "",
+          prerequisiteUnitIds: [],
+          remedialAnchors: [],
+          vocabulary: [],
+          grammar: [],
+          lessons: [],
+          scenarios: [
+            {
+              id: "sc-blank",
+              unitId: "u1",
+              category: "directions",
+              targetLevel: "A0",
+              goal: "Pedir indicações.",
+              setting: "Rua em Lisboa.",
+              roles: { learner: "Turista", teacher: "Passante" },
+              preTask: "   ", // whitespace-only — should be skipped
+              expectedTurns: 3,
+              vocabularyRefs: [],
+              grammarRefs: [],
+              remedialAnchorRefs: [],
+              successCriteria: ["Pergunta a direção."],
+              passingScore: 0.6,
+            },
+          ],
+        },
+      ],
+    };
+    const briefings = discoverTtsSources(curriculum).filter(
+      (s) => s.sourceKind === "scenario-briefing",
+    );
+    expect(briefings.map((b) => b.sourceRef).sort()).toEqual([
+      "sc-blank#goal",
+      "sc-blank#setting",
+    ]);
+  });
 });
 
 describe("runTtsPipeline", () => {
@@ -264,7 +426,55 @@ describe("orphan references", () => {
     expect(refs.has("u1-grammar-g1-ex1")).toBe(true);
     expect(refs.has("u1-lesson-l1-a1")).toBe(true);
   });
+
+  it("collects scenario briefing asset IDs (deterministic fallback when unset) — issue #45", () => {
+    const refs = collectReferencedAssetIds(buildScenarioCurriculum());
+    // Three briefing fields per scenario → 3 deterministic IDs.
+    expect(refs.has("scenario-sc-cafe-goal")).toBe(true);
+    expect(refs.has("scenario-sc-cafe-setting")).toBe(true);
+    expect(refs.has("scenario-sc-cafe-preTask")).toBe(true);
+  });
 });
+
+function buildScenarioCurriculum(): Curriculum {
+  return {
+    dialect: "pt-PT",
+    entryUnitId: "u1",
+    milestones: [],
+    units: [
+      {
+        id: "u1",
+        level: "A0",
+        order: 1,
+        title: "Unit 1",
+        description: "",
+        prerequisiteUnitIds: [],
+        remedialAnchors: [],
+        vocabulary: [],
+        grammar: [],
+        lessons: [],
+        scenarios: [
+          {
+            id: "sc-cafe",
+            unitId: "u1",
+            category: "cafe-restaurant",
+            targetLevel: "A0",
+            goal: "Pedir uma bebida.",
+            setting: "Café em Lisboa.",
+            roles: { learner: "Cliente", teacher: "Empregado" },
+            preTask: "Que horas são?",
+            expectedTurns: 3,
+            vocabularyRefs: [],
+            grammarRefs: [],
+            remedialAnchorRefs: [],
+            successCriteria: ["Cumprimenta."],
+            passingScore: 0.6,
+          },
+        ],
+      },
+    ],
+  };
+}
 
 describe("A0 curriculum snapshot", () => {
   it("produces a stable manifest across runs", async () => {

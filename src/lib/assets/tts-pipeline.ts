@@ -1,7 +1,17 @@
 import type { MiniMaxTTS, MockMiniMaxTTS } from "@/lib/minimax";
-import type { Curriculum, Unit } from "@/lib/curriculum";
+import type { Curriculum, Scenario, Unit } from "@/lib/curriculum";
+import {
+  briefingAssetIdFor,
+  briefingTextFor,
+  BRIEFING_FIELD_ORDER,
+  type BriefingField,
+} from "@/lib/scenarios/briefing-audio";
 
-export type TtsSourceKind = "vocabulary" | "grammar-example" | "lesson-audio";
+export type TtsSourceKind =
+  | "vocabulary"
+  | "grammar-example"
+  | "lesson-audio"
+  | "scenario-briefing";
 
 export type TtsSource = {
   unitId: string;
@@ -85,6 +95,9 @@ export function discoverTtsSources(curriculum: Curriculum): TtsSource[] {
       });
     }
     walkLessonAudio(unit, sources);
+    for (const scenario of unit.scenarios) {
+      walkScenarioBriefing(scenario, sources);
+    }
   }
   return dedupeSources(sources);
 }
@@ -102,6 +115,27 @@ function walkLessonAudio(unit: Unit, sink: TtsSource[]): void {
         });
       }
     }
+  }
+}
+
+function walkScenarioBriefing(scenario: Scenario, sink: TtsSource[]): void {
+  // Three audio assets per scenario (goal → setting → preTask). Issue #45
+  // acceptance: "every scenario in the library has audio for preTask,
+  // goal, and setting". The asset IDs come from the scenario's explicit
+  // fields when set, otherwise the deterministic fallback in
+  // `briefing-audio.ts`. Empty copy is skipped so a blank `preTask`
+  // doesn't pad the briefing with silence.
+  for (const field of BRIEFING_FIELD_ORDER) {
+    const text = briefingTextFor(scenario, field).trim();
+    if (!text) continue;
+    const assetId = briefingAssetIdFor(scenario, field);
+    sink.push({
+      unitId: scenario.unitId,
+      assetId,
+      text,
+      sourceKind: "scenario-briefing",
+      sourceRef: `${scenario.id}#${field satisfies BriefingField}`,
+    });
   }
 }
 
@@ -200,6 +234,11 @@ export function collectReferencedAssetIds(curriculum: Curriculum): ReadonlySet<s
     for (const lesson of unit.lessons) {
       for (const block of lesson.body.blocks) {
         if (block.kind === "audio") refs.add(block.assetId);
+      }
+    }
+    for (const scenario of unit.scenarios) {
+      for (const field of BRIEFING_FIELD_ORDER) {
+        refs.add(briefingAssetIdFor(scenario, field));
       }
     }
   }

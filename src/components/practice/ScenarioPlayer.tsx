@@ -7,6 +7,7 @@ import {
   LevelMismatchBadge,
   LevelMismatchGuidance,
 } from "@/components/practice/LevelMismatchBadge";
+import { ScenarioBriefingPlayer } from "@/components/scenarios/ScenarioBriefingPlayer";
 import { useAuth } from "@/lib/auth/useAuth";
 import {
   DEFAULT_DIFFICULTY_TARGET,
@@ -225,6 +226,11 @@ export function ScenarioPlayer({
           <div className="rounded-lg border border-ink/10 bg-paper p-4">
             <p className="stage-stamp">Briefing</p>
             <p className="mt-1 text-sm text-ink-soft">{scenario.preTask}</p>
+            <ScenarioBriefingPlayer
+              scenario={scenario}
+              className="mt-4 border-0 bg-transparent p-0"
+              showCaptions
+            />
           </div>
           {scenario.vocabularyRefs.length > 0 ? (
             <div
