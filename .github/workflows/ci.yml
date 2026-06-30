@@ -59,13 +59,26 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Set up database for Prisma-touching unit tests
+        run: |
+          if [ -f prisma/schema.prisma ]; then
+            mkdir -p prisma
+            touch prisma/dev.db
+            pnpm exec prisma migrate deploy
+          fi
+        env:
+          DATABASE_URL: file:./prisma/dev.db
+
       - name: Test
         run: pnpm test
+        env:
+          DATABASE_URL: file:./prisma/dev.db
 
       - name: Build
         run: pnpm build
         env:
           NEXT_PUBLIC_MOCK: "1"
+          DATABASE_URL: file:./prisma/dev.db
 
       - name: Performance budget alarm
         run: pnpm perf:budget
