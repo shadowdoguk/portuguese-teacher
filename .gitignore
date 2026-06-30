@@ -62,3 +62,8 @@ tmp/
 # keep the manifest.json snapshot.
 public/assets/tts/**/*.mp3
 public/assets/tts/**/*.wav
+
+# Playwright
+playwright-report/
+test-results/
+playwright/.cache/

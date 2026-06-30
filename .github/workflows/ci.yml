@@ -86,5 +86,48 @@ jobs:
       - name: ASR accuracy regression suite
         run: pnpm asr:regress
 
+<<<<<<< HEAD
       - name: SC-5 load-test (sampling distribution acceptance)
         run: pnpm sc5:load-test
+=======
+  e2e:
+    name: Playwright E2E (browser tiers)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm test:e2e:install
+
+      - name: Build app
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_MOCK: "1"
+
+      - name: Run Playwright E2E
+        run: pnpm test:e2e
+        env:
+          NEXT_PUBLIC_MOCK: "1"
+          CI: "1"
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+>>>>>>> 63cbd7d (feat(e2e): Playwright E2E across Chromium + Safari + Firefox tiers (#34))
