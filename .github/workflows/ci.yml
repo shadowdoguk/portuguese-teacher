@@ -72,3 +72,6 @@ jobs:
 
       - name: ASR accuracy regression suite
         run: pnpm asr:regress
+
+      - name: SC-5 load-test (sampling distribution acceptance)
+        run: pnpm sc5:load-test

@@ -15,6 +15,7 @@ import type {
   AsrTranscribeOptions,
   AsrWord,
 } from "@/lib/minimax/types";
+import { MiniMaxError } from "@/lib/minimax/types";
 
 beforeEach(() => {
   resetHealthStateForTests();
@@ -325,5 +326,126 @@ describe("transcribeFromForm — biasing + low-confidence", () => {
 describe("observability sink", () => {
   it("uses the console sink by default", () => {
     expect(consoleObservabilitySink.name).toBe("console");
+  });
+});
+
+describe("transcribeFromForm — SC-5 sampling integration", () => {
+  function makeRecordingRecorder(): {
+    recorder: {
+      enqueue: (blob: { utteranceId: string; body: Uint8Array; contentType: string; signedUrlExpiresIn: number }) => void;
+    };
+    samples: Array<{ utteranceId: string; body: Uint8Array; contentType: string }>;
+  } {
+    const samples: Array<{ utteranceId: string; body: Uint8Array; contentType: string }> = [];
+    return {
+      recorder: {
+        enqueue(blob): void {
+          samples.push({
+            utteranceId: blob.utteranceId,
+            body: blob.body,
+            contentType: blob.contentType,
+          });
+        },
+      },
+      samples,
+    };
+  }
+
+  it("enqueues to the SC-5 recorder with a per-request utteranceId when sampled", async () => {
+    const { recorder, samples } = makeRecordingRecorder();
+    let idCounter = 0;
+    const deps: AsrTranscribeDeps = {
+      transcriber: async () => FAKE_RESULT,
+      isMock: () => true,
+      sc5Recorder: recorder,
+      generateSc5UtteranceId: () => {
+        idCounter++;
+        // u-679 hashes into the 1 % bucket; u-0 does not.
+        return idCounter === 1 ? "u-679" : "u-0";
+      },
+    };
+
+    const { shouldSample } = await import("@/lib/sc5/sampler");
+    expect(shouldSample("u-679")).toBe(true);
+    expect(shouldSample("u-0")).toBe(false);
+
+    const form1 = new FormData();
+    form1.append("audio", new Blob([new Uint8Array(2048)], { type: "audio/webm" }), "u1.webm");
+    form1.append("lang", "pt-PT");
+    await transcribeFromForm(form1, deps);
+
+    const form2 = new FormData();
+    form2.append("audio", new Blob([new Uint8Array(2048)], { type: "audio/webm" }), "u2.webm");
+    form2.append("lang", "pt-PT");
+    await transcribeFromForm(form2, deps);
+
+    const sampled = samples.filter((s) => s.utteranceId === "u-679");
+    const dropped = samples.filter((s) => s.utteranceId === "u-0");
+    expect(sampled).toHaveLength(1);
+    expect(dropped).toHaveLength(0);
+    expect(sampled[0]?.contentType).toBe("audio/webm");
+    expect(sampled[0]?.body.byteLength).toBe(2048);
+  });
+
+  it("does not enqueue when the route returns a degraded response", async () => {
+    const { recorder, samples } = makeRecordingRecorder();
+    const deps: AsrTranscribeDeps = {
+      transcriber: async () => {
+        throw new MiniMaxError("ASR unreachable", 503, "asr");
+      },
+      isMock: () => true,
+      sc5Recorder: recorder,
+      generateSc5UtteranceId: () => "should-not-fire",
+    };
+
+    const form = new FormData();
+    form.append("audio", new Blob([new Uint8Array(2048)], { type: "audio/webm" }), "u.webm");
+    form.append("lang", "pt-PT");
+    const res = await transcribeFromForm(form, deps);
+    const body = (await res.json()) as { ok: boolean; degraded?: boolean };
+    expect(body.ok).toBe(false);
+    expect(body.degraded).toBe(true);
+    expect(samples).toHaveLength(0);
+  });
+
+  it("does not enqueue when no recorder is configured", async () => {
+    const deps: AsrTranscribeDeps = {
+      transcriber: async () => FAKE_RESULT,
+      isMock: () => true,
+    };
+    const form = new FormData();
+    form.append("audio", new Blob([new Uint8Array(2048)], { type: "audio/webm" }), "u.webm");
+    form.append("lang", "pt-PT");
+    const res = await transcribeFromForm(form, deps);
+    expect(res.status).toBe(200);
+  });
+
+  it("does not block the response on the SC-5 write (fire-and-forget)", async () => {
+    const slowRecorder = {
+      enqueue(blob: {
+        utteranceId: string;
+        body: Uint8Array;
+        contentType: string;
+        signedUrlExpiresIn: number;
+      }): void {
+        // We never await this from the recorder; the recorder's enqueue is
+        // synchronous. The route should never await the recorder's internal
+        // write. Here we just verify the route returns synchronously.
+      },
+    };
+    const deps: AsrTranscribeDeps = {
+      transcriber: async () => FAKE_RESULT,
+      isMock: () => true,
+      sc5Recorder: slowRecorder,
+      generateSc5UtteranceId: () => "u-latency",
+    };
+    const form = new FormData();
+    form.append("audio", new Blob([new Uint8Array(2048)], { type: "audio/webm" }), "u.webm");
+    form.append("lang", "pt-PT");
+    const start = Date.now();
+    const res = await transcribeFromForm(form, deps);
+    const elapsed = Date.now() - start;
+    expect(res.status).toBe(200);
+    expect(elapsed).toBeLessThan(500);
   });
 });

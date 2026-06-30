@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { getMiniMaxClients, isMockMode } from "@/lib/minimax";
 import { transcribeFromForm, type AsrTranscribeResponse } from "@/lib/asr/transcribe";
 import { unitBiasingVocabulary } from "@/lib/asr/biasing";
+import { sc5Recorder } from "@/lib/sc5";
 
 export const runtime = "nodejs";
 
@@ -33,5 +34,6 @@ export async function POST(request: Request): Promise<NextResponse<AsrTranscribe
     transcriber: (blob, options) => clients.asr.transcribe(blob, options),
     isMock: () => isMockMode() || clients.mock,
     resolveBiasing: (unitId) => unitBiasingVocabulary(unitId, { prisma: prisma() }),
+    sc5Recorder,
   });
 }

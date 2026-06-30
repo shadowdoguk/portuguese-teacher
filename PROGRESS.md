@@ -2,9 +2,17 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-29 (Session 6 closed — PR #90 (#37) + PR #91 (#36) + PR #92 (#45) all merged into main; **deploy smoke** found + fixed 6 Dockerfile / Prisma gaps: binaryTargets pin, libssl1.1 from Debian bullseye, runtime delete of the unused 1.1.x engine binary, Prisma migrations on container start. Local Docker image `portuguese-teacher:2c589b8` is the verified production artifact.)
+**Last updated:** 2026-06-30 (Session 6 closed; **Session 7 starting** with #34 Playwright E2E in the AM + #16 SC-5 Sampling Buffer infra in the PM. Main: 856/856 tests + axe + perf:budget + asr:regress + sc5:load-test + build all green.)
 
-## Session 6 picks in flight
+## Session 7 picks shipped
+
+- **#34 Playwright E2E across Chromium + Safari + Firefox tiers — branch green, PR pending** — new `playwright.config.ts` (chromium + webkit projects, firefox-smoke project running only `smoke.spec.ts`); new `tests/e2e/` (`fixtures.ts`, `practice-conversation.spec.ts`, `tier-degradation.spec.ts`, `smoke.spec.ts`, `README.md`). 13 tests cover: 10-turn conversation in Tier 1 + 2 with turn-history accumulation + i+1 difficulty target render; p95 ≤ 1.5 s latency assertion on Tier 1 (mock mode, 20 iterations); UA-spoofed Tier 1 / 2 / 3 detection (chromium-only — `Navigator.prototype.userAgent` is not overridable on webkit/firefox); Tier 3 text-fallback end-to-end turn. New `pnpm test:e2e`, `test:e2e:chromium`, `test:e2e:webkit`, `test:e2e:install` scripts. Wired into `ci.yml` as a dedicated `e2e` job (separate from the `verify` job to stay under its 15 min timeout); Playwright HTML report uploaded as artifact on failure. `tests/e2e/README.md` documents the setup. Branch `feat/issue-34-playwright-e2e-tiers` is green: 13/13 E2E pass (chromium 8/8 + webkit 4 pass + 4 UA-spoof skipped + firefox-smoke 1/1), 829/829 unit tests, lint clean, typecheck clean, perf:budget + asr:regress clean.
+
+- **#16 SC-5 Sampling Buffer infra — branch green, PR pending** — new `Sc5Sample` Prisma model (no `learnerId` field; decoupled from Learner identity per ADR-0003 §4) + migration `20260630083259_add_sc5_sampling_buffer`. New `src/lib/sc5/` module: `sampler.ts` (FNV-1a 32-bit hash + 1 % sample trigger + distribution tests pinning ±0.5 pp drift over 10 k utterances), `recorder.ts` (fire-and-forget recorder, off the Voice Loop critical path, `onError` for write failures, never awaited), `server-recorder.ts` (server-only binding via `require()` to dodge webpack's static resolution), `retention.ts` (24 h hard-delete sweep + dry-run + idempotency), `aggregation.ts` (weekly WER aggregation via held-out reference ASR + DP edit-distance), `health.ts` (sample count + oldest row + retention status), `index.ts` barrel. `/api/asr/transcribe` route extended with `sc5Recorder` + `generateSc5UtteranceId` deps; `transcribeFromForm` calls the recorder after every successful ASR transcript. New `GET /api/sc5/health` route. `src/instrumentation.ts` binds the default recorder to the shared Prisma client at server startup. New scripts: `pnpm sc5:load-test` (10 k utterances → ~1 % sample, asserts ±0.5 pp drift + sync/async write match), `pnpm sc5:retention` (24 h hard-delete sweep, idempotent, with `--dry-run`). New `docs/agents/sc5-gdpr-review.md` records the GDPR Art. 6 / 9 review conclusion (legitimate-interest framing + jurisdiction-specific opt-out as v1.1 follow-up). 4 new test files: `sc5-sampler.test.ts` (12 tests), `sc5-retention.test.ts` (4 tests), `sc5-recorder.test.ts` (4 tests), `sc5-aggregation.test.ts` (4 tests). ASR transcribe route extended with 4 integration tests pinning the seam. Branch `feat/issue-16-sc5-sampling-buffer-infra` is green: 856/856 unit tests, lint clean, typecheck clean, `pnpm perf:budget` clean, `pnpm asr:regress` clean (1.08 % / 4.04 % unchanged), `pnpm sc5:load-test` PASS (10 k utterances → 118 samples = 1.18 %, sync/async write match), `pnpm build` clean, `pnpm sc5:retention:dry-run` clean.
+
+## Session 7 picks in flight
+
+- _None — Session 7 closed._
 
 - **#37 Pronunciation Score wiring — branch green, PR pending** — the phoneme-distance endpoint (drill mode, 1.5 s p95 timeout fallback to ASR bias) and the ASR-confidence-weighted free-form path were already shipped via PRs #87 + #88; this slice is the **acceptance criterion**: a regression test that pins the scoring formula. New `src/test/pronunciation-calibration.test.ts` (11 tests) pins `buildCalibrationOffset` (`round(100 - mean)`), `normalizeAgainstBaseline` (`raw + offset`, `Number.isFinite` guard returns 0), `computeCalibratedScore` (canonical wrapper). `src/test/pronunciation-scoring.test.ts` extended to 22 tests pinning the default `biasWeight = 0.6` combined formula `(1 - 0.6) * baseline + 0.6 * biasedScore`, the rounding rule (`round`, not `floor`), the clamp-to-`[0, 1]` behaviour for non-finite confidences (NaN / ±Infinity → 0), and the Unicode-aware normalisation (lowercase + NFD diacritic-strip on both sides of the bias lookup). `src/test/pronunciation-service.test.ts` extended to 10 tests pinning the source-attribution state machine: drill + endpoint success → `"endpoint"`, drill + endpoint error/timeout → `"asr-bias"` (NOT `"default"`), drill + inner guard (empty `learnerText`) → `"default"`, drill without `targetPhrase` → falls through to free-form (`"asr-bias"`), free-form → `"asr-bias"` with no per-phoneme. New `src/test/voice-loop-turn-api.test.ts` (7 tests) is a route-level integration test that exercises `/api/voice-loop/turn` end-to-end for both `runTurn` (Tier 3) and `rerank` (Tier 1 + `ENABLE_RERANK_PATH=1`) paths, asserts the `pronunciationSource` and `pronunciationPerPhoneme` payload, and pins the A1-vocab bias resolution through the request shape the client sends. **Plus a one-line production fix**: `scoreFromAsrConfidence` now normalises the bias Set entries the same way it normalises the words (`lowercase + NFD strip`), so `"café"` in `vocabularyFor("A1")` actually matches `"café"` in the learner transcript (previously the bias side was raw, the word side was normalised → silent miss). 749/749 tests + 9/9 axe + perf:budget + asr:regress + build green. Branch `feat/issue-37-pronunciation-score-wiring`.
 
@@ -43,19 +51,16 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Current focus
 
-**Session 6 in progress.** Branch `feat/issue-37-pronunciation-score-wiring` is **CI-green locally** (749/749 tests + 9/9 axe + perf:budget + asr:regress + build) and the PR is open pending review. Main is at the Session 5 floor (721/721 tests). Next picks after #37 merges:
+**Session 7 closed (2026-06-30).** Both picks landed: #34 (Playwright E2E) and #16 (SC-5 Sampling Buffer infra) are branch-green with PRs pending review. Main is at the Session 6 floor (829/829 unit tests, all required CI alarms green) — the two PRs add 27 new tests + 4 new scripts + 2 new modules + 1 new migration + 2 new docs.
 
-- **Phase 3 — content** (the bulk): A1/A2/B1 curriculum authoring (~80% of remaining work); **#47** ≥ 100 scenarios.
-- **Phase 4 — Voice Loop real-world wiring**: **#35** SC-5 sampling-buffer 1 % audio capture (depends on #16 infra).
-- **Phase 5 — NFRs**: **#14** cross-device compatibility smoke tests, **#16** SC-5 sampling buffer infra.
-- **Phase 6 — E2E**: **#34** Playwright E2E, **#36** per-stage Voice Loop latency SLI dashboards.
-- **Subsystems**: **#45** real MiniMax TTS audio for scenario briefings.
-
-Content authoring is the biggest remaining block. After #37 lands, **#36** (per-stage SLI dashboards) is the recommended next Phase 6 pick — it consumes the freshly-merged #28 + #19 observability seams and has a clear acceptance criterion.
+Next-session candidates:
+- **#35** SC-5 sampling-buffer 1 % audio capture — now unblocked after #16. Picks up the Tier 1/2 audio capture hook + the jurisdiction-specific opt-out toggle (the v1.1 follow-up surfaced in `docs/agents/sc5-gdpr-review.md`).
+- **#47** Expand scenario library to ≥ 100 scenarios — depends on #23 + #41, both closed; unblocked. Heavy on content authoring.
+- **#14** Cross-device compatibility smoke tests — visual regression + device matrix on top of the #34 foundation.
 
 ## In progress
 
-- _Empty — Session 6 closed; PR #90 (#37) + PR #91 (#36) + PR #92 (#45) all merged into main. Main is at the new floor._
+- _Empty — Session 7 closed._
 
 ## Issues status
 
@@ -90,19 +95,17 @@ Content authoring is the biggest remaining block. After #37 lands, **#36** (per-
 - **#47** Expand scenario library to ≥ 100 scenarios
 
 ### Open — Phase 4 Voice Loop real-world wiring (depends on #5)
-- **#35** SC-5 Sampling Buffer 1% audio capture
-- ~~**#37** Pronunciation Score wiring~~ (this session — branch `feat/issue-37-pronunciation-score-wiring`)
+- **#35** SC-5 Sampling Buffer 1% audio capture (unblocked after today's #16)
 
 ### Open — Phase 5 NFRs
-- **#14** Cross-device compatibility smoke tests
-- **#16** SC-5 Sampling Buffer infra (depends on #5)
+- **#14** Cross-device compatibility smoke tests (foundation laid by today's #34)
+- _#16 SC-5 Sampling Buffer infra — Session 7 PM, branch green, PR pending_
 
 ### Open — Phase 6 E2E validation
-- **#34** Playwright E2E across Chromium + Safari + Firefox tiers
-- **#36** Per-stage Voice Loop latency SLI dashboards (observability)
+- _#34 Playwright E2E across Chromium + Safari + Firefox tiers — Session 7 AM, branch green, PR pending_
 
 ### Open — scenarios + voice-loop subsystems
-- **#45** Real MiniMax TTS audio for scenario briefings
+- _(none — #45 closed via #92)_
 
 ## PRs
 

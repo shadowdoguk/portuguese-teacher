@@ -46,7 +46,10 @@
     "perf:lighthouse": "lhci autorun",
     "asr:regress": "tsx scripts/asr-regress.ts",
     "asr:regress:update": "tsx scripts/asr-regress.ts --update-baseline",
-    "asr:regress:test": "vitest run src/test/asr-wer.test.ts src/test/asr-simulator.test.ts"
+    "asr:regress:test": "vitest run src/test/asr-wer.test.ts src/test/asr-simulator.test.ts",
+    "sc5:load-test": "tsx scripts/sc5-load-test.ts",
+    "sc5:retention": "tsx scripts/sc5-retention.ts",
+    "sc5:retention:dry-run": "tsx scripts/sc5-retention.ts --dry-run"
   },
   "dependencies": {
     "next": "14.2.18",
