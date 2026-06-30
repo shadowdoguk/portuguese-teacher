@@ -323,3 +323,24 @@ model VoiceLoopLatencySample {
   @@index([stage, occurredAt])
   @@index([learnerId, occurredAt])
 }
+
+// SC-5 Sampling Buffer row — see ADR-0003 §4 + issue #16. An ephemeral audio
+// path (≤ 24 h retention) used solely to compute SC-5 production-WER on a 1%
+// sample of utterances (FR-DATA-2 + NFR-1). The model is intentionally
+// **decoupled from Learner identity**: there is no `learnerId` column, so the
+// buffer is opt-in-agnostic under EU legitimate-interest framing (see
+// docs/agents/sc5-gdpr-review.md for the recorded review conclusion). The
+// held-out reference ASR pipeline + the weekly aggregation job
+// (`src/lib/sc5/aggregation.ts`) populate `transcript` + `confidence` on the
+// same row so the comparison can be done without leaving the platform.
+model Sc5Sample {
+  id           String   @id @default(cuid())
+  utteranceId  String   @unique
+  audioBlobUrl String
+  transcript   String?
+  confidence   Float?
+  dialect      String   @default("pt-PT")
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+}
