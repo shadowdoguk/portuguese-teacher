@@ -332,11 +332,17 @@ describe("observability sink", () => {
 describe("transcribeFromForm — SC-5 sampling integration", () => {
   function makeRecordingRecorder(): {
     recorder: {
-      enqueue: (blob: { utteranceId: string; body: Uint8Array; contentType: string; signedUrlExpiresIn: number }) => void;
+      enqueue: (blob: {
+        utteranceId: string;
+        body: Uint8Array;
+        contentType: string;
+        signedUrlExpiresIn: number;
+        optOut?: boolean;
+      }) => void;
     };
-    samples: Array<{ utteranceId: string; body: Uint8Array; contentType: string }>;
+    samples: Array<{ utteranceId: string; body: Uint8Array; contentType: string; optOut?: boolean }>;
   } {
-    const samples: Array<{ utteranceId: string; body: Uint8Array; contentType: string }> = [];
+    const samples: Array<{ utteranceId: string; body: Uint8Array; contentType: string; optOut?: boolean }> = [];
     return {
       recorder: {
         enqueue(blob): void {
@@ -344,6 +350,7 @@ describe("transcribeFromForm — SC-5 sampling integration", () => {
             utteranceId: blob.utteranceId,
             body: blob.body,
             contentType: blob.contentType,
+            ...(blob.optOut !== undefined ? { optOut: blob.optOut } : {}),
           });
         },
       },
@@ -351,7 +358,7 @@ describe("transcribeFromForm — SC-5 sampling integration", () => {
     };
   }
 
-  it("enqueues to the SC-5 recorder with a per-request utteranceId when sampled", async () => {
+  it("enqueues every utterance to the SC-5 recorder (issue #35 — recorder owns the sampling decision)", async () => {
     const { recorder, samples } = makeRecordingRecorder();
     let idCounter = 0;
     const deps: AsrTranscribeDeps = {
@@ -360,14 +367,9 @@ describe("transcribeFromForm — SC-5 sampling integration", () => {
       sc5Recorder: recorder,
       generateSc5UtteranceId: () => {
         idCounter++;
-        // u-679 hashes into the 1 % bucket; u-0 does not.
         return idCounter === 1 ? "u-679" : "u-0";
       },
     };
-
-    const { shouldSample } = await import("@/lib/sc5/sampler");
-    expect(shouldSample("u-679")).toBe(true);
-    expect(shouldSample("u-0")).toBe(false);
 
     const form1 = new FormData();
     form1.append("audio", new Blob([new Uint8Array(2048)], { type: "audio/webm" }), "u1.webm");
@@ -379,12 +381,35 @@ describe("transcribeFromForm — SC-5 sampling integration", () => {
     form2.append("lang", "pt-PT");
     await transcribeFromForm(form2, deps);
 
-    const sampled = samples.filter((s) => s.utteranceId === "u-679");
-    const dropped = samples.filter((s) => s.utteranceId === "u-0");
-    expect(sampled).toHaveLength(1);
-    expect(dropped).toHaveLength(0);
-    expect(sampled[0]?.contentType).toBe("audio/webm");
-    expect(sampled[0]?.body.byteLength).toBe(2048);
+    // Both utterances enqueue (the recorder decides sampled vs skipped).
+    expect(samples).toHaveLength(2);
+    expect(samples.map((s) => s.utteranceId).sort()).toEqual(["u-0", "u-679"]);
+    for (const sample of samples) {
+      expect(sample.contentType).toBe("audio/webm");
+      expect(sample.body.byteLength).toBe(2048);
+      expect(sample.optOut).toBeUndefined();
+    }
+  });
+
+  it("marks enqueued samples with optOut=true when sc5OptOut is set (issue #35)", async () => {
+    const { recorder, samples } = makeRecordingRecorder();
+    const deps: AsrTranscribeDeps = {
+      transcriber: async () => FAKE_RESULT,
+      isMock: () => true,
+      sc5Recorder: recorder,
+      generateSc5UtteranceId: () => "u-opt-out",
+      sc5OptOut: true,
+    };
+    const form = new FormData();
+    form.append("audio", new Blob([new Uint8Array(2048)], { type: "audio/webm" }), "u.webm");
+    form.append("lang", "pt-PT");
+    await transcribeFromForm(form, deps);
+
+    expect(samples).toHaveLength(1);
+    expect(samples[0]?.optOut).toBe(true);
+    // The route passes an empty body when opted out so the recorder
+    // short-circuits without reading the audio bytes.
+    expect(samples[0]?.body.byteLength).toBe(0);
   });
 
   it("does not enqueue when the route returns a degraded response", async () => {

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { withAsrFallback, type DegradedAsrResult, type AsrTranscriber } from "@/lib/minimax/fallbacks";
 import { LOW_CONFIDENCE_THRESHOLD, isLowConfidence } from "@/lib/asr/biasing";
-import { shouldSample } from "@/lib/sc5/sampler";
 import type { Sc5Recorder } from "@/lib/sc5/recorder";
 
 export type AsrTranscribeResponse =
@@ -60,6 +59,14 @@ export type AsrTranscribeDeps = {
    * trigger) and for dedup on the `Sc5Sample.utteranceId` unique constraint.
    */
   generateSc5UtteranceId?: () => string;
+  /**
+   * When true, the Learner has `Settings.sc5OptOut = true` (issue #35) and
+   * the route must skip the SC-5 write entirely. The recorder, if supplied,
+   * is invoked with `optOut: true` so the SLI dashboard records the
+   * suppressed sample. The dep is optional — when omitted, opt-out is
+   * treated as false (the route tests don't care about the SLI surface).
+   */
+  sc5OptOut?: boolean;
 };
 
 const ALLOWED_LANGS = new Set(["pt-PT"]);
@@ -144,20 +151,23 @@ export async function transcribeFromForm(
     );
   }
 
-  // Fire-and-forget SC-5 sample write. The sample rate is 1 % and the recorder
-  // returns immediately; we never await the write here.
+  // Fire-and-forget SC-5 sample write. The recorder owns the sampler + opt-out
+  // check (issue #35) and emits one of `sampled` / `skipped` / `opt-out` /
+  // `failed` events to the SLI dashboard. The route always enqueues; the
+  // recorder decides. We pass the audio bytes through (unless opted out —
+  // the recorder short-circuits before reading the body so we never even
+  // pay the `arrayBuffer()` cost on the opt-out path).
   if (deps.sc5Recorder) {
     const generateId = deps.generateSc5UtteranceId ?? defaultGenerateId;
     const utteranceId = generateId();
-    if (shouldSample(utteranceId)) {
-      const body = await readBlobBytes(audio);
-      deps.sc5Recorder.enqueue({
-        utteranceId,
-        body,
-        contentType: audio.type || "audio/webm",
-        signedUrlExpiresIn: 24 * 60 * 60,
-      });
-    }
+    const body = deps.sc5OptOut ? new Uint8Array(0) : await readBlobBytes(audio);
+    deps.sc5Recorder.enqueue({
+      utteranceId,
+      body,
+      contentType: audio.type || "audio/webm",
+      signedUrlExpiresIn: 24 * 60 * 60,
+      ...(deps.sc5OptOut ? { optOut: true } : {}),
+    });
   }
 
   return NextResponse.json({

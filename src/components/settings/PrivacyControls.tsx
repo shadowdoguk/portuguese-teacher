@@ -21,7 +21,7 @@ import { Card } from "@/components/ui/Card";
 
 export function PrivacyControls() {
   const { user } = useAuth();
-  const { settings } = useSettings();
+  const { settings, update } = useSettings();
   const [deletion, setDeletion] = useState<DeletionRequest | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -77,6 +77,10 @@ export function PrivacyControls() {
     setDeletion(null);
   }
 
+  function handleSc5OptOutToggle(): void {
+    update({ sc5OptOut: !settings.sc5OptOut });
+  }
+
   if (!user) {
     return (
       <Card eyebrow="Privacy" title="Sign in to manage privacy">
@@ -106,6 +110,44 @@ export function PrivacyControls() {
             </p>
           ) : null}
         </div>
+      </Card>
+
+      <Card eyebrow="Audio sampling" title="SC-5 Sampling Buffer">
+        <p className="text-sm text-ink-soft">
+          The platform maintains a separate audio path (SC-5 Sampling Buffer)
+          that captures roughly 1 % of voice-loop utterances to measure
+          production speech-recognition accuracy. The buffer is decoupled from
+          your account — no learner identifier is stored — and every sample is
+          hard-deleted within 24 hours. See{" "}
+          <code className="rounded bg-paper-warm/60 px-1 py-0.5 text-xs">
+            docs/agents/sc5-gdpr-review.md
+          </code>{" "}
+          for the privacy review.
+        </p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={settings.sc5OptOut}
+              onChange={handleSc5OptOutToggle}
+              data-testid="sc5-opt-out"
+            />
+            <span>Opt out of SC-5 sampling</span>
+          </label>
+          <span
+            className="pill"
+            data-testid="sc5-status"
+            data-state={settings.sc5OptOut ? "opted-out" : "active"}
+          >
+            {settings.sc5OptOut ? "Opted out" : "Active (1 % sample)"}
+          </span>
+        </div>
+        <p className="mt-2 text-xs text-ink-mute">
+          Required for jurisdictions (DE under BDSG, FR under CNIL guidance)
+          that mandate explicit consent for ephemeral audio capture.
+          Toggling suppresses every SC-5 write for your account; the SLI
+          dashboard records the suppression.
+        </p>
       </Card>
 
       <Card eyebrow="Account deletion" title="Delete your account and data">

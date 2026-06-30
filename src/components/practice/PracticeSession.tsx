@@ -158,6 +158,12 @@ export function PracticeSession() {
       form.append("audio", audioBlob, "utterance.webm");
       form.append("lang", "pt-PT");
       if (unitId) form.append("unitId", unitId);
+      // Issue #35 — propagate the Learner's SC-5 opt-out flag to the
+      // route so the recorder short-circuits when `Settings.sc5OptOut` is
+      // set. The flag is authoritative on the client (the Settings store
+      // is localStorage-only in v1); the server-side authoritative flag is
+      // a v1.1 follow-up per `docs/agents/sc5-gdpr-review.md`.
+      if (settings.sc5OptOut) form.append("sc5OptOut", "1");
       const res = await fetch("/api/asr/transcribe", {
         method: "POST",
         body: form,
@@ -176,7 +182,7 @@ export function PracticeSession() {
       setLowConfidenceNotice(null);
       return body.text;
     },
-    [unitId],
+    [unitId, settings.sc5OptOut],
   );
 
   const handleGrade = useCallback(

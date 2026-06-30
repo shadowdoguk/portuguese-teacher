@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { getObservabilitySink } from "@/lib/observability/sink";
 import { SC5_SAMPLE_RATE, shouldSample } from "./sampler";
 
 export type Sc5AudioObjectStore = {
@@ -10,6 +11,13 @@ export type Sc5AudioBlob = {
   body: Uint8Array;
   contentType: string;
   signedUrlExpiresIn: number;
+  /**
+   * Per-call opt-out override (issue #35). When true, the recorder emits an
+   * `outcome: "opt-out"` event without reading the body or writing. The
+   * recorder-level `optOut` option is a static fallback for tests that bind
+   * a recorder dedicated to opt-out requests.
+   */
+  optOut?: boolean;
 };
 
 export type Sc5Recorder = {
@@ -27,13 +35,40 @@ export type Sc5FireAndForgetOptions = {
   prisma?: PrismaClient;
   dialect?: string;
   onError?: (err: unknown) => void;
+  /**
+   * Static opt-out flag. When true, every call short-circuits with an
+   * `outcome: "opt-out"` event. Tests use this to bind a dedicated
+   * opt-out recorder; the production route reads the per-call flag from the
+   * Learner's Settings and passes it via the `enqueue` argument.
+   */
+  optOut?: boolean;
 };
 
 export type Sc5FireAndForgetInput = {
   utteranceId: string;
   audio: Uint8Array;
   contentType?: string;
+  optOut?: boolean;
 };
+
+function emitSc5Event(
+  outcome: "sampled" | "skipped" | "opt-out" | "failed",
+  utteranceId: string,
+  extras: { latencyMs?: number; detail?: string } = {},
+): void {
+  try {
+    getObservabilitySink().emit({
+      kind: "sc5_sample",
+      occurredAt: Date.now(),
+      outcome,
+      utteranceId,
+      ...(extras.latencyMs !== undefined ? { latencyMs: extras.latencyMs } : {}),
+      ...(extras.detail !== undefined ? { detail: extras.detail } : {}),
+    });
+  } catch {
+    /* telemetry is best-effort; never throw into the call site */
+  }
+}
 
 async function persistSample(
   prisma: PrismaClient,
@@ -63,10 +98,18 @@ export function createFireAndForgetRecorder(
 
   return {
     enqueue(blob): void {
-      if (!shouldSample(blob.utteranceId, sampleRate)) return;
+      if (blob.optOut ?? options.optOut) {
+        emitSc5Event("opt-out", blob.utteranceId);
+        return;
+      }
+      if (!shouldSample(blob.utteranceId, sampleRate)) {
+        emitSc5Event("skipped", blob.utteranceId);
+        return;
+      }
       // Fire-and-forget: latency is off the Voice Loop critical path.
       // Errors are reported via `onError` (the default sink logs them).
       const write = async (): Promise<void> => {
+        const start = Date.now();
         if (!store) {
           throw new Error("SC-5 recorder invoked without an object store");
         }
@@ -81,8 +124,14 @@ export function createFireAndForgetRecorder(
             dialect,
           });
         }
+        emitSc5Event("sampled", blob.utteranceId, {
+          latencyMs: Date.now() - start,
+        });
       };
       write().catch((err: unknown) => {
+        emitSc5Event("failed", blob.utteranceId, {
+          detail: err instanceof Error ? err.message : "unknown error",
+        });
         if (options.onError) {
           options.onError(err);
           return;
