@@ -40,6 +40,14 @@ export type Settings = {
   confidenceCheckinOptIn: boolean;
   weeklyGoalMinutes: number;
   ttsVoice: TtsVoice;
+  /**
+   * Per-Learner opt-out from the SC-5 Sampling Buffer. v1 ships the buffer
+   * on the legitimate-interest framing (per `docs/agents/sc5-gdpr-review.md`),
+   * but jurisdictions that require explicit consent (DE under BDSG, FR under
+   * CNIL guidance) need an opt-out toggle. The route consults this flag
+   * before calling the SC-5 recorder in `/api/asr/transcribe`.
+   */
+  sc5OptOut: boolean;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -53,6 +61,7 @@ export const DEFAULT_SETTINGS: Settings = {
   confidenceCheckinOptIn: false,
   weeklyGoalMinutes: 105,
   ttsVoice: DEFAULT_TTS_VOICE,
+  sc5OptOut: false,
 };
 
 export const VOICE_SPEED_RANGE = { min: 0.75, max: 1.25, step: 0.05 } as const;
@@ -99,6 +108,8 @@ export function applySettingsPatch(base: Settings, patch: SettingsPatch): Settin
       patch.weeklyGoalMinutes !== undefined
         ? clampWeeklyGoal(patch.weeklyGoalMinutes)
         : base.weeklyGoalMinutes,
+    sc5OptOut:
+      patch.sc5OptOut !== undefined ? Boolean(patch.sc5OptOut) : base.sc5OptOut,
     ttsVoice: normalizeTtsVoice(patch.ttsVoice),
   };
 }

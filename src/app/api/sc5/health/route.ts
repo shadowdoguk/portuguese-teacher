@@ -9,9 +9,13 @@ export const runtime = "nodejs";
 // requests dynamically on every GET.
 export const dynamic = "force-dynamic";
 
-const prisma = new PrismaClient();
+let prismaSingleton: PrismaClient | null = null;
+function prisma(): PrismaClient {
+  if (!prismaSingleton) prismaSingleton = new PrismaClient();
+  return prismaSingleton;
+}
 
 export async function GET(): Promise<NextResponse> {
-  const snapshot = await getSc5Health(prisma);
+  const snapshot = await getSc5Health(prisma());
   return NextResponse.json(snapshot);
 }

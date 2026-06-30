@@ -4,7 +4,8 @@ export type ObservabilityEventKind =
   | "srs_recall"
   | "voice_loop_latency"
   | "voice_loop_error"
-  | "degradation";
+  | "degradation"
+  | "sc5_sample";
 
 export type SrsRecallObservabilityEvent = {
   kind: "srs_recall";
@@ -81,11 +82,34 @@ export type DegradationEvent = {
   learnerId?: string;
 };
 
+/**
+ * SC-5 Sampling Buffer telemetry (issue #35). Emitted by `src/lib/sc5/recorder.ts`
+ * on every fire-and-forget write to the SC-5 buffer. The `outcome` field is
+ * one of:
+ * - `"sampled"`  — utterance qualified for the 1 % sample + write succeeded.
+ * - `"skipped"`  — utterance did NOT qualify for the sample (the 99 % miss).
+ * - `"opt-out"`  — Learner has `sc5OptOut = true`; sample suppressed.
+ * - `"failed"`   — sample qualified but the write failed (e.g. DB unreachable).
+ *
+ * Powers the SC-5 SLI dashboard surface + the per-stage latency assertion
+ * (the SC-5 path is fire-and-forget; this event lets ops verify it does
+ * not block the Voice Loop p95).
+ */
+export type Sc5SampleObservabilityEvent = {
+  kind: "sc5_sample";
+  occurredAt: number;
+  outcome: "sampled" | "skipped" | "opt-out" | "failed";
+  utteranceId: string;
+  latencyMs?: number;
+  detail?: string;
+};
+
 export type ObservabilityEvent =
   | SrsRecallObservabilityEvent
   | VoiceLoopLatencyEvent
   | VoiceLoopErrorEvent
-  | DegradationEvent;
+  | DegradationEvent
+  | Sc5SampleObservabilityEvent;
 
 export interface ObservabilitySink {
   readonly name: string;

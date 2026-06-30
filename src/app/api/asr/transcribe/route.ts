@@ -29,11 +29,24 @@ export async function POST(request: Request): Promise<NextResponse<AsrTranscribe
     return NextResponse.json({ ok: false, error: "Malformed multipart body" }, { status: 400 });
   }
 
+  // Resolve the Learner's SC-5 opt-out flag (issue #35). The browser
+  // supplies `sc5OptOut="1"` when the Learner has toggled the SC-5 opt-out
+  // in Settings (default off). The route honors the client-supplied flag
+  // and passes it to `transcribeFromForm` which short-circuits the SC-5
+  // recorder with an `outcome: "opt-out"` event so the SLI dashboard
+  // reflects the suppressed sample. The opt-out is intentionally a
+  // client-supplied flag in v1 (Settings are localStorage-only); the
+  // server-side settings store is a v1.1 follow-up (captured in
+  // `docs/agents/sc5-gdpr-review.md`).
+  const rawSc5OptOut = form.get("sc5OptOut");
+  const sc5OptOut = typeof rawSc5OptOut === "string" && rawSc5OptOut === "1";
+
   const clients = getMiniMaxClients();
   return transcribeFromForm(form, {
     transcriber: (blob, options) => clients.asr.transcribe(blob, options),
     isMock: () => isMockMode() || clients.mock,
     resolveBiasing: (unitId) => unitBiasingVocabulary(unitId, { prisma: prisma() }),
     sc5Recorder,
+    sc5OptOut,
   });
 }

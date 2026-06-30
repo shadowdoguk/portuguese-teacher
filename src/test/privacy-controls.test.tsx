@@ -127,4 +127,31 @@ describe("PrivacyControls", () => {
       expect(window.localStorage.getItem("portuguese-teacher:deletion:demo-learner-001")).toBeNull();
     });
   });
+
+  it("renders the SC-5 Sampling Buffer card with the toggle + status pill (issue #35)", async () => {
+    render(<Harness />);
+    await waitFor(() => {
+      expect(screen.getByTestId("sc5-opt-out")).toBeInTheDocument();
+    });
+    const checkbox = screen.getByTestId("sc5-opt-out") as HTMLInputElement;
+    const status = screen.getByTestId("sc5-status");
+    expect(checkbox.checked).toBe(false);
+    expect(status.getAttribute("data-state")).toBe("active");
+    expect(status.textContent).toMatch(/Active/);
+  });
+
+  it("toggles sc5OptOut + updates the status pill", async () => {
+    render(<Harness />);
+    await waitFor(() => {
+      expect(screen.getByTestId("sc5-opt-out")).toBeInTheDocument();
+    });
+    const checkbox = screen.getByTestId("sc5-opt-out") as HTMLInputElement;
+    fireEvent.click(checkbox);
+    await waitFor(() => {
+      expect((screen.getByTestId("sc5-opt-out") as HTMLInputElement).checked).toBe(true);
+    });
+    const status = screen.getByTestId("sc5-status");
+    expect(status.getAttribute("data-state")).toBe("opted-out");
+    expect(status.textContent).toMatch(/Opted out/);
+  });
 });

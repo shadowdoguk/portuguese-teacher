@@ -2,7 +2,7 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-30 (Session 7 closed — PR #93 (#34 Playwright E2E) + PR #94 (#16 SC-5 Sampling Buffer infra) merged into main. **Session 8 starting** with #35 SC-5 sampling-buffer 1% audio capture, the only Phase 4 Voice Loop real-world wiring pick that was unblocked by #16's infra. Main: 856/856 tests + axe + perf:budget + asr:regress + sc5:load-test + test:e2e + build all green.)
+**Last updated:** 2026-06-30 (Session 7 closed — PR #93 (#34 Playwright E2E) + PR #94 (#16 SC-5 Sampling Buffer infra) merged into main. **Session 8 starting** with #35 SC-5 sampling-buffer 1% audio capture, the only Phase 4 Voice Loop real-world wiring pick that was unblocked by #16's infra. Main: 866/866 tests + axe + perf:budget + asr:regress + sc5:load-test + test:e2e + build all green. Branch `feat/issue-35-sc5-1pct-audio-capture` is branch-green and ready to push.)
 
 ## Session 7 picks shipped
 
@@ -53,16 +53,25 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Current focus
 
-**Session 7 closed (2026-06-30).** Both picks landed: #34 (Playwright E2E) and #16 (SC-5 Sampling Buffer infra) are branch-green with PRs pending review. Main is at the Session 6 floor (829/829 unit tests, all required CI alarms green) — the two PRs add 27 new tests + 4 new scripts + 2 new modules + 1 new migration + 2 new docs.
+**Session 8 in flight (2026-06-30).** Branch `feat/issue-35-sc5-1pct-audio-capture` is branch-green (866/866 unit tests + lint + typecheck + perf:budget + asr:regress + sc5:load-test PASS + build clean) and ready to push.
 
-Next-session candidates:
-- **#35** SC-5 sampling-buffer 1 % audio capture — now unblocked after #16. Picks up the Tier 1/2 audio capture hook + the jurisdiction-specific opt-out toggle (the v1.1 follow-up surfaced in `docs/agents/sc5-gdpr-review.md`).
-- **#47** Expand scenario library to ≥ 100 scenarios — depends on #23 + #41, both closed; unblocked. Heavy on content authoring.
-- **#14** Cross-device compatibility smoke tests — visual regression + device matrix on top of the #34 foundation.
+Today's pick (#35, complete on the branch):
+- **Settings.sc5OptOut** (default false) — `src/lib/settings/types.ts` + `applySettingsPatch`. Per-Learner opt-out for jurisdictions that require explicit consent (DE under BDSG, FR under CNIL guidance). Persisted to localStorage via the existing SettingsProvider.
+- **PrivacyControls SC-5 card** — `src/components/settings/PrivacyControls.tsx`. Toggle + status pill (`data-state="active" | "opted-out"`). Links to `docs/agents/sc5-gdpr-review.md` for the privacy review record.
+- **SC-5 recorder owns sampling + opt-out decision** — `src/lib/sc5/recorder.ts`. `enqueue(blob)` accepts a per-call `optOut?: boolean` flag; the recorder emits one of four `sc5_sample` events (`sampled` / `skipped` / `opt-out` / `failed`) on every call. The route always enqueues — the recorder decides.
+- **sc5_sample observability event** — `src/lib/observability/sink.ts`. New `Sc5SampleObservabilityEvent` extends the `ObservabilityEvent` union. Powers the SLI dashboard (issue #36) and lets ops verify the SC-5 path does not block the Voice Loop p95.
+- **ASR transcribe seam** — `src/lib/asr/transcribe.ts` + `src/app/api/asr/transcribe/route.ts`. The route reads `sc5OptOut` from the form (set by the browser when `settings.sc5OptOut === true`) and passes it to `transcribeFromForm`. The transcribe helper short-circuits the `arrayBuffer()` call on the opt-out path so the route never pays the audio-decode cost for opted-out Learners.
+- **PracticeSession propagates the flag** — `src/components/practice/PracticeSession.tsx`. Appends `sc5OptOut="1"` to the multipart form when the Learner has toggled the opt-out.
+- **Tests** — 2 new test files: `src/test/sc5-1000-fixture.test.ts` (2 tests pinning the 1000-utterance → 10 samples acceptance for the `u-621..u-1620` fixture + the 10k drift acceptance); `src/test/sc5-sli.test.ts` (6 tests pinning the four-event taxonomy). Extended: `src/test/privacy-controls.test.tsx` (2 tests for the SC-5 card + toggle + status pill); `src/test/asr-transcribe-api.test.ts` (now pins the recorder-always-enqueues + opt-out body-is-empty semantics).
+
+After today, the remaining queue:
+- **Phase 3 — content**: **#47** ≥ 100 scenarios (depends on #23 + #41, both closed; unblocked).
+- **Phase 5 — NFRs**: **#14** cross-device compatibility smoke tests (foundation laid by #34).
+- **Phase 6 — E2E**: nothing further queued.
 
 ## In progress
 
-- _Empty — Session 7 closed._
+- _Branch `feat/issue-35-sc5-1pct-audio-capture` — 866/866 tests + all CI alarms green; pending push + PR._
 
 ## Issues status
 
