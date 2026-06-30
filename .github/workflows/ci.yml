@@ -108,6 +108,10 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client
+        run: pnpm exec prisma generate
+        if: hashFiles('prisma/schema.prisma') != ''
+
       - name: Install Playwright browsers
         run: pnpm test:e2e:install
 
@@ -115,11 +119,13 @@ jobs:
         run: pnpm build
         env:
           NEXT_PUBLIC_MOCK: "1"
+          DATABASE_URL: file:./prisma/dev.db
 
       - name: Run Playwright E2E
         run: pnpm test:e2e
         env:
           NEXT_PUBLIC_MOCK: "1"
+          DATABASE_URL: file:./prisma/dev.db
           CI: "1"
 
       - name: Upload Playwright report on failure
