@@ -49,7 +49,11 @@
     "asr:regress:test": "vitest run src/test/asr-wer.test.ts src/test/asr-simulator.test.ts",
     "sc5:load-test": "tsx scripts/sc5-load-test.ts",
     "sc5:retention": "tsx scripts/sc5-retention.ts",
-    "sc5:retention:dry-run": "tsx scripts/sc5-retention.ts --dry-run"
+    "sc5:retention:dry-run": "tsx scripts/sc5-retention.ts --dry-run",
+    "test:e2e": "playwright test",
+    "test:e2e:chromium": "playwright test --project=chromium",
+    "test:e2e:webkit": "playwright test --project=webkit",
+    "test:e2e:install": "playwright install chromium webkit firefox --with-deps"
   },
   "dependencies": {
     "next": "14.2.18",
@@ -59,6 +63,7 @@
   "devDependencies": {
     "@lhci/cli": "0.15.1",
     "@next/bundle-analyzer": "14.2.35",
+    "@playwright/test": "^1.61.1",
     "@prisma/client": "5.22.0",
     "@testing-library/jest-dom": "6.6.3",
     "@testing-library/react": "16.0.1",
