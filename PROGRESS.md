@@ -2,7 +2,7 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-30 (Sessions 7 + 8 closed — PR #93 (#34) + PR #94 (#16) + PR #95 (#35 SC-5 audio capture hook + opt-out toggle) + PR #96 (Session 8 HANDOFF) all merged into main. **Phase 4 queue is closed.** Main: 866/866 tests + axe + perf:budget + asr:regress + sc5:load-test + test:e2e + build all green. Next-session picks: #47 scenario expansion or #14 cross-device smoke.)
+**Last updated:** 2026-06-30 (Sessions 7 + 8 closed — PR #93 (#34) + PR #94 (#16) + PR #95 (#35 SC-5 audio capture hook + opt-out toggle) + PR #96 (Session 8 HANDOFF) all merged into main. **Session 9 in flight** with #47 scenario library expansion to ≥ 100 scenarios + ≥ 6 per category. Branch `feat/issue-47-scenario-library-expansion` is branch-green at 874/874 tests + lint + typecheck + perf:budget + asr:regress + sc5:load-test + build all clean. Next-session picks: #14 cross-device smoke.)
 
 ## Session 7 picks shipped
 
@@ -53,14 +53,35 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Current focus
 
-**Sessions 7 + 8 closed (2026-06-30).** PRs #93 + #94 + #95 + #96 all merged into main. Phase 4 queue is closed. Next-session picks:
+**Session 9 in flight (2026-06-30).** Branch `feat/issue-47-scenario-library-expansion` is branch-green at 874/874 tests + lint + typecheck + perf:budget + asr:regress + sc5:load-test + build all clean.
 
-- **#47** Expand scenario library to ≥ 100 scenarios (depends on #23 + #41, both closed; unblocked). Heavy on content authoring — finishes Phase 3 and unblocks the A1/A2/B1 curriculum pipeline.
-- **#14** Cross-device compatibility smoke tests (foundation laid by #34). Visual regression + device matrix on top of the Playwright E2E foundation.
+Today's pick (#47, complete on the branch):
+- **Library expansion to 100 scenarios** — `src/lib/scenarios/library.ts`. Adds 70 new pt-PT scenarios across 10 categories (greetings-introductions, cafe-restaurant, shopping-bargaining, directions, doctor, bank-post-office, job-interview, travelling, social-plans, cultural-norms). Final distribution:
+  ```
+  bank-post-office             8
+  cafe-restaurant              12
+  cultural-norms               16   (Lisbon/Porto cultural focus per acceptance)
+  directions                   10
+  doctor                       9
+  greetings-introductions      6
+  job-interview                9
+  shopping-bargaining          9
+  social-plans                 10
+  travelling                   11
+  ─
+  Total                       100
+  ```
+  Level coverage: A0: 4, A1: 30, A2: 33, B1: 33. Zero pt-BR tokens (verified by the existing scenario-library invariant).
+- **Property tests** — `src/test/scenarios-library-property.test.ts`. Asserts ≥ 100 total, ≥ 6 per category, every CEFR level covered, ≥ 3 scenarios per A1/A2/B1 Unit, structural invariants pass, sub-level coverage.
+- **A/B harness re-run** — `src/test/ab-harness.test.ts`. New "issue #47 scenario expansion re-run" describe block runs every CEFR boundary (A0→A1, A1→A2, A2→B1) under mock mode and pins the rerank vs prompt-only in-band relationship.
+- **A1/A2/B1 seed files** — `src/lib/curriculum/seed-a1.ts`, `seed-a2.ts`, `seed-b1.ts`. Two Units per Level (matches the in-memory library's minimum-viable Unit count). `prisma/seed.ts` updated to merge all four curricula. `pnpm seed` produces 10 Units (4 A0 + 2 A1 + 2 A2 + 2 B1).
+
+After today, the remaining queue:
+- **Phase 5 — NFRs**: **#14** cross-device compatibility smoke tests (foundation laid by #34). Visual regression + device matrix.
 
 ## In progress
 
-- _Empty — Phase 4 closed; Phase 3 / Phase 5 ready to pick up._
+- _Branch `feat/issue-47-scenario-library-expansion` — 874/874 tests + all CI alarms green; pending push + PR._
 
 ## Issues status
 

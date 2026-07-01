@@ -1,25 +1,39 @@
-// Seeds the Prisma database from the canonical in-memory A0_CURRICULUM
-// fixture (src/lib/curriculum/seed-a0.ts).
+// Seeds the Prisma database from the canonical in-memory curriculum
+// fixtures (src/lib/curriculum/seed-a{0,1,2,b1}.ts).
 //
 // Idempotent: every row is upserted on its natural ID so re-running the
 // script is safe and produces the same state.
 //
 // Usage:
-//   pnpm seed          # seeds everything that A0_CURRICULUM declares
+//   pnpm seed          # seeds everything that the four level curricula declare
 //   pnpm seed:a0       # explicit alias (Level A0)
 //
 // References:
-//   - src/lib/curriculum/seed-a0.ts (source of truth)
+//   - src/lib/curriculum/seed-a0.ts (A0 source of truth)
+//   - src/lib/curriculum/seed-a1.ts (A1 source of truth)
+//   - src/lib/curriculum/seed-a2.ts (A2 source of truth)
+//   - src/lib/curriculum/seed-b1.ts (B1 source of truth)
 //   - prisma/schema.prisma (target)
 //   - docs/adr/0003-v1-scope-amendment.md (v1 is pt-PT only)
 
 import { PrismaClient } from "@prisma/client";
 import { execSync } from "node:child_process";
 import { A0_CURRICULUM } from "../src/lib/curriculum/seed-a0";
+import { A1_CURRICULUM } from "../src/lib/curriculum/seed-a1";
+import { A2_CURRICULUM } from "../src/lib/curriculum/seed-a2";
+import { B1_CURRICULUM } from "../src/lib/curriculum/seed-b1";
+import type { Curriculum } from "../src/lib/curriculum/types";
 
 const prisma = new PrismaClient();
 
 const CURRICULUM_ID = "pt-PT-v1";
+
+const ALL_CURRICULA: ReadonlyArray<Curriculum> = [
+  A0_CURRICULUM,
+  A1_CURRICULUM,
+  A2_CURRICULUM,
+  B1_CURRICULUM,
+];
 
 function ensureMigrationsApplied(): void {
   // `migrate status` exits non-zero when there are pending migrations.
@@ -41,22 +55,29 @@ async function main(): Promise<void> {
   const start = Date.now();
   ensureMigrationsApplied();
 
-  const curriculum = A0_CURRICULUM;
-  if (curriculum.dialect !== "pt-PT") {
-    throw new Error(
-      `Refusing to seed non-pt-PT curriculum (v1 is pt-PT only): ${curriculum.dialect}`,
-    );
+  for (const curriculum of ALL_CURRICULA) {
+    if (curriculum.dialect !== "pt-PT") {
+      throw new Error(
+        `Refusing to seed non-pt-PT curriculum (v1 is pt-PT only): ${curriculum.dialect}`,
+      );
+    }
   }
 
+  // The A0 curriculum owns the dialect + entryUnitId of the singleton
+  // curriculum row; subsequent curricula contribute Units only.
+  const primary = A0_CURRICULUM;
   await prisma.curriculum.upsert({
     where: { id: CURRICULUM_ID },
-    update: { dialect: curriculum.dialect, entryUnitId: curriculum.entryUnitId },
+    update: { dialect: primary.dialect, entryUnitId: primary.entryUnitId },
     create: {
       id: CURRICULUM_ID,
-      dialect: curriculum.dialect,
-      entryUnitId: curriculum.entryUnitId,
+      dialect: primary.dialect,
+      entryUnitId: primary.entryUnitId,
     },
   });
+
+  // Merge all four curricula — every Unit lands in the DB.
+  const allUnits = ALL_CURRICULA.flatMap((c) => c.units);
 
   // Levels — declared as A0/A1/A2/B1 in CONTEXT.md. We seed the four rows;
   // A1/A2/B1 will gain Units as #24 / later issues land.
@@ -74,8 +95,8 @@ async function main(): Promise<void> {
     });
   }
 
-  // Units
-  for (const unit of curriculum.units) {
+  // Units (merged across all four levels — A0/A1/A2/B1)
+  for (const unit of allUnits) {
     await prisma.unit.upsert({
       where: { id: unit.id },
       update: {
@@ -257,9 +278,10 @@ async function main(): Promise<void> {
     }
   }
 
-  // Milestones
+  // Milestones — A0 owns the milestone set (the A0 → A1 boundary);
+  // A1/A2/B1 milestones can land in a follow-up issue.
   await prisma.milestone.deleteMany({});
-  for (const m of curriculum.milestones) {
+  for (const m of primary.milestones) {
     await prisma.milestone.create({
       data: {
         boundary: m.boundary,
@@ -285,7 +307,7 @@ async function main(): Promise<void> {
 
   // eslint-disable-next-line no-console
   console.log(
-    `Seeded curriculum ${curriculum.dialect} (${CURRICULUM_ID}): ` +
+    `Seeded curriculum ${primary.dialect} (${CURRICULUM_ID}): ` +
       `${unitsCount} units, ${lessonsCount} lessons, ${exercisesCount} exercises, ` +
       `${vocabCount} vocabulary items, ${scenariosCount} scenarios, ` +
       `${anchorsCount} remedial anchors, ${milestonesCount} milestones. ` +
