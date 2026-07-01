@@ -66,7 +66,7 @@ const B1_2_SERVICOS: Unit = {
   ],
   vocabulary: [],
   grammar: [],
-  scenarios: [],
+  scenarios: scenariosForUnit("b1-2-servicos"),
 };
 
 export const B1_CURRICULUM: Curriculum = {

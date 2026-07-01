@@ -11,7 +11,7 @@ import { B1_CURRICULUM } from "@/lib/curriculum/seed-b1";
 
 describe("scenarios-extended", () => {
   it("exports a non-empty list of extended scenarios", () => {
-    expect(EXTENDED_SCENARIOS.length).toBeGreaterThanOrEqual(15);
+    expect(EXTENDED_SCENARIOS.length).toBeGreaterThanOrEqual(70);
   });
 
   it("scopes every extended scenario to a seeded A1/A2/B1 Unit ID", () => {
@@ -55,7 +55,7 @@ describe("scenarios-extended", () => {
     }
   });
 
-  it("A2_CURRICULUM wires library scenarios into the seeded A2 Unit", () => {
+  it("A2_CURRICULUM wires library scenarios into every seeded A2 Unit", () => {
     for (const unit of A2_CURRICULUM.units) {
       const expected = SCENARIOS_BY_UNIT_ID[unit.id] ?? [];
       expect(unit.scenarios.length).toBe(expected.length);
@@ -65,7 +65,7 @@ describe("scenarios-extended", () => {
     }
   });
 
-  it("B1_CURRICULUM wires library scenarios into the seeded B1 Unit", () => {
+  it("B1_CURRICULUM wires library scenarios into every seeded B1 Unit", () => {
     for (const unit of B1_CURRICULUM.units) {
       const expected = SCENARIOS_BY_UNIT_ID[unit.id] ?? [];
       expect(unit.scenarios.length).toBe(expected.length);
@@ -73,6 +73,18 @@ describe("scenarios-extended", () => {
         expected.map((s) => s.id).sort(),
       );
     }
+  });
+
+  it("SEEDED_A1_A2_B1_SCENARIO_UNIT_IDS covers every A1/A2/B1 Unit declared in the seeds", () => {
+    // Pin the invariant: the wiring list stays in sync with the
+    // declared Unit IDs. If a future seed adds a new A1/A2/B1 Unit
+    // without updating this list, this test catches it.
+    const seededIds = new Set([
+      ...A1_CURRICULUM.units,
+      ...A2_CURRICULUM.units,
+      ...B1_CURRICULUM.units,
+    ].map((u) => u.id));
+    expect(new Set(SEEDED_A1_A2_B1_SCENARIO_UNIT_IDS)).toEqual(seededIds);
   });
 
   it("every extended scenario preserves the required Scenario fields", () => {

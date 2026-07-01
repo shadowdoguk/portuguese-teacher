@@ -14,12 +14,13 @@ import { SCENARIO_LIBRARY } from "@/lib/scenarios/library";
  *
  * This module maps the library's Unit IDs to the seeds' Unit IDs and
  * exposes a `SCENARIOS_BY_UNIT_ID` lookup the seed files consume when
- * they build their `Unit.scenarios` arrays. Today the 4 seeded
+ * they build their `Unit.scenarios` arrays. Today the 6 seeded
  * A1/A2/B1 Unit IDs (a1-1-viagens, a1-2-alimentacao,
- * a2-1-rotina-trabalho, b1-1-gastronomia) account for 46 of the
- * remaining 96 scenarios; the other 50 reference Unit IDs that the
- * A1/A2/B1 seeds haven't authored yet (a1-2-mercearia, a2-1-compras,
- * etc.) and are out of scope for this slice.
+ * a2-1-rotina-trabalho, a2-2-viagens-saude, b1-1-gastronomia,
+ * b1-2-servicos) account for 76 of the remaining 96 scenarios; the
+ * other 20 reference Unit IDs that the A1/A2/B1 seeds haven't
+ * authored yet (a1-2-mercearia, a2-1-compras, a1-3-roupa, etc.) and
+ * are out of scope for this slice.
  *
  * v1.1 expands the seed files to author those additional Unit IDs
  * (ADR-0005 §1 v1.1 deferrals — "additional A1/A2/B1 Units").
@@ -29,7 +30,9 @@ export const SEEDED_A1_A2_B1_SCENARIO_UNIT_IDS = [
   "a1-1-viagens",
   "a1-2-alimentacao",
   "a2-1-rotina-trabalho",
+  "a2-2-viagens-saude",
   "b1-1-gastronomia",
+  "b1-2-servicos",
 ] as const;
 
 export const EXTENDED_SCENARIOS: ReadonlyArray<Scenario> = SCENARIO_LIBRARY.filter(

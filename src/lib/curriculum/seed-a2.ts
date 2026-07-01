@@ -67,7 +67,7 @@ const A2_2_VIAGENS_SAUDE: Unit = {
   ],
   vocabulary: [],
   grammar: [],
-  scenarios: [],
+  scenarios: scenariosForUnit("a2-2-viagens-saude"),
 };
 
 export const A2_CURRICULUM: Curriculum = {
