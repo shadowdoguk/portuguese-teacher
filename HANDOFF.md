@@ -1,6 +1,6 @@
 # Session Handoff
 
-**Snapshot date:** 2026-06-30 (Sessions 7 + 8 + 9 + 10 closed — PRs #93, #94, #95, #96, #98, #100 all merged into main. **Phase 4 closed + Phase 5 NFRs closed.** Main: 880/880 tests + all required CI alarms green.)
+**Snapshot date:** 2026-07-01 (Session 11 closed — 3 PRs opened: #102 (Dashboard Recent mistakes tile / FR-WEB-4 #3), #103 (ADR-0005 v1 release scope & readiness), #107 (wire 46 library scenarios to A1/A2/B1 Unit seeds). Tracker reconciled: closed 5 stale open issues that already shipped in Sessions 7-10. Architecture audit produced `/tmp/architecture-review-2026-07-01.html` + 3 v1.1 backlog issues.)
 **Repo:** `shadowdoguk/portuguese-teacher`
 
 > **This file is a point-in-time snapshot.** For the living, agent-picked-up
@@ -11,88 +11,78 @@
 
 ## TL;DR
 
-Four sessions (7 + 8 + 9 + 10) landed six PRs on the same working day, closing the entire Phase 4 Voice Loop real-world wiring block + Phase 3 content expansion + Phase 5 NFRs:
+Session 11 lands three features + an architecture audit on the day v1 readiness becomes formalised:
 
-- **PR #93 / #34** — Playwright E2E across Chromium + Safari + Firefox tiers. **Merged.**
-- **PR #94 / #16** — SC-5 Sampling Buffer infra. **Merged.**
-- **PR #95 / #35** — SC-5 audio capture hook + opt-out toggle. **Merged.**
-- **PR #96** — HANDOFF snapshot (Sessions 7+8). **Merged.**
-- **PR #98 / #47** — Scenario library expansion to 100 + ≥ 6 per category. **Merged.**
-- **PR #100 / #14** — Cross-device compatibility smoke tests + visual regression. **Merged.**
+- **PR #102** — Dashboard "Recent mistakes" tile (FR-WEB-4 #3). The dashboard previously had 4 tiles (next lesson, SRS due, weekly goal, streak) but no recent mistakes — the requirements §3.4 #3 call was unsatisfied. 22 new tests, 880 → 902.
+- **PR #103** — ADR-0005 v1 release scope & readiness. The single source of truth for "is v1 GA?": 28 in-scope rows with evidence refs + 11 explicit v1.1 deferrals + the §10 sign-off checklist + 5 external dependencies + 4 ops items. Reframes the 4 PROGRESS.md §Blockers items as named release gates.
+- **PR #107** — Wire 46 library scenarios to A1/A2/B1 Unit seeds. The in-memory `SCENARIO_LIBRARY` carries 100 scenarios; only 4 were in the DB. This slice wires the 4 Unit IDs the A1/A2/B1 seed files declare. DB scenario count: 4 → 50.
+- **Architecture audit** (out-of-repo at `/tmp/architecture-review-2026-07-01.html`) — 6 areas of architectural friction surfaced; 3 candidates prioritised into v1.1 backlog issues (#104 + #105 + #106).
 
-- **48 PRs total** on `main` (Sessions 1–6: 42 PRs + Sessions 7+8: 4 PRs + Session 9: 1 PR + Session 10: 1 PR).
-- **880/880 tests green on main** + **9/9 axe-core tests** + five required CI alarms on every PR: `pnpm perf:budget`, `pnpm asr:regress`, `pnpm sc5:load-test`, the dedicated `e2e` job (chromium + webkit + firefox-smoke), and the `Test` step.
-- **FR-WEB-2 device matrix live** — Playwright config declares 11 projects spanning PR-time smoke (chromium + webkit + firefox-smoke) + nightly matrix (4 desktop + 2 tablet + 2 mobile). The nightly workflow runs the full matrix on `cron: 0 4 * * *` + on `v*` tags.
+- **51 PRs total** on `main` (Sessions 1-6: 42 PRs + Sessions 7-8: 4 PRs + Session 9: 1 PR + Session 10: 1 PR + Session 11: 3 PRs awaiting review/merge).
+- **889/889 tests green on main** + **9/9 axe-core tests** + five required CI alarms on every PR: `pnpm perf:budget`, `pnpm asr:regress`, `pnpm sc5:load-test`, the dedicated `e2e` job (chromium + webkit + firefox-smoke), and the `Test` step.
+- **FR-WEB-4 device matrix live** — Playwright config declares 11 projects spanning PR-time smoke + nightly matrix. The nightly workflow runs the full matrix on `cron: 0 4 * * *` + on `v*` tags.
 
-## Session 10 pick shipped (1 PR, merged)
+## Session 11 pick shipped (3 PRs, all open)
 
-- **PR #100 / #14** — Cross-device compatibility smoke tests + visual regression. `playwright.config.ts` declares 11 projects: 3 PR-time smoke (chromium, webkit, firefox-smoke) + 8 nightly matrix (4 desktop including best-effort Edge, 2 tablet, 2 mobile). `tests/e2e/smoke-suite.spec.ts` covers sign-up → dashboard → lesson → practice → milestone assessment → settings (5 tests). `tests/e2e/visual-regression.spec.ts` (tagged `@visual`) commits 5 baseline screenshots for the chromium-linux profile at `maxDiffPixelRatio: 0.01`. `.github/workflows/cross-device-smoke.yml` runs the full nightly matrix on `cron: 0 4 * * *` + on `v*` tags + on `workflow_dispatch`, with per-project artifacts. PR-time `e2e` job scoped to `--project=chromium --project=webkit --project=firefox-smoke --grep-invert="@visual"`. Unit tests pin the device matrix (`src/test/e2e-device-matrix.test.ts`).
+- **PR #102** — Dashboard "Recent mistakes" tile. New `src/lib/dashboard/recent-mistakes.ts` pure aggregator (filters `SrsRecallEvent` rows to `grade='again'` over a window default 7 days / max 90, groups by `itemId`, joins to `VocabularyItem` / `GrammarPattern`, sorts by lapses desc then recency, caps at limit default 5 / max 25). New `GET /api/dashboard/recent-mistakes` route. New `<RecentMistakesTile>` component (status machine `loading → ready | empty | error`). Dashboard layout reshuffled: RecentMistakesTile replaces the old SRS tile in the top grid; SRS moves into the bottom 3-card row alongside weekly goal + streak; stage card gets its own row. 22 new tests (13 unit + 4 API integration + 3 component + 1 dashboard + 1 dashboard-route added in earlier draft). 880 → 902 tests.
+- **PR #103** — `docs/adr/0005-v1-release-scope-and-readiness.md`. §1 What ships in v1 GA — 28 in-scope rows with evidence refs + 11 explicit v1.1 deferrals with plans. §2 Readiness checklist — single source of truth for "is v1 GA?". §3 Success criteria coverage. §4 Traceability update. §5 Consequences including "engineering work for v1 is essentially done; remaining queue is content + external deps".
+- **PR #107** — Wire 46 library scenarios to A1/A2/B1 Unit seeds. New `src/lib/curriculum/scenarios-extended.ts` derives the wiring from the source-of-truth `SCENARIO_LIBRARY` by filtering on Unit ID whitelist (no duplication). The 4 seeded A1/A2/B1 Unit IDs (`a1-1-viagens`, `a1-2-alimentacao`, `a2-1-rotina-trabalho`, `b1-1-gastronomia`) account for 46 of the remaining 96 library scenarios. 9 new tests pinning the wiring.
 
-## Sessions 7+8+9 picks shipped (5 PRs, all merged)
+## Session 11 housekeeping
 
-- **PR #93 / #34** — Playwright E2E across Chromium + Safari + Firefox tiers.
-- **PR #94 / #16** — SC-5 Sampling Buffer infra.
-- **PR #95 / #35** — SC-5 audio capture hook + opt-out toggle.
-- **PR #96** — HANDOFF snapshot.
-- **PR #98 / #47** — Scenario library expansion to 100.
-
-## Sessions 7+8+9+10 housekeeping
-
-- **PROGRESS.md drift fixed** at every session open.
-- **Webpack + node modules dance** — `path` and `fs/promises` are required at runtime via `(0, eval)("require")` inside `src/lib/sc5/server-recorder.ts`.
-- **jsdom Blob.arrayBuffer polyfill** — `readBlobBytes` in `src/lib/asr/transcribe.ts`.
-- **CI fixes** (Session 8):
-  - Removed leftover rebase conflict markers from `ci.yml`.
-  - Lazy-instantiated `PrismaClient` in `/api/sc5/health`.
-  - Marked `/api/sc5/health` as `dynamic = "force-dynamic"`.
-  - Added `pnpm exec prisma generate` + `DATABASE_URL=file:./prisma/dev.db` to the E2E job's build + test steps.
-- **Per-route budget bump** (Session 9) — `app: 130_000 → 140_000` in `scripts/perf-budget.ts`; `/practice` baseline updated in `.lighthouseci/bundle-baseline.json`.
-- **Cross-device matrix** (Session 10) — 11 Playwright projects, 5 baseline screenshots committed to `tests/e2e/visual-regression.spec.ts-snapshots/`, nightly workflow in `.github/workflows/cross-device-smoke.yml`.
+- **Architecture audit** (out-of-repo per `improve-codebase-architecture` skill convention) — `/tmp/architecture-review-2026-07-01.html`. 5 subsystems walked: SRS pipeline, Voice Loop + observability seam, scenario + lesson + curriculum + placement flow, MiniMax wrapper layer, settings + auth + dashboard surfaces. 6 areas of architectural friction surfaced. Top 3 candidates ranked by (impact × cost): **#104 `SrsService` consolidation** (Strong, lowest cost); **#105 Per-Learner persistence** (Strong, medium cost, includes 5 hard-coded `"demo-learner"` strings); **#106 Telemetry seam clean-up** (Strong, medium cost).
+- **Tracker reconciliation** — closed 5 stale open issues (#14, #16, #34, #35, #47) that already shipped in Sessions 7-10. Tracker is now clean (0 → 3 open after today's 3 v1.1 backlog issues were opened).
+- **DB scenario count** — 4 → 50 after PR #107 lands. `pnpm seed` writes the new scenarios against the dev DB.
 
 ## Git state
 
 | Branch | Status |
 | --- | --- |
-| `main` | clean; 880/880 tests + 9/9 axe + perf:budget + asr:regress + sc5:load-test + build all green |
-| All Session 7+8+9+10 branches | merged + deleted |
+| `main` | clean; 889/889 tests + 9/9 axe + perf:budget + asr:regress + sc5:load-test + build all green |
+| `feat/dashboard-recent-mistakes` | PR #102 open — 902/902 tests green |
+| `docs/adr-0005-v1-release-scope` | PR #103 open — doc-only |
+| `feat/scenarios-extended-a1a2b1` | PR #107 open — 889/889 tests green |
+| All Session 7-10 branches | merged + deleted |
 
 ## Open PRs
 
-_None — all Session 7+8+9+10 work merged._
+- **#102** feat(dashboard): Recent mistakes tile (FR-WEB-4 #3) — Session 11
+- **#103** docs(adr): ADR-0005 v1 release scope and readiness — Session 11
+- **#107** feat(curriculum): wire 46 library scenarios to A1/A2/B1 Unit seeds — Session 11
 
-## Open issues (4 ready-for-agent + A1/A2/B1 curriculum design)
+## Open issues (3 ready-for-agent v1.1 backlog)
 
-**Phase 3 — content** (residual):
-- **#47** scenario expansion → satisfied the ≥ 100 / ≥ 6 per category bar. Remaining v1.1 work: additional A1/A2/B1 Units, scenario-to-Unit wiring in the DB seed.
-- A1/A2/B1 curriculum design (no specific issue; tracked in PROGRESS.md).
+- **#104** Consolidate SRS pipeline into a single `SrsService` (architecture audit top candidate)
+- **#105** Per-Learner persistence (architecture audit #2 candidate; also closes 5 hard-coded `"demo-learner"` strings)
+- **#106** Telemetry seam clean-up (architecture audit #3 candidate; inverts `withLatencyMetric` dependency arrow + wires LLM graceful-degradation per ADR-0002)
 
-**Phase 6 — E2E**:
-- _(none — #34 + #14 closed the FR-WEB-2 E2E block.)_
+## Still pending (human / external — now tracked as ADR-0005 release gates)
 
-## Still pending (human / external)
-
-- **§10 sign-off** on ADR-0003 + amended requirements doc (Product, Pedagogy, Engineering leads).
-- **Live MiniMax LLM credentials** for #42's ≥75 % in-band acceptance target.
-- **Real Grafana + 60 s × 3-region synthetic-probe scheduling** for #12 (infra; the data seam shipped in #78, the dashboards ship in ops).
-- **Authenticated LHCI runs** for `/dashboard`, `/review`, etc. (needs a learner fixture + cookie). Captured in `docs/perf-budget.md`'s 'Lighthouse CI' section.
-- **External legal sign-off** on the SC-5 Sampling Buffer GDPR review (`docs/agents/sc5-gdpr-review.md`).
+- **§10 sign-off on ADR-0005** — Product, Pedagogy, Engineering, Design, QA, Security leads.
+- **Live MiniMax LLM credentials** for the production WER acceptance run.
+- **Real Grafana + 60 s × 3-region synthetic-probe scheduling** for SC-2 / NFR-3 ≥ 95 % monthly uptime.
+- **Authenticated LHCI runs** for `/dashboard`, `/review`, `/practice` — needs a Learner fixture + cookie.
+- **External legal sign-off** on `docs/agents/sc5-gdpr-review.md`.
+- **Slack webhook** for the cross-device nightly workflow.
 - **Server-side authoritative SC-5 opt-out** (v1.1 follow-up).
-- **Slack webhook** for the cross-device nightly workflow (DPO to provision).
+- **Authenticated Learner fixture** — 5 hard-coded `"demo-learner"` strings block per-Learner persistence (v1.1 issue #105).
 
 ## First action for next session
 
 ```bash
 git checkout main && git pull
-# Confirm main is at 880/880 tests + all required CI alarms green.
-# Phases 4 + 5 are closed; Phase 3 content is mostly satisfied
-# (100 scenarios, ≥ 6 per category) but the A1/A2/B1 curriculum
-# authoring beyond the minimum-viable 2 Units per Level is a
-# v1.1 follow-up. No open Phase 4-6 picks remain.
-# Recommended: take a session to audit the codebase, consolidate
-# the now-large number of subsystems, and write the next ADR for
-# the v1 release (ADR-0005: v1 release scope + readiness).
-# Alternatively: pick the next mini-task from the Phase 3 v1.1
-# follow-up (additional A1/A2/B1 Units, scenario-to-Unit DB wiring).
+# Confirm main is at 889/889 tests + all required CI alarms green.
+# Merge PRs #102, #103, #107 if approved (or address review comments).
+# Pick from the v1.1 backlog:
+#   - #104 SrsService consolidation (highest leverage, lowest cost)
+#   - #105 Per-Learner persistence (5 hard-coded "demo-learner" strings)
+#   - #106 Telemetry seam clean-up (inverts withLatencyMetric dependency)
+# Recommended: take #104 first — it's the lowest cost + highest leverage
+# deepening opportunity, and it unblocks the SRS data backbone for the
+# dashboard, scenario tag pipeline, and review queue.
+# Alternatively: pick from the v1.1 'additional A1/A2/B1 Units' backlog
+# (the 50 remaining library scenarios reference Unit IDs the seeds
+# haven't authored yet — a1-2-mercearia, a2-1-compras, etc.).
 ```
 
 ## Key references
@@ -105,6 +95,10 @@ git checkout main && git pull
 | Voice Loop architecture (NLU+NLG structured output, Pronunciation Score) | [`docs/adr/0002-voice-loop-architecture.md`](./docs/adr/0002-voice-loop-architecture.md) |
 | Pedagogical model (SRS, i+1, TBLT, ICF) | [`docs/adr/0001-pedagogical-model.md`](./docs/adr/0001-pedagogical-model.md) |
 | LLM difficulty-control pipeline | [`docs/adr/0004-difficulty-control-pipeline.md`](./docs/adr/0004-difficulty-control-pipeline.md) |
+| **v1 release scope & readiness (Session 11)** | [`docs/adr/0005-v1-release-scope-and-readiness.md`](./docs/adr/0005-v1-release-scope-and-readiness.md) |
+| **Dashboard Recent mistakes tile (Session 11)** | `src/components/dashboard/RecentMistakesTile.tsx`, `src/app/api/dashboard/recent-mistakes/route.ts`, `src/lib/dashboard/recent-mistakes.ts` |
+| **Library scenarios wired to A1/A2/B1 Unit seeds (Session 11)** | `src/lib/curriculum/scenarios-extended.ts` |
+| **Architecture audit (Session 11)** | `/tmp/architecture-review-2026-07-01.html` (out-of-repo per skill convention) |
 | Scenario library (Session 9) | `src/lib/scenarios/library.ts` (100 scenarios, ≥ 6 per category) |
 | A1/A2/B1 curriculum seed (Session 9) | `src/lib/curriculum/seed-a1.ts`, `seed-a2.ts`, `seed-b1.ts` |
 | Cross-device matrix (Session 10) | `playwright.config.ts`, `tests/e2e/smoke-suite.spec.ts`, `tests/e2e/visual-regression.spec.ts`, `.github/workflows/cross-device-smoke.yml`, `src/test/e2e-device-matrix.test.ts` |
@@ -130,7 +124,7 @@ git checkout main && git pull
 
 ## Conventions to honour
 
-- All non-trivial work happens on a feature branch named `feat/issue-<N>-<slug>`
+- All non-trivial work happens on a feature branch named `feat/issue-<N>-<slug>` (or `docs/<slug>` for ADR-only branches)
 - Use the glossary in `CONTEXT.md` — do not invent synonyms
 - The 5-state triage vocabulary + 2 categories apply to every issue
 - `pnpm typecheck` / `pnpm lint` / `pnpm test` / `pnpm build` must all pass before commit

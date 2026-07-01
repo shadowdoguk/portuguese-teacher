@@ -2,7 +2,25 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-30 (Sessions 7 + 8 + 9 closed — PRs #93 (Playwright E2E) + #94 (SC-5 infra) + #95 (SC-5 audio capture hook + opt-out toggle) + #96 (HANDOFF) + #98 (scenario library expansion to 100) all merged into main. **Session 10 in flight** with #14 cross-device compatibility smoke tests. Branch `feat/issue-14-cross-device-smoke` is branch-green at 880/880 tests + lint + typecheck + perf:budget + asr:regress + sc5:load-test + build all clean. The Phase 5 NFRs queue is now closed.)
+**Last updated:** 2026-07-01 (Session 11 closed — 3 PRs opened: #102 (Dashboard Recent mistakes tile / FR-WEB-4 #3), #103 (ADR-0005 v1 release scope & readiness), #107 (wire 46 library scenarios to A1/A2/B1 Unit seeds). Tracker reconciled: closed 5 stale open issues (#14, #16, #34, #35, #47) that already shipped in Sessions 7-10. Architecture audit produced `/tmp/architecture-review-2026-07-01.html` + 3 v1.1 backlog issues (#104 SRS consolidation, #105 per-Learner persistence, #106 telemetry seam). **Main: 889/889 tests** + lint + typecheck + perf:budget + asr:regress + sc5:load-test + test:a11y 9/9 + build all clean. **Total scenario count in DB: 4 → 50.**)
+
+## Session 11 picks shipped
+
+- **PR #102 / Dashboard "Recent mistakes" tile (FR-WEB-4 #3)** — closed the requirements §3.4 #3 gap (the dashboard had 4 tiles — next lesson, SRS due, weekly goal, streak — but no recent mistakes). New `src/lib/dashboard/recent-mistakes.ts` pure aggregator (filters `SrsRecallEvent` rows to `grade='again'` over a window default 7 days / max 90, groups by `itemId`, joins to `VocabularyItem` / `GrammarPattern`, sorts by lapses desc then recency, caps at limit default 5 / max 25, falls back to itemId when lookup misses, infers kind from `grammar-` prefix). New `GET /api/dashboard/recent-mistakes` route. New `<RecentMistakesTile>` (status machine `loading → ready | empty | error`, top items render with lapse count ×N, empty state "No recent slips — keep going.", footer links to `/review`). `DashboardClient` layout reshuffle: RecentMistakesTile replaces the old SRS tile in the top grid; SRS moves into the bottom 3-card row alongside weekly goal + streak; stage card gets its own row. 22 new tests (13 unit + 4 API integration + 3 component + 1 dashboard + 1 dashboard-route added in earlier draft). 880 → 902 tests.
+
+- **PR #103 / ADR-0005 v1 release scope & readiness** — new `docs/adr/0005-v1-release-scope-and-readiness.md`. The HANDOFF explicitly recommended this as the next-session action. Captures (1) what ships in v1 GA — 28 in-scope rows with evidence refs (PR #, file path, decision ADR) + 11 explicit v1.1 deferrals with plans; (2) the v1 release readiness checklist — single source of truth for "is v1 GA?", engineering readiness fully ticked, §10 sign-off process + 5 external dependencies + 4 ops items remain as named release gates; (3) success criteria coverage mapping SC-1..5 to v1 measurement surfaces; (4) traceability update adding FR-WEB-4 #3 'recent mistakes' + §10 sign-off process to requirements §8; (5) consequences including "engineering work for v1 is essentially done; remaining queue is content + external deps". Reframes the 4 PROGRESS.md §Blockers items as named release gates. Doc-only — no code change.
+
+- **PR #107 / Wire 46 library scenarios to A1/A2/B1 Unit seeds** — closed the wiring gap from ADR-0005 §1 v1.1 deferrals. The in-memory `SCENARIO_LIBRARY` carries 100 scenarios across 21 Unit IDs; only 4 were in the DB. This slice wires the 4 Unit IDs the A1/A2/B1 seed files declare (`a1-1-viagens`, `a1-2-alimentacao`, `a2-1-rotina-trabalho`, `b1-1-gastronomia`) — 18 + 4 + 16 + 8 = **46 scenarios**. DB scenario count: 4 → 50. New `src/lib/curriculum/scenarios-extended.ts` derives the wiring from the source-of-truth library (filter on Unit ID whitelist); `scenariosForUnit(unitId)` helper. `seed-a1.ts` / `seed-a2.ts` / `seed-b1.ts` updated to call the helper. **No duplication** of scenario data — the library stays the single source of truth. 9 new tests pinning the wiring.
+
+## Session 11 housekeeping
+
+- **Architecture audit** (not a PR — out-of-repo deliverable at `/tmp/architecture-review-2026-07-01.html`) — used the `improve-codebase-architecture` skill to walk 5 subsystems (SRS pipeline, Voice Loop + observability seam, scenario + lesson + curriculum + placement flow, MiniMax wrapper layer, settings + auth + dashboard surfaces). Three top candidates surfaced for the v1.1 backlog:
+  - **#104** — Consolidate SRS pipeline into a single `SrsService` (eliminates 3 duplicate grade validators, dead `gradeFromString` + dead `upsertRecords`, kills the `grammar-` prefix convention leak; SRS data backbone deepens from ~120 lines of duplication)
+  - **#105** — Per-Learner persistence (5 hard-coded `"demo-learner"` strings, three Provider contexts hydrating from localStorage on different lifecycles, zero writers to `weeklyMinutes` / `streakDays`, SC-5 opt-out is client-trusted and the GDPR review leaned on it)
+  - **#106** — Telemetry seam clean-up (`withLatencyMetric` lives in `minimax/types.ts`, observability inverted into MiniMax; dashboard reads the same row twice; re-rank diagnostic printed to stdout and lost; LLM graceful-degradation pillar of ADR-0002 not wired)
+- **Tracker reconciliation** — closed 5 stale open issues (#14, #16, #34, #35, #47) that already shipped in Sessions 7-10. Tracker is now clean (0 → 3 open after today's 3 v1.1 backlog issues were opened).
+- **`sc5:load-test` baseline update** — not needed; SC-5 still at 1.18 % sample rate (118 / 10 k utterances, sync/async write match).
+- **DB scenario count** — 4 → 50 after PR #107 lands. `pnpm seed` runs against the dev DB and writes the new scenarios.
 
 ## Session 7 picks shipped
 
@@ -53,32 +71,39 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Current focus
 
-**Session 10 in flight (2026-06-30).** Branch `feat/issue-14-cross-device-smoke` is branch-green at 880/880 tests + lint + typecheck + perf:budget + asr:regress + sc5:load-test + build all clean.
+**Session 11 in flight (2026-07-01).** 3 PRs opened (#102 + #103 + #107) — all CI-green at 889/889 tests + lint + typecheck + perf:budget + asr:regress + sc5:load-test + test:a11y 9/9 + build all clean. Tracker reconciled: 5 stale open issues closed (#14, #16, #34, #35, #47); 3 new v1.1 backlog issues opened (#104 SRS consolidation, #105 per-Learner persistence, #106 telemetry seam).
 
-Today's pick (#14, complete on the branch):
-- **Device matrix in `playwright.config.ts`** — FR-WEB-2 compliance. 11 Playwright projects:
-  - **Smoke layer** (PR-time): `chromium`, `webkit`, `firefox-smoke` (the existing 3 PR projects, unchanged).
-  - **Desktop matrix layer** (nightly): `desktop-chromium`, `desktop-webkit-full`, `desktop-firefox-full`, `desktop-edge` (best-effort when Edge isn't installed).
-  - **Tablet layer** (nightly): `tablet-ipad` (iPad gen 11), `tablet-android-chrome` (Galaxy Tab S4).
-  - **Mobile layer** (nightly): `mobile-iphone` (iPhone 15), `mobile-android-pixel` (Pixel 7).
-- **Smoke suite** — `tests/e2e/smoke-suite.spec.ts`. 5 tests cover sign-up → dashboard → lesson → practice turn → milestone assessment → settings (with privacy panel + SC-5 status). Each test renders the page and asserts the headline + a representative testid.
-- **Visual regression baselines** — `tests/e2e/visual-regression.spec.ts` tagged `@visual`. 5 baseline screenshots (dashboard, lesson, practice, assess, settings) committed under `tests/e2e/visual-regression.spec.ts-snapshots/` for the chromium-linux profile. `maxDiffPixelRatio: 0.01` per page.
-- **Nightly CI workflow** — `.github/workflows/cross-device-smoke.yml`. Runs on `cron: 0 4 * * *` + on every `v*` tag + on `workflow_dispatch`. 8 matrix jobs (one per device profile). Each job uploads `playwright-report-<project>` as an artifact. `desktop-edge` is best-effort (tolerates a non-zero exit).
-- **PR-time `e2e` job** — `.github/workflows/ci.yml` updated to invoke `pnpm test:e2e --project=chromium --project=webkit --project=firefox-smoke --grep-invert="@visual"` (smoke only, no visual regression on PR).
-- **Unit tests pinning the matrix** — `src/test/e2e-device-matrix.test.ts`. 6 tests assert every required desktop / tablet / mobile device profile is available via Playwright's `devices` registry, with the right `isMobile` flag.
+Today's picks (all complete on their branches):
+- **Recent mistakes tile** (`feat/dashboard-recent-mistakes`, PR #102) — closes the FR-WEB-4 #3 gap. 902 tests on the branch.
+- **ADR-0005 v1 release scope & readiness** (`docs/adr-0005-v1-release-scope`, PR #103) — doc-only ADR capturing what ships + what's deferred + the release readiness checklist. Reframes 4 PROGRESS §Blockers items as named release gates.
+- **Architecture audit** (`/tmp/architecture-review-2026-07-01.html` — out-of-repo) — 6 areas of architectural friction surfaced; 3 candidates prioritised into v1.1 backlog issues.
+- **Wire 46 library scenarios to A1/A2/B1 Unit seeds** (`feat/scenarios-extended-a1a2b1`, PR #107) — DB scenario count 4 → 50.
 
 After today, the remaining queue:
-- **None for Phase 5 NFRs** — #14 closed.
-- **Phase 3 content** (residual): additional A1/A2/B1 Units + scenario-to-Unit wiring in the DB seed (v1.1 follow-up; the in-memory `SCENARIO_LIBRARY` covers all 100 scenarios today).
-- **Phase 6 E2E**: no further picks queued.
+- **v1 release readiness** — §10 sign-off + 5 external dependencies + 4 ops items per ADR-0005 §2.
+- **Phase 3 content** (v1.1 backlog): additional A1/A2/B1 Units (the 50 remaining library scenarios reference Unit IDs the seeds haven't authored yet — a1-2-mercearia, a2-1-compras, b1-1-gastronomia beyond the first Unit, etc.).
+- **Architecture deepening** (v1.1 backlog): #104 + #105 + #106.
 
 ## In progress
 
-- _Branch `feat/issue-14-cross-device-smoke` — 880/880 tests + all CI alarms green; pending push + PR._
+- _No active branches today — all 3 Session 11 PRs (#102, #103, #107) are branch-green and pushed, awaiting review/merge._
+- _Architecture audit HTML report at `/tmp/architecture-review-2026-07-01.html` — out-of-repo per `improve-codebase-architecture` skill convention._
 
 ## Issues status
 
-### Closed (this session — Session 5)
+### Closed (this session — Session 11)
+- **#14** Cross-device compatibility smoke tests — closed (already shipped via PR #100, Session 10)
+- **#16** SC-5 Sampling Buffer infra — closed (already shipped via PR #94, Session 7)
+- **#34** Playwright E2E across Chromium + Safari + Firefox tiers — closed (already shipped via PR #93, Session 7)
+- **#35** SC-5 1% audio capture — closed (already shipped via PR #95, Session 8)
+- **#47** Scenario library expansion to ≥ 100 — closed (already shipped via PR #98, Session 9)
+
+### Opened (this session — Session 11, v1.1 backlog)
+- **#104** Consolidate SRS pipeline into a single `SrsService`
+- **#105** Per-Learner persistence (5 hard-coded `"demo-learner"` IDs + dashboard numbers + SC-5 opt-out enforcement)
+- **#106** Telemetry seam clean-up (observability inverted into MiniMax + dashboard reads twice + re-rank diagnostic lost + LLM graceful-degradation not wired)
+
+### Closed (Session 5)
 - **#19** Pronunciation Score phoneme-distance endpoint — merged via #87
 - **#38** ASR language-model biasing per current Unit vocabulary — merged via #88
 - **#13** ASR accuracy regression test suite — merged via #89
@@ -123,6 +148,14 @@ After today, the remaining queue:
 
 ## PRs
 
+### Open — Session 11 (CI-green, awaiting review/merge)
+- **#102** feat(dashboard): Recent mistakes tile (FR-WEB-4 #3)
+- **#103** docs(adr): ADR-0005 v1 release scope and readiness
+- **#107** feat(curriculum): wire 46 library scenarios to A1/A2/B1 Unit seeds
+
+### Merged this session (Session 11)
+- _None yet — PRs #102, #103, #107 awaiting review/merge._
+
 ### Open — Session 6 (CI-green locally, awaiting review/merge)
 - **#90** feat(voice-loop): Pronunciation Score wiring — formula regression pin + bias-side normalisation fix + route-level integration test (#37)
 
@@ -155,6 +188,14 @@ After today, the remaining queue:
 
 ## Decisions log
 
+- **2026-07-01 — v1 GA cut is gated on §10 sign-offs + 5 external dependencies + 4 ops items (ADR-0005).** The engineering work for v1 is essentially done — Phase 4 (Voice Loop real-world wiring) + Phase 5 (NFRs) closed in Sessions 7-10, the 100-scenario library landed in Session 9, and today's PR #107 closes the scenario-to-Unit DB wiring gap for the 4 A1/A2/B1 Unit IDs the seeds declare. ADR-0005 §2 is the single source of truth for "is v1 GA?": 28 in-scope rows with evidence refs, 11 explicit v1.1 deferrals, and a checklist whose Engineering Readiness section is fully ticked. The remaining gates are the §10 sign-off process (Product / Pedagogy / Engineering / Design / QA / Security), 5 external dependencies (live MiniMax LLM creds, authenticated LHCI cookie, Grafana + 3-region synthetic probes, Slack webhook, external legal sign-off on `docs/agents/sc5-gdpr-review.md`), and 4 ops items (status page, incident runbook, GDPR + LGPD Art. 30 records). PR #103.
+
+- **2026-07-01 — Dashboard "Recent mistakes" tile is the FR-WEB-4 #3 acceptance surface (issue #... unspecified).** The dashboard previously rendered 4 tiles (next lesson, SRS due, weekly goal, streak) but the requirements §3.4 #3 call for *"current Unit, streak, weekly goal, recommended next action, recent mistakes"* was unsatisfied. PR #102 ships the new tile with a pure aggregator (`src/lib/dashboard/recent-mistakes.ts` — filters `SrsRecallEvent` rows to `grade='again'` over a window, groups by `itemId`, joins to vocabulary/grammar, sorts by lapses desc then recency), the `GET /api/dashboard/recent-mistakes` route, and a `<RecentMistakesTile>` component. The dashboard layout was reshuffled: RecentMistakesTile replaces the old SRS tile in the top grid; SRS moves into the bottom 3-card row alongside weekly goal + streak; the Stage card gets its own row. 22 new tests. /practice bundle held at 133.1 kB gzipped.
+
+- **2026-07-01 — v1.1 backlog has 3 deepening candidates (#104 + #105 + #106) from the 2026-07-01 architecture audit.** The audit (delivered as `/tmp/architecture-review-2026-07-01.html` per the `improve-codebase-architecture` skill convention) walked 5 subsystems and surfaced 6 areas of architectural friction. The top 3 candidates ranked by (impact on v1 maintenance) × (cost to deepen): **#104 — `SrsService` consolidation** (the SRS data backbone has 3 duplicate grade validators + dead `gradeFromString` + dead `upsertRecords` + a `grammar-` prefix convention leak; highest leverage, lowest cost); **#105 — Per-Learner persistence** (5 hard-coded `"demo-learner"` strings + three Provider contexts hydrating from localStorage on different lifecycles + zero writers to `weeklyMinutes` / `streakDays` + SC-5 opt-out is client-trusted and the GDPR review leaned on it); **#106 — Telemetry seam clean-up** (`withLatencyMetric` lives in `minimax/types.ts` so the dependency arrow is inverted; dashboard reads the same row twice; re-rank diagnostic printed to stdout and lost; LLM graceful-degradation pillar of ADR-0002 not wired). All 3 are v1.1 backlog items per ADR-0005 §1.
+
+- **2026-07-01 — Library scenarios are the source of truth for scenario content (PR #107).** The 100-scenario `SCENARIO_LIBRARY` is the canonical fixture authored in PR #98 (Session 9). The DB Scenario table is a derived view. PR #107 closes the wiring gap by adding `src/lib/curriculum/scenarios-extended.ts` which **derives** the Unit.scenarios arrays from the library by filtering on a Unit ID whitelist — no duplication. The 4 A1/A2/B1 Unit IDs the seeds declare (`a1-1-viagens`, `a1-2-alimentacao`, `a2-1-rotina-trabalho`, `b1-1-gastronomia`) account for 46 of the remaining 96 library scenarios; the other 50 target Unit IDs the A1/A2/B1 seeds haven't authored yet and are part of the v1.1 'additional A1/A2/B1 Units' backlog.
+
 - **2026-06-29 — Production deploy smoke found + fixed 6 Dockerfile / Prisma gaps (Session 6 close-out).** Building the Docker image at `bd628ec` exposed: (1) the Prisma 5.22 default `binaryTargets` includes `debian-openssl-1.1.x` which bookworm-slim can't load → pinned `binaryTargets = ["native", "debian-openssl-3.0.x"]` in `prisma/schema.prisma` (`17de81e`); (2) the Prisma runtime still defaults to the 1.1.x engine binary on linux x64 when present in the tarball → installed actual `libssl1.1` from `snapshot.debian.org`'s bullseye archive (`7557438`, the symlink shim `49e41cd` and the engine-deletion attempt `6938639` were tried first but the OpenSSL 3↔1 ABI mismatch made them unworkable); (3) the prisma CLI isn't bundled in `.next/standalone` so `prisma migrate deploy` never ran in production → added a fresh `migrate` stage that installs devDeps from scratch and a CMD wrapper `node_modules/.bin/prisma migrate deploy && node server.js` (`2c589b8`). The current `portuguese-teacher:2c589b8` image (1.61 GB) is the verified production artifact — `GET /api/observability/sli?window=1h` returns HTTP 200 with the per-stage summaries array, end-to-end.
 - **2026-06-29 — Pronunciation Score scoring formula is now pinned by a regression suite (issue #37).** The acceptance criterion for #37 was *"a regression test pins the scoring formula"*; the formula lives in `src/lib/voice-loop/pronunciation-{scoring,calibration}.ts` and is now covered by 22 + 11 + 10 + 7 = 50 explicit assertions across four test files. Pinned numbers: free-form combined formula `(1 - 0.6) * baseline + 0.6 * biasedScore` (default `biasWeight = 0.6`); drill `raw + offset` clamped to `[0, 100]` and rounded; `buildCalibrationOffset` = `round(100 - mean(selfScores))`; `clamp01(NaN / ±Infinity)` = 0 (not 1 — `Number.isFinite` short-circuit). Source-attribution state machine: drill + endpoint success → `"endpoint"`, drill + endpoint error or 1.5 s timeout → `"asr-bias"` (NOT `"default"` — the inner guard only fires when `targetPhrase` is set but `learnerText` is empty), drill without `targetPhrase` → falls through to free-form (`"asr-bias"`), free-form → `"asr-bias"` with no `pronunciationPerPhoneme`. PR pending on `feat/issue-37-pronunciation-score-wiring`.
 - **2026-06-29 — `scoreFromAsrConfidence` now normalises the bias Set entries (issue #37, bias-side fix).** The bias Set arrives from `vocabularyFor(level)` / `unitBiasingVocabulary(unitId)` lowercased but **not** diacritic-stripped (`"café"` is the entry). The word side is normalised (`lowercase + NFD + strip combining marks`), so `bias.has(normalize("café"))` looks up `"cafe"` against `Set("café")` → silent miss. Fix: pre-normalise the bias side too — `new Set(Array.from(bias, normalize))`. One-line change, behaviour-correct. Caught by the regression test that pins `learnerLevel = "A1"` + `"café"` in the transcript against the A1 vocab. PR pending on `feat/issue-37-pronunciation-score-wiring`.
@@ -184,9 +225,16 @@ After today, the remaining queue:
 
 ## Blockers
 
-- **§10 sign-off on ADR-0003 + amended requirements doc** — Product, Pedagogy, Engineering leads. Work proceeds in parallel since the spec is captured in code; this gates release, not development.
-- **Live MiniMax LLM credentials** for #42's ≥75% in-band acceptance target (ADR-0004 §8). Sandbox creds provisioning blocks the production-WER acceptance run; the harness + CLI are wired and tested with mocks.
-- **Authenticated LHCI runs for `/dashboard`, `/review`, etc.** — needs a learner fixture + cookie. The follow-up is captured in `docs/perf-budget.md`'s 'Lighthouse CI' section.
+(Per ADR-0005 §2 — each blocker is now a named release gate. The engineering blockers from prior sessions are now resolved by Sessions 7-11 PRs.)
+
+- **§10 sign-off on ADR-0005 v1 release scope and readiness** — Product, Pedagogy, Engineering, Design, QA, Security leads. The checklist at `docs/adr/0005-v1-release-scope-and-readiness.md` §2 is the single source of truth; engineering readiness is fully ticked, sign-off process is the remaining gate.
+- **Live MiniMax LLM credentials** for the production WER acceptance run (SC-5 weekly aggregation). Sandbox creds provisioning blocks the held-out reference ASR pipeline run; the harness + CLI are wired and tested with mocks (PR #89).
+- **Authenticated LHCI runs for `/dashboard`, `/review`, etc.** — needs a learner fixture + cookie. Captured in `docs/perf-budget.md`'s 'Lighthouse CI' section + ADR-0005 §2.
+- **Real Grafana + 60 s × 3-region synthetic-probe scheduling** for SC-2 / NFR-3 ≥ 95 % monthly uptime measurement. The endpoint + data model ship (`POST /api/probes/heartbeat`); the scheduler doesn't.
+- **External legal sign-off** on `docs/agents/sc5-gdpr-review.md` (GDPR Art. 6 / 9 review conclusion).
+- **Slack webhook** for the `cross-device-smoke` nightly workflow (DPO to provision).
+- **Server-side authoritative SC-5 opt-out** — v1 ships a client-side toggle + the per-Learner SC-5 surface; a server-side gate is a v1.1 follow-up (ADR-0005 §1 + issue #105).
+- **Authenticated Learner fixture** — five hard-coded `"demo-learner"` strings block per-Learner persistence; v1.1 issue #105.
 
 ## Conventions reminder
 
