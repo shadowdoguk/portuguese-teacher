@@ -71,7 +71,12 @@ describe("GET /api/srs/events", () => {
       reviewCount: 0,
       lapses: 0,
     } as const;
-    await repo.upsertRecords(learnerId, [item]);
+    await repo.writeRecord({
+      learnerId,
+      itemId: item.itemId,
+      kind: "vocabulary",
+      record: item,
+    });
 
     await repo.applyRecall({
       learnerId,

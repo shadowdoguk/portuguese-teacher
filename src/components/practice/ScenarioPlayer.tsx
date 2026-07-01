@@ -19,11 +19,7 @@ import {
   initialDifficulty,
   adjustFromRules,
 } from "@/lib/voice-loop";
-import {
-  adaptPreTask,
-  levelMismatch,
-  type AdaptedPreTask,
-} from "@/lib/scenarios/adaptive";
+import { adaptPreTask, levelMismatch, type AdaptedPreTask } from "@/lib/scenarios/adaptive";
 import {
   advance,
   complete,
@@ -89,9 +85,7 @@ export function ScenarioPlayer({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setCapabilities(
-      capabilitiesFromGlobals({ navigator: window.navigator, window }),
-    );
+    setCapabilities(capabilitiesFromGlobals({ navigator: window.navigator, window }));
   }, []);
 
   useEffect(() => {
@@ -122,6 +116,27 @@ export function ScenarioPlayer({
       cancelled = true;
     };
   }, [scenario.id]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (scenario.vocabularyRefs.length === 0) return;
+    async function tagScenarioVocabulary(): Promise<void> {
+      try {
+        await fetch("/api/srs/sources", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            learnerId: SCENARIO_SRS_LEARNER_ID,
+            scenarioId: scenario.id,
+            itemIds: scenario.vocabularyRefs,
+          }),
+        });
+      } catch {
+        /* best-effort; the completion handler retries on completion */
+      }
+    }
+    void tagScenarioVocabulary();
+  }, [scenario.id, scenario.vocabularyRefs]);
 
   const tier: BrowserTier = capabilities?.tier ?? SCENARIO_TIER_FALLBACK;
 
@@ -243,20 +258,14 @@ export function ScenarioPlayer({
                 {adaptedPreTask.unknownVocab.length} new
               </p>
               {adaptedPreTask.unknownVocab.length > 0 ? (
-                <p
-                  className="mt-2 text-xs text-ink-soft"
-                  data-testid="scenario-vocab-unknown"
-                >
+                <p className="mt-2 text-xs text-ink-soft" data-testid="scenario-vocab-unknown">
                   <span className="stage-stamp mr-2">New</span>
                   {adaptedPreTask.unknownVocab.join(", ")}
                 </p>
               ) : (
-                <p
-                  className="mt-2 text-xs text-ink-soft"
-                  data-testid="scenario-vocab-all-known"
-                >
-                  You&apos;ve reviewed every item in this Unit already — the
-                  scenario is mostly a fluency run.
+                <p className="mt-2 text-xs text-ink-soft" data-testid="scenario-vocab-all-known">
+                  You&apos;ve reviewed every item in this Unit already — the scenario is mostly a
+                  fluency run.
                 </p>
               )}
             </div>
@@ -392,10 +401,7 @@ export function ScenarioPlayer({
   );
 
   return (
-    <Card
-      eyebrow="Post-task"
-      title={breakdown.passed ? "Scenario complete" : "Scenario ended"}
-    >
+    <Card eyebrow="Post-task" title={breakdown.passed ? "Scenario complete" : "Scenario ended"}>
       <div className="space-y-4">
         <p className="text-sm text-ink-soft">
           You took {history.length} turn{history.length === 1 ? "" : "s"} across{" "}

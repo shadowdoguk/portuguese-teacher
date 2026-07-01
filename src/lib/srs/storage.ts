@@ -1,5 +1,5 @@
 import { emptyState, type SrsState } from "./scheduler";
-import { isRecallGrade, type RecallGrade, type SrsRecallEvent } from "./types";
+import type { SrsRecallEvent } from "./types";
 
 const STORAGE_KEY = "pt.srs.v1";
 
@@ -52,7 +52,3 @@ export const consoleRecallSink: RecallSink = (event) => {
   if (typeof console === "undefined") return;
   console.info("[srs_recall]", event);
 };
-
-export function gradeFromString(value: string): RecallGrade | null {
-  return isRecallGrade(value) ? value : null;
-}

@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import type { ScenarioCompletion } from "./library";
+import { createSrsService } from "@/lib/srs/service";
 import {
   emptySnapshot,
   type ScenarioProgress,
@@ -75,22 +76,11 @@ export function createScenarioRepository(prisma: PrismaClient): ScenarioReposito
       const snapshot = recordCompletion(emptySnapshot(), completion);
 
       const refs = options?.vocabularyRefs ?? [];
-      let recordedSources = 0;
-      for (const itemId of refs) {
-        if (typeof itemId !== "string" || itemId.length === 0) continue;
-        await prisma.srsItemSource.upsert({
-          where: {
-            learnerId_itemId_sourceScenarioId: {
-              learnerId,
-              itemId,
-              sourceScenarioId: completion.scenarioId,
-            },
-          },
-          create: { learnerId, itemId, sourceScenarioId: completion.scenarioId },
-          update: {},
-        });
-        recordedSources += 1;
-      }
+      const recordedSources = await createSrsService(prisma).recordScenarioSources(
+        learnerId,
+        completion.scenarioId,
+        refs,
+      );
       return { snapshot, progress, recordedSources };
     },
 

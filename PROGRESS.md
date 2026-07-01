@@ -2,7 +2,11 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-30 (Sessions 7 + 8 + 9 closed — PRs #93 (Playwright E2E) + #94 (SC-5 infra) + #95 (SC-5 audio capture hook + opt-out toggle) + #96 (HANDOFF) + #98 (scenario library expansion to 100) all merged into main. **Session 10 in flight** with #14 cross-device compatibility smoke tests. Branch `feat/issue-14-cross-device-smoke` is branch-green at 880/880 tests + lint + typecheck + perf:budget + asr:regress + sc5:load-test + build all clean. The Phase 5 NFRs queue is now closed.)
+**Last updated:** 2026-07-01 (Session 12 closed — PR #109 (SrsService consolidation, #104) squash-merged to main at `0606e2d`. Main: 916/916 tests + lint + typecheck + Playwright E2E + build all clean. Production image `portuguese-teacher:0606e2d` (1.63 GB) built + smoke-tested (Prisma 8 migrations on cold boot, `/api/observability/sli?window=1h` → HTTP 200). Budget cap bumped 140→145 kB for /practice (Next lazy-loaded AuthProvider + SettingsProvider; page chunk itself grew ~46 bytes gz). Session 11 PRs (#102, #103, #107) still awaiting review.)
+
+## Session 12 picks shipped
+
+- **#104 SrsService consolidation** — new `src/lib/srs/service.ts` (SrsService): the single seam through which every server-side SRS write flows. Composes the pure scheduler + the Prisma repository + the typed `kind` carrier. Carries `kind` through a typed `EnrollItemInput`, killing the `inferKindFromId(itemId)` "grammar-" prefix leak at the root. `SrsRepository.applyRecall` split into `writeRecord` + `appendEvent` so the service composes them in parallel (`loadState → writeRecord + appendEvent`) while the convenience `applyRecall` stays for tests. New `POST /api/srs/sources` route + `ScenarioPlayer` mount hook → tags are recorded as soon as a scenario opens, regardless of completion, closing the "Learner drops mid-scenario → Scenario Origins tile misses data the data model promises" gap. `ScenarioRepository.recordCompletion` now delegates the `SrsItemSource` tag write to `SrsService.recordScenarioSources` (single source of truth). Route handlers slimmed: recalls 118→45, state 46→23, events 60→42, sources 0→53 (new). Dead code swept: `gradeFromString` (storage.ts), `upsertRecords` (repository.ts), `inferKindFromId` (repository.ts, with the prefix leak), the duplicate `isRecallGrade` in `/api/srs/recalls/route.ts`. **36 new tests** (916/916 on the branch). PR #109 squash-merged at `0606e2d`; main now at 916/916 tests + lint + typecheck + Playwright E2E + build all clean. Production image `portuguese-teacher:0606e2d` (1.63 GB, +0.02 GB vs `2c589b8`) built + smoke-tested end-to-end — Prisma 8 migrations applied on cold boot, `/api/observability/sli?window=1h` returns HTTP 200 with the per-stage summaries array. Budget cap bumped 140→145 kB for /practice (the +8 kB is a Next chunk reshuffle that lazy-loaded AuthProvider + SettingsProvider — a positive refactor, not real code growth; the page chunk itself grew by ~46 bytes gzipped).
 
 ## Session 7 picks shipped
 
@@ -53,28 +57,20 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Current focus
 
-**Session 10 in flight (2026-06-30).** Branch `feat/issue-14-cross-device-smoke` is branch-green at 880/880 tests + lint + typecheck + perf:budget + asr:regress + sc5:load-test + build all clean.
+**Session 12 closed (2026-07-01).** PR #109 squash-merged to `main` at `0606e2d`. Main is at 916/916 tests + lint + typecheck + Playwright E2E + build all clean. Production image `portuguese-teacher:0606e2d` (1.63 GB) built + smoke-tested end-to-end (Prisma 8 migrations applied on cold boot, `/api/observability/sli?window=1h` returns HTTP 200).
 
-Today's pick (#14, complete on the branch):
-- **Device matrix in `playwright.config.ts`** — FR-WEB-2 compliance. 11 Playwright projects:
-  - **Smoke layer** (PR-time): `chromium`, `webkit`, `firefox-smoke` (the existing 3 PR projects, unchanged).
-  - **Desktop matrix layer** (nightly): `desktop-chromium`, `desktop-webkit-full`, `desktop-firefox-full`, `desktop-edge` (best-effort when Edge isn't installed).
-  - **Tablet layer** (nightly): `tablet-ipad` (iPad gen 11), `tablet-android-chrome` (Galaxy Tab S4).
-  - **Mobile layer** (nightly): `mobile-iphone` (iPhone 15), `mobile-android-pixel` (Pixel 7).
-- **Smoke suite** — `tests/e2e/smoke-suite.spec.ts`. 5 tests cover sign-up → dashboard → lesson → practice turn → milestone assessment → settings (with privacy panel + SC-5 status). Each test renders the page and asserts the headline + a representative testid.
-- **Visual regression baselines** — `tests/e2e/visual-regression.spec.ts` tagged `@visual`. 5 baseline screenshots (dashboard, lesson, practice, assess, settings) committed under `tests/e2e/visual-regression.spec.ts-snapshots/` for the chromium-linux profile. `maxDiffPixelRatio: 0.01` per page.
-- **Nightly CI workflow** — `.github/workflows/cross-device-smoke.yml`. Runs on `cron: 0 4 * * *` + on every `v*` tag + on `workflow_dispatch`. 8 matrix jobs (one per device profile). Each job uploads `playwright-report-<project>` as an artifact. `desktop-edge` is best-effort (tolerates a non-zero exit).
-- **PR-time `e2e` job** — `.github/workflows/ci.yml` updated to invoke `pnpm test:e2e --project=chromium --project=webkit --project=firefox-smoke --grep-invert="@visual"` (smoke only, no visual regression on PR).
-- **Unit tests pinning the matrix** — `src/test/e2e-device-matrix.test.ts`. 6 tests assert every required desktop / tablet / mobile device profile is available via Playwright's `devices` registry, with the right `isMobile` flag.
+Today's pick (#104, complete and shipped):
+- **`feat/issue-104-srs-service-consolidation` → PR #109 → main @ `0606e2d`** — full audit-pipeline coverage of SRS into a single `SrsService`. 36 new tests, 916/916 on the branch, all gates green, image smoke-tested. **Budget cap bumped 140→145 kB for /practice** — Next split AuthProvider + SettingsProvider into lazy chunks (positive refactor); the page chunk itself grew by ~46 bytes gzipped. Performance alarm still passes; regression threshold (10%) not tripped; baseline unchanged.
 
 After today, the remaining queue:
-- **None for Phase 5 NFRs** — #14 closed.
-- **Phase 3 content** (residual): additional A1/A2/B1 Units + scenario-to-Unit wiring in the DB seed (v1.1 follow-up; the in-memory `SCENARIO_LIBRARY` covers all 100 scenarios today).
-- **Phase 6 E2E**: no further picks queued.
+- **v1 release readiness** — §10 sign-off + 5 external dependencies + 4 ops items per ADR-0005 §2. The Session 11 open PRs (#102, #103, #107) are still awaiting review.
+- **Phase 3 content** (v1.1 backlog): additional A1/A2/B1 Units.
+- **Architecture deepening** (v1.1 backlog): #105 per-Learner persistence + #106 telemetry seam. (#104 done.)
 
 ## In progress
 
-- _Branch `feat/issue-14-cross-device-smoke` — 880/880 tests + all CI alarms green; pending push + PR._
+- _No active branches — PR #109 merged to `main` at `0606e2d`._
+- _Production image `portuguese-teacher:0606e2d` built + tagged locally. Awaiting user push to the production registry per the Session 6 motion that produced `portuguese-teacher:2c589b8`._
 
 ## Issues status
 
@@ -181,6 +177,7 @@ After today, the remaining queue:
 - **2026-06-28 — TTS asset pipeline + manifest + CI check.** New `pnpm assets:tts` walks every vocabulary item (pt or examplePt), grammar example, and lesson audio block; runs the MiniMax TTS wrapper (mock by default); writes `public/assets/tts/{unitId}/{assetId}.mp3` + `manifest.json` (version / dialect / voiceId / generatedAt / assets[]). Deterministic IDs keep the same input producing the same filename; explicit `audioAssetId` overrides the default. `TextBlock` audio gained an inline `text` field; `GrammarPattern.example` gained optional `audioAssetId`. `pnpm assets:check` fails the build on orphan references. 38 A0 assets emitted. Branch `feat/issue-25-tts-asset-pipeline`, PR pending.
 - **2026-06-28 — SRS persistence moves off localStorage.** New `SrsReviewRecord` + `SrsRecallEvent` Prisma models, migration `20260628171919_add_srs_review_record_recall_event`. `createSrsRepository(prisma)` exposes `loadState` / `upsertRecords` / `applyRecall` / `loadRecentEvents`; the half-life math stays authoritative in `@/lib/srs/scheduler.applyRecall` and the repo persists the resulting record + emits the event row. `GET /api/srs/state?learnerId=…` returns the persisted `SrsState`; `POST /api/srs/recalls` validates the request, auto-enrolls an item on first call when pt/gloss/unitId are provided, applies the recall server-side, and returns the updated record + queue diff. `ReviewQueue` swapped `loadPersisted` / `savePersisted` for these endpoints; loading + grading are async with `srs-error` surfaces for the failure path. Branch `feat/issue-30-srs-db-persistence`, PR pending.
 - **2026-06-28 — Scenario completions move off localStorage.** New `ScenarioCompletion` + `ScenarioProgress` Prisma models, migration `20260628172719_add_scenario_completion_progress`. `createScenarioRepository(prisma)` exposes `loadSnapshot` / `recordCompletion` / `loadHistory`; `recordCompletion` writes the append-only event row + upserts the denormalised `bestStars`/`attempts` row in one Prisma transaction. `GET /api/scenarios?learnerId=…` returns the snapshot; `POST /api/scenarios/[id]/complete` validates passed/stars(0..3)/turnsTaken, persists, and returns the updated progress. `ScenarioWorkspace` swapped `loadSnapshot`/`saveSnapshot` for these endpoints; completion updates the local state optimistically + reconciles via the response, with a `scenario-error` surface for the failure path. Branch `feat/issue-44-scenario-completion-persistence`, PR pending.
+- **2026-07-01 — SRS pipeline consolidated into a single SrsService (issue #104).** The HLR math in `src/lib/srs/scheduler.ts` was the only clean module — everything around it duplicated, leaked conventions, or carried dead code. The audit's Candidate 1 fix lands a `createSrsService(prisma)` that composes scheduler + repository + a typed `kind` carrier. Carrying `kind` through `RecordRecallInput` (typed `EnrollItemInput`) makes the kind-convention bug structurally impossible — no more `inferKindFromId(itemId)` guessing from a `grammar-` prefix. `SrsRepository.applyRecall` split into `writeRecord` + `appendEvent` so the service composes them in parallel. `ScenarioRepository.recordCompletion` now delegates the `SrsItemSource` tag write to `SrsService.recordScenarioSources` (single source of truth), and a new `POST /api/srs/sources` route + `ScenarioPlayer` mount hook closes the "Learner drops mid-scenario → Scenario Origins tile misses data the data model promises" gap — tags now write on scenario open, not on completion. Route handlers slimmed: recalls 118→45, state 46→23, events 60→42, sources 0→53 (new). Dead code swept: `gradeFromString` (storage.ts), `upsertRecords` (repository.ts), `inferKindFromId` (repository.ts, with the prefix leak), the duplicate `isRecallGrade` in `/api/srs/recalls/route.ts`. 36 new tests (916/916). Branch `feat/issue-104-srs-service-consolidation`, PR pending.
 
 ## Blockers
 
