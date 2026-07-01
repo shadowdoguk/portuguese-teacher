@@ -1,4 +1,5 @@
 import type { Curriculum, Unit } from "./types";
+import { scenariosForUnit } from "./scenarios-extended";
 
 const B1_1_GASTRONOMIA: Unit = {
   id: "b1-1-gastronomia",
@@ -31,7 +32,7 @@ const B1_1_GASTRONOMIA: Unit = {
   ],
   vocabulary: [],
   grammar: [],
-  scenarios: [],
+  scenarios: scenariosForUnit("b1-1-gastronomia"),
 };
 
 const B1_2_SERVICOS: Unit = {
@@ -65,7 +66,7 @@ const B1_2_SERVICOS: Unit = {
   ],
   vocabulary: [],
   grammar: [],
-  scenarios: [],
+  scenarios: scenariosForUnit("b1-2-servicos"),
 };
 
 export const B1_CURRICULUM: Curriculum = {
