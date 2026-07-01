@@ -58,10 +58,13 @@ export type RouteGroupKey = "public" | "app" | "auth" | "system";
 export const PER_ROUTE_BUDGETS: Record<RouteGroupKey, number> = {
   // Numbers are gzipped First Load JS bytes — matches what Next.js prints
   // for "First Load JS" and what users actually download on a slow network.
-  // Tuned from the current build: /practice sits at ~117 kB gzipped, the
-  // heaviest non-system page; the budgets above leave ~10–15 kB of headroom.
+  // Tuned from the current build: /practice sits at ~133 kB gzipped after
+  // the #47 scenario library expansion (100 scenarios in the in-memory
+  // library). The previous budget (130 kB) was set when /practice was
+  // ~117 kB. The 5 kB headroom above the current build catches regressions
+  // without flapping on every additional scenario.
   public: 100_000,
-  app: 130_000,
+  app: 140_000,
   auth: 110_000,
   system: 100_000,
 };

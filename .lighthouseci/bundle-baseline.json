@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "takenAt": "2026-06-29T13:36:00.000Z",
-  "buildId": "issue-36-voice-loop-sli",
+  "takenAt": "2026-07-01T08:21:17.710Z",
+  "buildId": "issue-47-scenario-library-expansion",
   "entries": {
     "/": {
       "firstLoadJsBytes": 94139,
@@ -49,9 +49,9 @@
       "totalAssetsBytes": 107381
     },
     "/practice": {
-      "firstLoadJsBytes": 119432,
+      "firstLoadJsBytes": 133100,
       "firstLoadCssBytes": 0,
-      "totalAssetsBytes": 119432
+      "totalAssetsBytes": 133100
     },
     "/profile": {
       "firstLoadJsBytes": 106753,
