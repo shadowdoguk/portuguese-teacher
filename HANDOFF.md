@@ -1,6 +1,6 @@
 # Session Handoff
 
-**Snapshot date:** 2026-07-01 (Session 12 closed — PR #109 (SrsService consolidation, issue #104) squash-merged to `main` at `0606e2d`. Production image `portuguese-teacher:0606e2d` (1.63 GB) built + smoke-tested end-to-end. Main: 916/916 tests + lint + typecheck + Playwright E2E + build all clean. Budget cap bumped 140→145 kB for /practice — Next lazy-loaded AuthProvider + SettingsProvider; the page chunk itself grew by ~46 bytes gzipped.)
+**Snapshot date:** 2026-07-01 (Session 12 closed — PR #109 (SrsService consolidation, #104) + PRs #102/#103/#107 (review-feedback follow-ups) all squash-merged to `main`. Main: 950/950 tests + lint + typecheck + Playwright E2E + build all clean. Production image rebuilt + smoke-tested post-merge.)
 **Repo:** `shadowdoguk/portuguese-teacher`
 
 > **This file is a point-in-time snapshot.** For the living, agent-picked-up
@@ -11,31 +11,25 @@
 
 ## TL;DR
 
-Session 12 closes the architecture audit's top candidate (#104): the SRS pipeline
-consolidated into a single `SrsService` and shipped to main + production image.
+Session 12 closed three PRs (SrsService consolidation + three review-feedback follow-ups) and shipped a fresh production image.
 
-- **PR #109** — `feat(srs): consolidate pipeline into a single SrsService (#104)`. New `src/lib/srs/service.ts` (SrsService), `SrsRepository.applyRecall` split into `writeRecord` + `appendEvent`, `POST /api/srs/sources` route + `ScenarioPlayer` mount hook (closes the "Learner drops mid-scenario" gap), `ScenarioRepository.recordCompletion` delegates to `SrsService.recordScenarioSources`. Dead code swept: `gradeFromString`, `upsertRecords`, `inferKindFromId` (with the `grammar-` prefix leak), the duplicate `isRecallGrade`. Route handlers slimmed: recalls 118→45, state 46→23, events 60→42, sources 0→53. 36 new tests (916/916).
-- **Production image** `portuguese-teacher:0606e2d` (1.63 GB, +0.02 GB vs `2c589b8`) built + smoke-tested end-to-end: cold-boot Prisma 8 migrations applied, Next.js ready in 84 ms, `/api/observability/sli?window=1h` returns HTTP 200, every page (`/`, `/dashboard`, `/review`, `/practice`) returns 200. Awaiting push to the production registry per the Session 6 motion.
-- **Session 11 PRs still open** — #102 (Recent mistakes tile), #103 (ADR-0005 v1 release scope & readiness), #107 (wire 46 library scenarios to A1/A2/B1 Unit seeds). All branch-green from Session 11, awaiting review/merge.
+- **PR #109** — `feat(srs): consolidate pipeline into a single SrsService (#104)`. Squash-merged at `0606e2d`.
+- **PR #102** — `feat(dashboard): Recent mistakes tile (FR-WEB-4 #3)` + `fix(dashboard): apply review feedback to #102` (post-#109 cleanup: removed `grammar-` prefix leak via persisted `SrsReviewRecord.kind` fallback + DB-level filter pushdown + dead-export cleanup). Squash-merged at `942594c`. 22 new tests + 4 review-feedback tests (3 net).
+- **PR #103** — `docs(adr): ADR-0005 v1 release scope and readiness` + `docs(adr-0005): apply review feedback` (post-#107 deferred-list refresh + LGPD Art. 30 fix). Squash-merged at `fc854f6`.
+- **PR #107** — `feat(curriculum): wire 46 library scenarios to A1/A2/B1 Unit seeds` + `feat(curriculum): wire 76 library scenarios across all 6 seeded A1/A2/B1 Units (#107 expansion)` (post-review: expanded from 4 → 6 seeded Unit IDs; added the seed-sync regression-guard test). Squash-merged at `a126ecd`. 9 new tests + 1 invariant test (10 total).
+- **PR #108** — Closed as superseded by Session 12's main commit; Session 11 narrative preserved at commit `23d41c2`.
+- **Production image** `portuguese-teacher:latest` rebuilt post-merge (1.63 GB). Cold-boot Prisma 8 migrations apply; `/api/dashboard/recent-mistakes?learnerId=test` returns HTTP 200. Previous image `portuguese-teacher:0606e2d` retained for rollback.
 
 ## Git state
 
 | Branch | Status |
 | --- | --- |
-| `main` | clean; 916/916 tests + lint + typecheck + Playwright E2E + build all green; merge commit `0606e2d` |
+| `main` | clean; 950/950 tests + lint + typecheck + Playwright E2E + build all green; latest merge `e21ae50` (PROGRESS bump post-#102/#107/#103) |
 | `feat/issue-104-srs-service-consolidation` | merged + deleted (squash into `0606e2d`) |
-| `feat/dashboard-recent-mistakes` | PR #102 open — 902/902 tests green |
-| `docs/adr-0005-v1-release-scope` | PR #103 open — doc-only |
-| `feat/scenarios-extended-a1a2b1` | PR #107 open — 889/889 tests green |
-| `docs/session-11-handoff` | PR #108 open — session close-out |
-| All Session 7-11 branches | merged + deleted |
-
-## Open PRs
-
-- **#102** feat(dashboard): Recent mistakes tile (FR-WEB-4 #3) — Session 11
-- **#103** docs(adr): ADR-0005 v1 release scope and readiness — Session 11
-- **#107** feat(curriculum): wire 46 library scenarios to A1/A2/B1 Unit seeds — Session 11
-- **#108** docs(handoff): Session 11 closed — Session 11
+| `feat/dashboard-recent-mistakes` | merged + deleted (squash into `942594c`) |
+| `feat/scenarios-extended-a1a2b1` | merged + deleted (squash into `a126ecd`) |
+| `docs/adr-0005-v1-release-scope` | merged + deleted (squash into `fc854f6`) |
+| `docs/session-11-handoff` | superseded (PR closed) |
 
 ## Open issues (2 ready-for-agent v1.1 backlog)
 
@@ -44,13 +38,13 @@ consolidated into a single `SrsService` and shipped to main + production image.
 
 ## Still pending (human / external — now tracked as ADR-0005 release gates)
 
-- **§10 sign-off on ADR-0005** — Product, Pedagogy, Engineering, Design, QA, Security leads. Engineering sign-off is auto-ticked by today's branch-green merge.
+- **§10 sign-off on ADR-0005** — Product, Pedagogy, Engineering, Design, QA, Security leads. Engineering sign-off is auto-ticked by today's 950/950 branch-green merge.
 - **Live MiniMax LLM credentials** for the production WER acceptance run (SC-5 weekly aggregation).
 - **Authenticated LHCI runs** for `/dashboard`, `/review`, `/practice` — needs a Learner fixture + cookie.
 - **Real Grafana + 60 s × 3-region synthetic-probe scheduling** for SC-2 / NFR-3 ≥ 95 % monthly uptime.
 - **External legal sign-off** on `docs/agents/sc5-gdpr-review.md`.
 - **Slack webhook** for the cross-device nightly workflow.
-- **Production image push** — `portuguese-teacher:0606e2d` built + tagged locally. Awaiting user push to the production registry per Session 6 motion.
+- **Production image push** — `portuguese-teacher:latest` rebuilt + smoke-tested locally. Awaiting user push to the production registry per Session 6 motion.
 - **Server-side authoritative SC-5 opt-out** (v1.1 follow-up).
 - **Authenticated Learner fixture** — 5 hard-coded `"demo-learner"` strings block per-Learner persistence (v1.1 issue #105).
 
@@ -58,18 +52,18 @@ consolidated into a single `SrsService` and shipped to main + production image.
 
 ```bash
 git checkout main && git pull
-# Confirm main is at 916/916 tests + all required CI alarms green.
-# Push portuguese-teacher:0606e2d to the production registry (if not yet pushed).
-# Merge PRs #102, #103, #107, #108 if approved (or address review comments).
+# Confirm main is at 950/950 tests + all required CI alarms green.
+# Push portuguese-teacher:latest to the production registry (if not yet pushed).
 # Pick from the v1.1 backlog:
 #   - #105 Per-Learner persistence (5 hard-coded "demo-learner" strings)
 #   - #106 Telemetry seam clean-up (inverts withLatencyMetric dependency)
-# Recommended: take #105 first — #104 just landed and #105 closes the
-# dashboard numbers-that-don't-update + SC-5 opt-out-client-trusted gaps that
-# ride on the same auth surface.
+# Recommended: take #105 first — it closes the dashboard-numbers-don't-update
+# + SC-5 opt-out-client-trusted gaps that ride on the same auth surface.
 # Alternatively: pick from the v1.1 'additional A1/A2/B1 Units' backlog
-# (the 50 remaining library scenarios reference Unit IDs the seeds
-# haven't authored yet — a1-2-mercearia, a2-1-compras, etc.).
+# (the 24 remaining library scenarios reference Unit IDs the seeds
+# haven't authored yet — a1-2-mercearia, a1-3-roupa, a1-4-familia,
+# a1-5-rotinas, a2-1-compras, a2-2-restaurante, a2-3-banco, a2-4-sociais,
+# b1-1-emprego, b1-2-sociais, b1-3-cultura, …).
 ```
 
 ## Key references
@@ -82,11 +76,15 @@ git checkout main && git pull
 | Voice Loop architecture (NLU+NLG structured output, Pronunciation Score) | [`docs/adr/0002-voice-loop-architecture.md`](./docs/adr/0002-voice-loop-architecture.md) |
 | Pedagogical model (SRS, i+1, TBLT, ICF) | [`docs/adr/0001-pedagogical-model.md`](./docs/adr/0001-pedagogical-model.md) |
 | LLM difficulty-control pipeline | [`docs/adr/0004-difficulty-control-pipeline.md`](./docs/adr/0004-difficulty-control-pipeline.md) |
-| **v1 release scope & readiness (Session 11)** | [`docs/adr/0005-v1-release-scope-and-readiness.md`](./docs/adr/0005-v1-release-scope-and-readiness.md) |
-| **SRS Service (Session 12)** | `src/lib/srs/service.ts` (new), `src/lib/srs/repository.ts` (split), `src/app/api/srs/sources/route.ts` (new), `src/components/practice/ScenarioPlayer.tsx` (mount hook), `src/lib/scenarios/repository.ts` (delegation) |
+| **v1 release scope & readiness (Session 11 + post-#107 update)** | [`docs/adr/0005-v1-release-scope-and-readiness.md`](./docs/adr/0005-v1-release-scope-and-readiness.md) |
+| **SRS Service (Session 12)** | `src/lib/srs/service.ts` (new), `src/lib/srs/repository.ts` (split + `loadRecentMistakes` + `loadItemKind`), `src/app/api/srs/sources/route.ts` (new), `src/components/practice/ScenarioPlayer.tsx` (mount hook), `src/lib/scenarios/repository.ts` (delegation) |
 | **SRS Service tests (Session 12)** | `src/test/srs-service.test.ts` (21), `src/test/srs-sources-api.test.ts` (9), `src/test/srs-repository-split.test.ts` (4), `src/test/scenario-adaptive.test.tsx` (+2) |
-| Dashboard Recent mistakes tile (Session 11) | `src/components/dashboard/RecentMistakesTile.tsx`, `src/app/api/dashboard/recent-mistakes/route.ts`, `src/lib/dashboard/recent-mistakes.ts` |
-| Library scenarios wired to A1/A2/B1 Unit seeds (Session 11) | `src/lib/curriculum/scenarios-extended.ts` |
+| **Recent mistakes tile (#102)** | `src/components/dashboard/RecentMistakesTile.tsx`, `src/app/api/dashboard/recent-mistakes/route.ts`, `src/lib/dashboard/recent-mistakes.ts` (with `kindForItem` orphan fallback) |
+| **Recent mistakes tile tests (#102)** | `src/test/dashboard-recent-mistakes.test.ts` (14), `src/test/dashboard-recent-mistakes-api.test.ts` (5), `src/test/dashboard-recent-mistakes-tile.test.tsx` (3) |
+| **Library scenarios wired to all 6 seeded A1/A2/B1 Units (#107)** | `src/lib/curriculum/scenarios-extended.ts`, `src/lib/curriculum/seed-{a1,a2,b1}.ts` |
+| **Scenarios-extended tests (#107)** | `src/test/scenarios-extended.test.ts` (10) |
+| Dashboard Recent mistakes tile (Session 11 — first cut) | `src/components/dashboard/RecentMistakesTile.tsx`, `src/app/api/dashboard/recent-mistakes/route.ts`, `src/lib/dashboard/recent-mistakes.ts` |
+| Library scenarios wired to A1/A2/B1 Unit seeds (Session 11 — first cut) | `src/lib/curriculum/scenarios-extended.ts` |
 | Architecture audit (Session 11) | `/tmp/architecture-review-2026-07-01.html` (out-of-repo per skill convention) |
 | Scenario library (Session 9) | `src/lib/scenarios/library.ts` (100 scenarios, ≥ 6 per category) |
 | A1/A2/B1 curriculum seed (Session 9) | `src/lib/curriculum/seed-a1.ts`, `seed-a2.ts`, `seed-b1.ts` |
@@ -110,8 +108,9 @@ git checkout main && git pull
 | Workflow conventions | [`AGENTS.md`](./AGENTS.md) |
 | Research synthesis | [`docs/research/language-acquisition-findings.md`](./docs/research/language-acquisition-findings.md) |
 | A/B harness report | [`docs/research/difficulty-ab-mock-report.md`](./docs/research/difficulty-ab-mock-report.md) |
-| **Production image (Session 12)** | `portuguese-teacher:0606e2d` (1.63 GB; built + smoke-tested; awaiting user push) |
-| **Production image (Session 6)** | `portuguese-teacher:2c589b8` (1.61 GB; previous deploy) |
+| **Production image (Session 12, post-#102/#107/#103)** | `portuguese-teacher:latest` (1.63 GB; rebuilt + smoke-tested post-merge) |
+| **Production image (Session 12, post-#109 only)** | `portuguese-teacher:0606e2d` (1.63 GB; previous build) |
+| **Production image (Session 6)** | `portuguese-teacher:2c589b8` (1.61 GB; first production deploy) |
 
 ## Conventions to honour
 

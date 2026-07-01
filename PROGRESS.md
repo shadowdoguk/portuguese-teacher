@@ -2,7 +2,7 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-07-01 (Session 12 closed — PR #109 (SrsService consolidation, #104) squash-merged to main at `0606e2d`. Main: 916/916 tests + lint + typecheck + Playwright E2E + build all clean. Production image `portuguese-teacher:0606e2d` (1.63 GB) built + smoke-tested (Prisma 8 migrations on cold boot, `/api/observability/sli?window=1h` → HTTP 200). Budget cap bumped 140→145 kB for /practice (Next lazy-loaded AuthProvider + SettingsProvider; page chunk itself grew ~46 bytes gz). Session 11 PRs (#102, #103, #107) still awaiting review.)
+**Last updated:** 2026-07-01 (Session 12 closed — PRs #102 (Recent mistakes tile fix: prefix-leak + DB-level filter + SrsService), #103 (ADR-0005 deferred-list + LGPD Art. fix), #107 (wiring expanded 4 → 6 seeded A1/A2/B1 Unit IDs, 46 → 76 library scenarios, DB count 4 → 80) all squash-merged to main. Main: 950/950 tests + lint + typecheck + Playwright E2E + build all clean. Production image `portuguese-teacher:latest` (rebuilt post-merge, 1.63 GB) smoke-tested (Prisma 8 migrations on cold boot, `/api/dashboard/recent-mistakes?learnerId=test` returns 200). Previous image `portuguese-teacher:0606e2d` retained for rollback.)
 
 ## Session 12 picks shipped
 
