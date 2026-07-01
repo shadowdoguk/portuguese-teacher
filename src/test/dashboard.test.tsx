@@ -95,4 +95,13 @@ describe("DashboardClient", () => {
     });
     expect(screen.getByText(/Change starting Unit/)).toBeInTheDocument();
   });
+
+  it("renders the Recent mistakes tile eyebrow when authenticated", async () => {
+    seedUser();
+    render(<Harness />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Recent mistakes")).toBeInTheDocument();
+    });
+  });
 });

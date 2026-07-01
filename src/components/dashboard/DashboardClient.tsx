@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { useAuth } from "@/lib/auth/useAuth";
 import { useSettings } from "@/lib/settings";
 import { Card } from "@/components/ui/Card";
+import { RecentMistakesTile } from "@/components/dashboard/RecentMistakesTile";
 import { LEARNER_GOALS, LEVELS, type Level } from "@/lib/auth/types";
 import { formatStage, pluralize } from "@/lib/utils";
 import { indexCurriculum, getUnit } from "@/lib/curriculum";
@@ -143,15 +144,7 @@ export function DashboardClient() {
           {next.blurb}
         </Card>
 
-        <Card eyebrow="Spaced repetition" title={`${reviewDue.count} due today`}>
-          Items you learned earlier are about to fade. A quick review locks them in.
-          <Link
-            href="/review"
-            className="mt-4 inline-block text-sm text-terracotta-deep underline decoration-terracotta underline-offset-4"
-          >
-            Open review queue →
-          </Link>
-        </Card>
+        <RecentMistakesTile learnerId={user.id} />
       </section>
 
       {placementStatus?.kind === "pending" ? (
@@ -215,11 +208,23 @@ export function DashboardClient() {
           </Link>
         </Card>
 
+        <Card eyebrow="Spaced repetition" title={`${reviewDue.count} due today`}>
+          Items you learned earlier are about to fade. A quick review locks them in.
+          <Link
+            href="/review"
+            className="mt-4 inline-block text-sm text-terracotta-deep underline decoration-terracotta underline-offset-4"
+          >
+            Open review queue →
+          </Link>
+        </Card>
+
         <Card eyebrow="Streak" title={pluralize(user.streakDays, "day")}>
           Don&apos;t break the chain. {Math.max(15 - user.streakDays, 1)} minutes
           tomorrow keeps it alive.
         </Card>
+      </section>
 
+      <section>
         <Card eyebrow="Stage" title={`${formatStage(user.level)} · ${stageName(user.level)}`}>
           {milestoneBlurb(user.level)}
           {primaryGoals.length > 0 ? (
