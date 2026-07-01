@@ -64,8 +64,11 @@ describe("GET /api/srs/state", () => {
   it("returns the persisted state for a known learner", async () => {
     const learnerId = `learner-${Date.now()}`;
     const repo = createSrsRepository(prisma);
-    await repo.upsertRecords(learnerId, [
-      {
+    await repo.writeRecord({
+      learnerId,
+      itemId: "a0-1-v-ola",
+      kind: "vocabulary",
+      record: {
         itemId: "a0-1-v-ola",
         halfLifeMs: 600_000,
         lastReviewedAt: null,
@@ -73,7 +76,7 @@ describe("GET /api/srs/state", () => {
         reviewCount: 0,
         lapses: 0,
       },
-    ]);
+    });
 
     const res = await getState(
       new Request(`http://localhost/api/srs/state?learnerId=${learnerId}`),
@@ -106,8 +109,11 @@ describe("POST /api/srs/recalls", () => {
   it("returns 404 for an unknown itemId", async () => {
     const learnerId = `learner-${Date.now()}-404`;
     const repo = createSrsRepository(prisma);
-    await repo.upsertRecords(learnerId, [
-      {
+    await repo.writeRecord({
+      learnerId,
+      itemId: "known",
+      kind: "vocabulary",
+      record: {
         itemId: "known",
         halfLifeMs: 600_000,
         lastReviewedAt: null,
@@ -115,7 +121,7 @@ describe("POST /api/srs/recalls", () => {
         reviewCount: 0,
         lapses: 0,
       },
-    ]);
+    });
 
     const res = await postRecall(
       jsonRequest("http://localhost/api/srs/recalls", {
@@ -131,8 +137,11 @@ describe("POST /api/srs/recalls", () => {
   it("applies a recall and returns the updated record + queue", async () => {
     const learnerId = `learner-${Date.now()}-happy`;
     const repo = createSrsRepository(prisma);
-    await repo.upsertRecords(learnerId, [
-      {
+    await repo.writeRecord({
+      learnerId,
+      itemId: "a0-1-v-ola",
+      kind: "vocabulary",
+      record: {
         itemId: "a0-1-v-ola",
         halfLifeMs: 300_000,
         lastReviewedAt: null,
@@ -140,7 +149,12 @@ describe("POST /api/srs/recalls", () => {
         reviewCount: 0,
         lapses: 0,
       },
-      {
+    });
+    await repo.writeRecord({
+      learnerId,
+      itemId: "a0-1-v-adeus",
+      kind: "vocabulary",
+      record: {
         itemId: "a0-1-v-adeus",
         halfLifeMs: 600_000,
         lastReviewedAt: null,
@@ -148,7 +162,7 @@ describe("POST /api/srs/recalls", () => {
         reviewCount: 0,
         lapses: 0,
       },
-    ]);
+    });
 
     const res = await postRecall(
       jsonRequest("http://localhost/api/srs/recalls", {
