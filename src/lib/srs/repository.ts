@@ -41,6 +41,12 @@ export type SrsRepository = {
     event: SrsRecallEvent;
   }>;
   loadRecentEvents(learnerId: string, limit: number): Promise<ReadonlyArray<SrsRecallEvent>>;
+  loadRecentMistakes(
+    learnerId: string,
+    sinceMs: number,
+    limit: number,
+  ): Promise<ReadonlyArray<SrsRecallEvent>>;
+  loadItemKind(learnerId: string, itemId: string): Promise<SrsItemKind | null>;
   recordScenarioSources(
     learnerId: string,
     sources: ReadonlyArray<{ itemId: string; sourceScenarioId: string }>,
@@ -147,6 +153,27 @@ export function createSrsRepository(prisma: PrismaClient): SrsRepository {
         take: limit,
       });
       return rows.map(rowToEvent);
+    },
+
+    async loadRecentMistakes(learnerId, sinceMs, limit) {
+      // DB-level filter for grade='again' AND occurredAt >= sinceMs so the
+      // route never pulls + discards thousands of good/easy rows. Pushed
+      // down here as part of #102 (post-#109) — keeps the cap meaningful
+      // for heavy users and removes the JS-side filter cost.
+      const rows = await prisma.srsRecallEvent.findMany({
+        where: { learnerId, grade: "again", occurredAt: { gte: new Date(sinceMs) } },
+        orderBy: { occurredAt: "desc" },
+        take: limit,
+      });
+      return rows.map(rowToEvent);
+    },
+
+    async loadItemKind(learnerId, itemId): Promise<SrsItemKind | null> {
+      const row = await prisma.srsReviewRecord.findUnique({
+        where: { learnerId_itemId: { learnerId, itemId } },
+        select: { kind: true },
+      });
+      return (row?.kind as SrsItemKind | undefined) ?? null;
     },
 
     async recordScenarioSources(learnerId, sources) {

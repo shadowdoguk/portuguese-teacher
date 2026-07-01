@@ -66,6 +66,12 @@ export type SrsService = {
     itemIds: ReadonlyArray<string>,
   ): Promise<number>;
   loadRecentEvents(learnerId: string, limit: number): Promise<ReadonlyArray<SrsRecallEvent>>;
+  loadRecentMistakes(
+    learnerId: string,
+    sinceMs: number,
+    limit: number,
+  ): Promise<ReadonlyArray<SrsRecallEvent>>;
+  loadItemKind(learnerId: string, itemId: string): Promise<SrsItemKind | null>;
 };
 
 export function createSrsService(prisma: PrismaClient): SrsService {
@@ -161,6 +167,14 @@ export function createSrsService(prisma: PrismaClient): SrsService {
 
     loadRecentEvents(learnerId, limit) {
       return repo.loadRecentEvents(learnerId, limit);
+    },
+
+    loadRecentMistakes(learnerId, sinceMs, limit) {
+      return repo.loadRecentMistakes(learnerId, sinceMs, limit);
+    },
+
+    loadItemKind(learnerId, itemId) {
+      return repo.loadItemKind(learnerId, itemId);
     },
   };
 }
