@@ -13,22 +13,44 @@ export type SrsItemSource = {
   recordedAt: number;
 };
 
+export type WriteRecordInput = {
+  learnerId: string;
+  itemId: string;
+  kind: SrsItemKind;
+  record: SrsReviewRecord;
+};
+
+export type AppendEventInput = {
+  learnerId: string;
+  itemId: string;
+  grade: RecallGrade;
+  event: SrsRecallEvent;
+};
+
+export type ApplyRecallInput = AppendEventInput & {
+  kind: SrsItemKind;
+  record: SrsReviewRecord;
+};
+
 export type SrsRepository = {
   loadState(learnerId: string): Promise<SrsState>;
-  upsertRecords(learnerId: string, records: ReadonlyArray<SrsReviewRecord>): Promise<void>;
-  applyRecall(args: {
-    learnerId: string;
-    itemId: string;
-    kind: SrsItemKind;
-    grade: RecallGrade;
+  writeRecord(input: WriteRecordInput): Promise<void>;
+  appendEvent(input: AppendEventInput): Promise<void>;
+  applyRecall(input: ApplyRecallInput): Promise<{
     record: SrsReviewRecord;
     event: SrsRecallEvent;
-  }): Promise<{ record: SrsReviewRecord; event: SrsRecallEvent }>;
+  }>;
   loadRecentEvents(learnerId: string, limit: number): Promise<ReadonlyArray<SrsRecallEvent>>;
+  loadRecentMistakes(
+    learnerId: string,
+    sinceMs: number,
+    limit: number,
+  ): Promise<ReadonlyArray<SrsRecallEvent>>;
+  loadItemKind(learnerId: string, itemId: string): Promise<SrsItemKind | null>;
   recordScenarioSources(
     learnerId: string,
     sources: ReadonlyArray<{ itemId: string; sourceScenarioId: string }>,
-  ): Promise<void>;
+  ): Promise<number>;
   loadScenarioSources(learnerId: string): Promise<ReadonlyArray<SrsItemSource>>;
 };
 
@@ -44,39 +66,7 @@ export function createSrsRepository(prisma: PrismaClient): SrsRepository {
       return { items };
     },
 
-    async upsertRecords(learnerId, records) {
-      for (const record of records) {
-        await prisma.srsReviewRecord.upsert({
-          where: { learnerId_itemId: { learnerId, itemId: record.itemId } },
-          create: {
-            learnerId,
-            itemId: record.itemId,
-            kind: inferKindFromId(record.itemId),
-            halfLifeMs: record.halfLifeMs,
-            lastReviewedAt:
-              typeof record.lastReviewedAt === "number"
-                ? new Date(record.lastReviewedAt)
-                : null,
-            dueAt: new Date(record.dueAt),
-            reviewCount: record.reviewCount,
-            lapses: record.lapses,
-          },
-          update: {
-            halfLifeMs: record.halfLifeMs,
-            lastReviewedAt:
-              typeof record.lastReviewedAt === "number"
-                ? new Date(record.lastReviewedAt)
-                : null,
-            dueAt: new Date(record.dueAt),
-            reviewCount: record.reviewCount,
-            lapses: record.lapses,
-          },
-        });
-      }
-    },
-
-    async applyRecall(args) {
-      const { learnerId, itemId, kind, grade, record, event } = args;
+    async writeRecord({ learnerId, itemId, kind, record }) {
       await prisma.srsReviewRecord.upsert({
         where: { learnerId_itemId: { learnerId, itemId } },
         create: {
@@ -85,9 +75,7 @@ export function createSrsRepository(prisma: PrismaClient): SrsRepository {
           kind,
           halfLifeMs: record.halfLifeMs,
           lastReviewedAt:
-            typeof record.lastReviewedAt === "number"
-              ? new Date(record.lastReviewedAt)
-              : null,
+            typeof record.lastReviewedAt === "number" ? new Date(record.lastReviewedAt) : null,
           dueAt: new Date(record.dueAt),
           reviewCount: record.reviewCount,
           lapses: record.lapses,
@@ -95,15 +83,53 @@ export function createSrsRepository(prisma: PrismaClient): SrsRepository {
         update: {
           halfLifeMs: record.halfLifeMs,
           lastReviewedAt:
-            typeof record.lastReviewedAt === "number"
-              ? new Date(record.lastReviewedAt)
-              : null,
+            typeof record.lastReviewedAt === "number" ? new Date(record.lastReviewedAt) : null,
           dueAt: new Date(record.dueAt),
           reviewCount: record.reviewCount,
           lapses: record.lapses,
         },
       });
-      const persisted = await prisma.srsRecallEvent.create({
+    },
+
+    async appendEvent({ learnerId, itemId, grade, event }) {
+      await prisma.srsRecallEvent.create({
+        data: {
+          learnerId,
+          itemId,
+          grade,
+          halfLifeBeforeMs: event.halfLifeBeforeMs,
+          halfLifeAfterMs: event.halfLifeAfterMs,
+          dueAt: new Date(event.dueAt),
+          occurredAt: new Date(event.timestamp),
+        },
+      });
+    },
+
+    async applyRecall(input) {
+      const { learnerId, itemId, kind, grade, record, event } = input;
+      await prisma.srsReviewRecord.upsert({
+        where: { learnerId_itemId: { learnerId, itemId } },
+        create: {
+          learnerId,
+          itemId,
+          kind,
+          halfLifeMs: record.halfLifeMs,
+          lastReviewedAt:
+            typeof record.lastReviewedAt === "number" ? new Date(record.lastReviewedAt) : null,
+          dueAt: new Date(record.dueAt),
+          reviewCount: record.reviewCount,
+          lapses: record.lapses,
+        },
+        update: {
+          halfLifeMs: record.halfLifeMs,
+          lastReviewedAt:
+            typeof record.lastReviewedAt === "number" ? new Date(record.lastReviewedAt) : null,
+          dueAt: new Date(record.dueAt),
+          reviewCount: record.reviewCount,
+          lapses: record.lapses,
+        },
+      });
+      await prisma.srsRecallEvent.create({
         data: {
           learnerId,
           itemId,
@@ -116,10 +142,7 @@ export function createSrsRepository(prisma: PrismaClient): SrsRepository {
       });
       return {
         record,
-        event: {
-          ...event,
-          event: "srs_recall" as const,
-        },
+        event: { ...event, event: "srs_recall" as const },
       };
     },
 
@@ -132,8 +155,31 @@ export function createSrsRepository(prisma: PrismaClient): SrsRepository {
       return rows.map(rowToEvent);
     },
 
+    async loadRecentMistakes(learnerId, sinceMs, limit) {
+      // DB-level filter for grade='again' AND occurredAt >= sinceMs so the
+      // route never pulls + discards thousands of good/easy rows. Pushed
+      // down here as part of #102 (post-#109) — keeps the cap meaningful
+      // for heavy users and removes the JS-side filter cost.
+      const rows = await prisma.srsRecallEvent.findMany({
+        where: { learnerId, grade: "again", occurredAt: { gte: new Date(sinceMs) } },
+        orderBy: { occurredAt: "desc" },
+        take: limit,
+      });
+      return rows.map(rowToEvent);
+    },
+
+    async loadItemKind(learnerId, itemId): Promise<SrsItemKind | null> {
+      const row = await prisma.srsReviewRecord.findUnique({
+        where: { learnerId_itemId: { learnerId, itemId } },
+        select: { kind: true },
+      });
+      return (row?.kind as SrsItemKind | undefined) ?? null;
+    },
+
     async recordScenarioSources(learnerId, sources) {
+      let recorded = 0;
       for (const source of sources) {
+        if (typeof source.itemId !== "string" || source.itemId.length === 0) continue;
         await prisma.srsItemSource.upsert({
           where: {
             learnerId_itemId_sourceScenarioId: {
@@ -149,7 +195,9 @@ export function createSrsRepository(prisma: PrismaClient): SrsRepository {
           },
           update: {},
         });
+        recorded += 1;
       }
+      return recorded;
     },
 
     async loadScenarioSources(learnerId) {
@@ -203,8 +251,4 @@ export function rowToEvent(row: {
     dueAt: row.dueAt.getTime(),
     timestamp: row.occurredAt.getTime(),
   };
-}
-
-function inferKindFromId(itemId: string): SrsItemKind {
-  return itemId.startsWith("grammar-") ? "grammar" : "vocabulary";
 }
