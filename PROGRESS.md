@@ -2,7 +2,7 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-06-30 (Sessions 7 + 8 closed — PR #93 (#34) + PR #94 (#16) + PR #95 (#35 SC-5 audio capture hook + opt-out toggle) + PR #96 (Session 8 HANDOFF) all merged into main. **Session 9 in flight** with #47 scenario library expansion to ≥ 100 scenarios + ≥ 6 per category. Branch `feat/issue-47-scenario-library-expansion` is branch-green at 874/874 tests + lint + typecheck + perf:budget + asr:regress + sc5:load-test + build all clean. Next-session picks: #14 cross-device smoke.)
+**Last updated:** 2026-06-30 (Sessions 7 + 8 + 9 closed — PRs #93 (Playwright E2E) + #94 (SC-5 infra) + #95 (SC-5 audio capture hook + opt-out toggle) + #96 (HANDOFF) + #98 (scenario library expansion to 100) all merged into main. **Session 10 in flight** with #14 cross-device compatibility smoke tests. Branch `feat/issue-14-cross-device-smoke` is branch-green at 880/880 tests + lint + typecheck + perf:budget + asr:regress + sc5:load-test + build all clean. The Phase 5 NFRs queue is now closed.)
 
 ## Session 7 picks shipped
 
@@ -53,35 +53,28 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Current focus
 
-**Session 9 in flight (2026-06-30).** Branch `feat/issue-47-scenario-library-expansion` is branch-green at 874/874 tests + lint + typecheck + perf:budget + asr:regress + sc5:load-test + build all clean.
+**Session 10 in flight (2026-06-30).** Branch `feat/issue-14-cross-device-smoke` is branch-green at 880/880 tests + lint + typecheck + perf:budget + asr:regress + sc5:load-test + build all clean.
 
-Today's pick (#47, complete on the branch):
-- **Library expansion to 100 scenarios** — `src/lib/scenarios/library.ts`. Adds 70 new pt-PT scenarios across 10 categories (greetings-introductions, cafe-restaurant, shopping-bargaining, directions, doctor, bank-post-office, job-interview, travelling, social-plans, cultural-norms). Final distribution:
-  ```
-  bank-post-office             8
-  cafe-restaurant              12
-  cultural-norms               16   (Lisbon/Porto cultural focus per acceptance)
-  directions                   10
-  doctor                       9
-  greetings-introductions      6
-  job-interview                9
-  shopping-bargaining          9
-  social-plans                 10
-  travelling                   11
-  ─
-  Total                       100
-  ```
-  Level coverage: A0: 4, A1: 30, A2: 33, B1: 33. Zero pt-BR tokens (verified by the existing scenario-library invariant).
-- **Property tests** — `src/test/scenarios-library-property.test.ts`. Asserts ≥ 100 total, ≥ 6 per category, every CEFR level covered, ≥ 3 scenarios per A1/A2/B1 Unit, structural invariants pass, sub-level coverage.
-- **A/B harness re-run** — `src/test/ab-harness.test.ts`. New "issue #47 scenario expansion re-run" describe block runs every CEFR boundary (A0→A1, A1→A2, A2→B1) under mock mode and pins the rerank vs prompt-only in-band relationship.
-- **A1/A2/B1 seed files** — `src/lib/curriculum/seed-a1.ts`, `seed-a2.ts`, `seed-b1.ts`. Two Units per Level (matches the in-memory library's minimum-viable Unit count). `prisma/seed.ts` updated to merge all four curricula. `pnpm seed` produces 10 Units (4 A0 + 2 A1 + 2 A2 + 2 B1).
+Today's pick (#14, complete on the branch):
+- **Device matrix in `playwright.config.ts`** — FR-WEB-2 compliance. 11 Playwright projects:
+  - **Smoke layer** (PR-time): `chromium`, `webkit`, `firefox-smoke` (the existing 3 PR projects, unchanged).
+  - **Desktop matrix layer** (nightly): `desktop-chromium`, `desktop-webkit-full`, `desktop-firefox-full`, `desktop-edge` (best-effort when Edge isn't installed).
+  - **Tablet layer** (nightly): `tablet-ipad` (iPad gen 11), `tablet-android-chrome` (Galaxy Tab S4).
+  - **Mobile layer** (nightly): `mobile-iphone` (iPhone 15), `mobile-android-pixel` (Pixel 7).
+- **Smoke suite** — `tests/e2e/smoke-suite.spec.ts`. 5 tests cover sign-up → dashboard → lesson → practice turn → milestone assessment → settings (with privacy panel + SC-5 status). Each test renders the page and asserts the headline + a representative testid.
+- **Visual regression baselines** — `tests/e2e/visual-regression.spec.ts` tagged `@visual`. 5 baseline screenshots (dashboard, lesson, practice, assess, settings) committed under `tests/e2e/visual-regression.spec.ts-snapshots/` for the chromium-linux profile. `maxDiffPixelRatio: 0.01` per page.
+- **Nightly CI workflow** — `.github/workflows/cross-device-smoke.yml`. Runs on `cron: 0 4 * * *` + on every `v*` tag + on `workflow_dispatch`. 8 matrix jobs (one per device profile). Each job uploads `playwright-report-<project>` as an artifact. `desktop-edge` is best-effort (tolerates a non-zero exit).
+- **PR-time `e2e` job** — `.github/workflows/ci.yml` updated to invoke `pnpm test:e2e --project=chromium --project=webkit --project=firefox-smoke --grep-invert="@visual"` (smoke only, no visual regression on PR).
+- **Unit tests pinning the matrix** — `src/test/e2e-device-matrix.test.ts`. 6 tests assert every required desktop / tablet / mobile device profile is available via Playwright's `devices` registry, with the right `isMobile` flag.
 
 After today, the remaining queue:
-- **Phase 5 — NFRs**: **#14** cross-device compatibility smoke tests (foundation laid by #34). Visual regression + device matrix.
+- **None for Phase 5 NFRs** — #14 closed.
+- **Phase 3 content** (residual): additional A1/A2/B1 Units + scenario-to-Unit wiring in the DB seed (v1.1 follow-up; the in-memory `SCENARIO_LIBRARY` covers all 100 scenarios today).
+- **Phase 6 E2E**: no further picks queued.
 
 ## In progress
 
-- _Branch `feat/issue-47-scenario-library-expansion` — 874/874 tests + all CI alarms green; pending push + PR._
+- _Branch `feat/issue-14-cross-device-smoke` — 880/880 tests + all CI alarms green; pending push + PR._
 
 ## Issues status
 

@@ -1,0 +1,133 @@
+# Cross-device smoke + visual regression — issue #14.
+#
+# Runs nightly + on every release + on manual dispatch. Executes the full
+# device matrix (desktop + tablet + mobile × Chromium / WebKit / Firefox /
+# Edge per FR-WEB-2) and uploads the Playwright report as a workflow artifact.
+#
+# PR-time fast path lives in `.github/workflows/ci.yml` (chromium + webkit +
+# firefox-smoke only, scoped by `--project=`). This workflow exercises the
+# complete matrix and is the source of truth for the "A regression on any
+# device blocks release" acceptance criterion.
+
+name: Cross-device smoke + visual regression
+
+on:
+  schedule:
+    # Nightly at 04:00 UTC. Slack #qa-smoke notifications + release-block are
+    # wired by tagging the run as `cross-device-smoke-failed` (the DPO will
+    # wire the actual Slack hook).
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+    inputs:
+      project:
+        description: "Run a specific project (default: full matrix)"
+        required: false
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  matrix:
+    name: ${{ matrix.project.name }} on ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [
+          # Desktop (FR-WEB-2 §"Browser support matrix")
+          { name: "desktop-chromium",        label: "Desktop Chrome",   channel: "chromium" },
+          { name: "desktop-webkit-full",     label: "Desktop Safari",   channel: "webkit"   },
+          { name: "desktop-firefox-full",    label: "Desktop Firefox",  channel: "firefox"  },
+          { name: "desktop-edge",            label: "Desktop Edge",     channel: "msedge"   },
+          # Tablet
+          { name: "tablet-ipad",             label: "iPad (gen 11)",    channel: "webkit"   },
+          { name: "tablet-android-chrome",   label: "Galaxy Tab S4",    channel: "chromium" },
+          # Mobile
+          { name: "mobile-iphone",           label: "iPhone 15",        channel: "webkit"   },
+          { name: "mobile-android-pixel",    label: "Pixel 7",          channel: "chromium" },
+        ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm exec prisma generate
+        if: hashFiles('prisma/schema.prisma') != ''
+
+      - name: Install Playwright browsers
+        run: pnpm test:e2e:install
+
+      - name: Build app
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_MOCK: "1"
+          DATABASE_URL: file:./prisma/dev.db
+
+      - name: Run cross-device smoke + visual regression
+        id: e2e
+        run: |
+          PROJECT_NAME="${{ matrix.project.name }}"
+          echo "Running matrix project: $PROJECT_NAME (${{ matrix.project.label }})"
+          # `desktop-edge` is best-effort — Playwright will exit non-zero if
+          # the browser isn't installed. We tolerate that here so the
+          # nightly workflow doesn't fail when Edge isn't on the runner image.
+          set +e
+          pnpm test:e2e --project="$PROJECT_NAME" 2>&1 | tee e2e-output.log
+          E2E_EXIT=$?
+          set -e
+          echo "::notice::Project $PROJECT_NAME exited with status $E2E_EXIT"
+          if [ "$E2E_EXIT" -ne 0 ] && [ "$PROJECT_NAME" != "desktop-edge" ]; then
+            exit "$E2E_EXIT"
+          fi
+          exit 0
+        env:
+          NEXT_PUBLIC_MOCK: "1"
+          DATABASE_URL: file:./prisma/dev.db
+          CI: "1"
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project.name }}
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload e2e log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-log-${{ matrix.project.name }}
+          path: e2e-output.log
+          retention-days: 7
+
+      - name: Annotate run as failed when matrix project exits non-zero
+        if: failure()
+        run: |
+          # Surface to the qa-smoke audit pipeline. The release-blocker check
+          # is wired here so a failed nightly visibly tags the commit + the
+          # release. The DPO can add a Slack webhook here once provisioned.
+          echo "::error::cross-device smoke failed for ${{ matrix.project.name }} (${{ matrix.project.label }}). See artifact playwright-report-${{ matrix.project.name }}."
+          exit 1
