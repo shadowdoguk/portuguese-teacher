@@ -216,3 +216,74 @@ describe("ScenarioPlayer — adaptive difficulty (#48)", () => {
     });
   });
 });
+
+describe("ScenarioPlayer — partial-completion tag write (#104)", () => {
+  it("posts the scenario's vocabularyRefs to /api/srs/sources on mount", async () => {
+    seedUser("A1");
+    fetchMock.mockResolvedValue(
+      jsonResponse({ ok: true, state: { items: {} }, sources: [] }),
+    );
+    const scenario = scenarioAt("A1", ["a1-1-v-bilhete", "a1-1-v-passaporte"]);
+    render(
+      <AuthProvider>
+        <SettingsProvider>
+          <ScenarioPlayer
+            scenario={scenario}
+            onExit={() => undefined}
+            onComplete={() => undefined}
+          />
+        </SettingsProvider>
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      const sourcesCall = fetchMock.mock.calls.find((call) => {
+        const url = typeof call[0] === "string" ? call[0] : (call[0] as Request).url;
+        return url.includes("/api/srs/sources");
+      });
+      expect(sourcesCall).toBeDefined();
+    });
+
+    const sourcesCall = fetchMock.mock.calls.find((call) => {
+      const url = typeof call[0] === "string" ? call[0] : (call[0] as Request).url;
+      return url.includes("/api/srs/sources");
+    })!;
+    const init = sourcesCall[1] as RequestInit | undefined;
+    expect(init?.method).toBe("POST");
+    const body = JSON.parse(String(init?.body)) as {
+      learnerId: string;
+      scenarioId: string;
+      itemIds: ReadonlyArray<string>;
+    };
+    expect(body.learnerId).toBe("demo-learner");
+    expect(body.scenarioId).toBe(scenario.id);
+    expect(body.itemIds).toEqual(["a1-1-v-bilhete", "a1-1-v-passaporte"]);
+  });
+
+  it("does NOT post to /api/srs/sources when the scenario has no vocabularyRefs", async () => {
+    seedUser("A0");
+    fetchMock.mockResolvedValue(
+      jsonResponse({ ok: true, state: { items: {} }, sources: [] }),
+    );
+    const scenario = scenarioAt("A0", []);
+    render(
+      <AuthProvider>
+        <SettingsProvider>
+          <ScenarioPlayer
+            scenario={scenario}
+            onExit={() => undefined}
+            onComplete={() => undefined}
+          />
+        </SettingsProvider>
+      </AuthProvider>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("scenario-level-mismatch")).toBeInTheDocument();
+    });
+    const sourcesCall = fetchMock.mock.calls.find((call) => {
+      const url = typeof call[0] === "string" ? call[0] : (call[0] as Request).url;
+      return url.includes("/api/srs/sources");
+    });
+    expect(sourcesCall).toBeUndefined();
+  });
+});

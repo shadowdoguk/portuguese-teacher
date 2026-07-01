@@ -68,11 +68,14 @@ describe("SrsRepository", () => {
     expect(state).toEqual(emptyState());
   });
 
-  it("upsertRecords persists half-life + dueAt + counters", async () => {
+  it("writeRecord persists half-life + dueAt + counters", async () => {
     const repo = createSrsRepository(prisma);
     const learnerId = `learner-${Date.now()}-upsert`;
-    await repo.upsertRecords(learnerId, [
-      {
+    await repo.writeRecord({
+      learnerId,
+      itemId: REF_A.itemId,
+      kind: REF_A.kind,
+      record: {
         itemId: REF_A.itemId,
         halfLifeMs: 600_000,
         lastReviewedAt: null,
@@ -80,7 +83,7 @@ describe("SrsRepository", () => {
         reviewCount: 0,
         lapses: 0,
       },
-    ]);
+    });
     const state = await repo.loadState(learnerId);
     expect(Object.keys(state.items)).toHaveLength(1);
     expect(state.items[REF_A.itemId]?.halfLifeMs).toBe(600_000);
@@ -91,7 +94,14 @@ describe("SrsRepository", () => {
     const repo = createSrsRepository(prisma);
     const learnerId = `learner-${Date.now()}-recall`;
     const startState = enrollItem(emptyState(), REF_A, 1_000_000);
-    await repo.upsertRecords(learnerId, Object.values(startState.items));
+    for (const record of Object.values(startState.items)) {
+      await repo.writeRecord({
+        learnerId,
+        itemId: record.itemId,
+        kind: REF_A.kind,
+        record,
+      });
+    }
 
     const result = applyRecall(startState, learnerId, REF_A.itemId, "good", 2_000_000);
     const persisted = await repo.applyRecall({
@@ -123,10 +133,15 @@ describe("SrsRepository", () => {
     let state = emptyState();
     state = enrollItem(state, REF_A, 1_000);
     state = enrollItem(state, REF_B, 1_000);
-    await repo.upsertRecords(
-      learnerId,
-      Object.values(state.items),
-    );
+    for (const record of Object.values(state.items)) {
+      const ref = record.itemId === REF_A.itemId ? REF_A : REF_B;
+      await repo.writeRecord({
+        learnerId,
+        itemId: record.itemId,
+        kind: ref.kind,
+        record,
+      });
+    }
 
     const reloaded = await repo.loadState(learnerId);
     expect(Object.keys(reloaded.items).sort()).toEqual(
@@ -137,8 +152,11 @@ describe("SrsRepository", () => {
   it("two loadState calls for the same learner produce the same record", async () => {
     const repo = createSrsRepository(prisma);
     const learnerId = `learner-${Date.now()}-stable`;
-    await repo.upsertRecords(learnerId, [
-      {
+    await repo.writeRecord({
+      learnerId,
+      itemId: REF_A.itemId,
+      kind: REF_A.kind,
+      record: {
         itemId: REF_A.itemId,
         halfLifeMs: 1_200_000,
         lastReviewedAt: 5_000,
@@ -146,7 +164,7 @@ describe("SrsRepository", () => {
         reviewCount: 3,
         lapses: 1,
       },
-    ]);
+    });
     const a = await repo.loadState(learnerId);
     const b = await repo.loadState(learnerId);
     expect(a).toEqual(b);
