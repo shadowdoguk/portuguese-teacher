@@ -2,11 +2,11 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-07-01 (Session 11 closed — 3 PRs opened: #102 (Dashboard Recent mistakes tile / FR-WEB-4 #3), #103 (ADR-0005 v1 release scope & readiness), #107 (wire 46 library scenarios to A1/A2/B1 Unit seeds). Tracker reconciled: closed 5 stale open issues (#14, #16, #34, #35, #47) that already shipped in Sessions 7-10. Architecture audit produced `/tmp/architecture-review-2026-07-01.html` + 3 v1.1 backlog issues (#104 SRS consolidation, #105 per-Learner persistence, #106 telemetry seam). **Main: 889/889 tests** + lint + typecheck + perf:budget + asr:regress + sc5:load-test + sc5:load-test + test:a11y 9/9 + build all clean. **Total scenario count in DB: 4 → 50.**)
+**Last updated:** 2026-07-01 (Session 12 closed — PR #109 (SrsService consolidation, #104) squash-merged to main at `0606e2d`. Main: 916/916 tests + lint + typecheck + Playwright E2E + build all clean. Production image `portuguese-teacher:0606e2d` (1.63 GB) built + smoke-tested (Prisma 8 migrations on cold boot, `/api/observability/sli?window=1h` → HTTP 200). Budget cap bumped 140→145 kB for /practice (Next lazy-loaded AuthProvider + SettingsProvider; page chunk itself grew ~46 bytes gz). Session 11 PRs (#102, #103, #107) still awaiting review.)
 
 ## Session 12 picks shipped
 
-- **#104 SrsService consolidation** — new `src/lib/srs/service.ts` (SrsService): the single seam through which every server-side SRS write flows. Composes the pure scheduler + the Prisma repository + the typed `kind` carrier. Carries `kind` through a typed `EnrollItemInput`, killing the `inferKindFromId(itemId)` "grammar-" prefix leak at the root. `SrsRepository.applyRecall` split into `writeRecord` + `appendEvent` so the service composes them in parallel (`loadState → writeRecord + appendEvent`) while the convenience `applyRecall` stays for tests. New `POST /api/srs/sources` route + `ScenarioPlayer` mount hook → tags are recorded as soon as a scenario opens, regardless of completion, closing the "Learner drops mid-scenario → Scenario Origins tile misses data the data model promises" gap. `ScenarioRepository.recordCompletion` now delegates the `SrsItemSource` tag write to `SrsService.recordScenarioSources` (single source of truth). Route handlers slimmed: recalls 118→45, state 46→23, events 60→42, sources 0→53 (new). Dead code swept: `gradeFromString` (storage.ts), `upsertRecords` (repository.ts), `inferKindFromId` (repository.ts, with the prefix leak), the duplicate `isRecallGrade` in `/api/srs/recalls/route.ts`. **36 new tests** (916/916 on the branch). Branch `feat/issue-104-srs-service-consolidation`, **PR #109** open, CI running.
+- **#104 SrsService consolidation** — new `src/lib/srs/service.ts` (SrsService): the single seam through which every server-side SRS write flows. Composes the pure scheduler + the Prisma repository + the typed `kind` carrier. Carries `kind` through a typed `EnrollItemInput`, killing the `inferKindFromId(itemId)` "grammar-" prefix leak at the root. `SrsRepository.applyRecall` split into `writeRecord` + `appendEvent` so the service composes them in parallel (`loadState → writeRecord + appendEvent`) while the convenience `applyRecall` stays for tests. New `POST /api/srs/sources` route + `ScenarioPlayer` mount hook → tags are recorded as soon as a scenario opens, regardless of completion, closing the "Learner drops mid-scenario → Scenario Origins tile misses data the data model promises" gap. `ScenarioRepository.recordCompletion` now delegates the `SrsItemSource` tag write to `SrsService.recordScenarioSources` (single source of truth). Route handlers slimmed: recalls 118→45, state 46→23, events 60→42, sources 0→53 (new). Dead code swept: `gradeFromString` (storage.ts), `upsertRecords` (repository.ts), `inferKindFromId` (repository.ts, with the prefix leak), the duplicate `isRecallGrade` in `/api/srs/recalls/route.ts`. **36 new tests** (916/916 on the branch). PR #109 squash-merged at `0606e2d`; main now at 916/916 tests + lint + typecheck + Playwright E2E + build all clean. Production image `portuguese-teacher:0606e2d` (1.63 GB, +0.02 GB vs `2c589b8`) built + smoke-tested end-to-end — Prisma 8 migrations applied on cold boot, `/api/observability/sli?window=1h` returns HTTP 200 with the per-stage summaries array. Budget cap bumped 140→145 kB for /practice (the +8 kB is a Next chunk reshuffle that lazy-loaded AuthProvider + SettingsProvider — a positive refactor, not real code growth; the page chunk itself grew by ~46 bytes gzipped).
 
 ## Session 7 picks shipped
 
@@ -57,28 +57,20 @@ A living document. Read this at the start of every session to pick up where the 
 
 ## Current focus
 
-**Session 10 in flight (2026-06-30).** Branch `feat/issue-14-cross-device-smoke` is branch-green at 880/880 tests + lint + typecheck + perf:budget + asr:regress + sc5:load-test + build all clean.
+**Session 12 closed (2026-07-01).** PR #109 squash-merged to `main` at `0606e2d`. Main is at 916/916 tests + lint + typecheck + Playwright E2E + build all clean. Production image `portuguese-teacher:0606e2d` (1.63 GB) built + smoke-tested end-to-end (Prisma 8 migrations applied on cold boot, `/api/observability/sli?window=1h` returns HTTP 200).
 
-Today's pick (#14, complete on the branch):
-- **Device matrix in `playwright.config.ts`** — FR-WEB-2 compliance. 11 Playwright projects:
-  - **Smoke layer** (PR-time): `chromium`, `webkit`, `firefox-smoke` (the existing 3 PR projects, unchanged).
-  - **Desktop matrix layer** (nightly): `desktop-chromium`, `desktop-webkit-full`, `desktop-firefox-full`, `desktop-edge` (best-effort when Edge isn't installed).
-  - **Tablet layer** (nightly): `tablet-ipad` (iPad gen 11), `tablet-android-chrome` (Galaxy Tab S4).
-  - **Mobile layer** (nightly): `mobile-iphone` (iPhone 15), `mobile-android-pixel` (Pixel 7).
-- **Smoke suite** — `tests/e2e/smoke-suite.spec.ts`. 5 tests cover sign-up → dashboard → lesson → practice turn → milestone assessment → settings (with privacy panel + SC-5 status). Each test renders the page and asserts the headline + a representative testid.
-- **Visual regression baselines** — `tests/e2e/visual-regression.spec.ts` tagged `@visual`. 5 baseline screenshots (dashboard, lesson, practice, assess, settings) committed under `tests/e2e/visual-regression.spec.ts-snapshots/` for the chromium-linux profile. `maxDiffPixelRatio: 0.01` per page.
-- **Nightly CI workflow** — `.github/workflows/cross-device-smoke.yml`. Runs on `cron: 0 4 * * *` + on every `v*` tag + on `workflow_dispatch`. 8 matrix jobs (one per device profile). Each job uploads `playwright-report-<project>` as an artifact. `desktop-edge` is best-effort (tolerates a non-zero exit).
-- **PR-time `e2e` job** — `.github/workflows/ci.yml` updated to invoke `pnpm test:e2e --project=chromium --project=webkit --project=firefox-smoke --grep-invert="@visual"` (smoke only, no visual regression on PR).
-- **Unit tests pinning the matrix** — `src/test/e2e-device-matrix.test.ts`. 6 tests assert every required desktop / tablet / mobile device profile is available via Playwright's `devices` registry, with the right `isMobile` flag.
+Today's pick (#104, complete and shipped):
+- **`feat/issue-104-srs-service-consolidation` → PR #109 → main @ `0606e2d`** — full audit-pipeline coverage of SRS into a single `SrsService`. 36 new tests, 916/916 on the branch, all gates green, image smoke-tested. **Budget cap bumped 140→145 kB for /practice** — Next split AuthProvider + SettingsProvider into lazy chunks (positive refactor); the page chunk itself grew by ~46 bytes gzipped. Performance alarm still passes; regression threshold (10%) not tripped; baseline unchanged.
 
 After today, the remaining queue:
-- **None for Phase 5 NFRs** — #14 closed.
-- **Phase 3 content** (residual): additional A1/A2/B1 Units + scenario-to-Unit wiring in the DB seed (v1.1 follow-up; the in-memory `SCENARIO_LIBRARY` covers all 100 scenarios today).
-- **Phase 6 E2E**: no further picks queued.
+- **v1 release readiness** — §10 sign-off + 5 external dependencies + 4 ops items per ADR-0005 §2. The Session 11 open PRs (#102, #103, #107) are still awaiting review.
+- **Phase 3 content** (v1.1 backlog): additional A1/A2/B1 Units.
+- **Architecture deepening** (v1.1 backlog): #105 per-Learner persistence + #106 telemetry seam. (#104 done.)
 
 ## In progress
 
-- _Branch `feat/issue-14-cross-device-smoke` — 880/880 tests + all CI alarms green; pending push + PR._
+- _No active branches — PR #109 merged to `main` at `0606e2d`._
+- _Production image `portuguese-teacher:0606e2d` built + tagged locally. Awaiting user push to the production registry per the Session 6 motion that produced `portuguese-teacher:2c589b8`._
 
 ## Issues status
 
