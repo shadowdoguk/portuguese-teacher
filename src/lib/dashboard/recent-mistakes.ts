@@ -1,8 +1,8 @@
-import type { SrsRecallEvent } from "@/lib/srs/types";
+import type { SrsItemKind, SrsRecallEvent } from "@/lib/srs/types";
 
 export type RecentMistakeItem = {
   itemId: string;
-  kind: "vocabulary" | "grammar";
+  kind: SrsItemKind;
   pt: string;
   gloss: string;
   lapses: number;
@@ -17,7 +17,7 @@ export type RecentMistakesResult = {
 };
 
 export type ItemLookup = {
-  kind: "vocabulary" | "grammar";
+  kind: SrsItemKind;
   pt: string;
   gloss: string;
 };
@@ -30,6 +30,16 @@ export const MAX_RECENT_MISTAKES_WINDOW_DAYS = 90;
 export function aggregateRecentMistakes(args: {
   events: ReadonlyArray<SrsRecallEvent>;
   lookupItem: (itemId: string) => ItemLookup | null;
+  /**
+   * Fallback kind source for items the curriculum lookup misses
+   * (e.g. items deleted from the current seed). Should read the
+   * persisted `kind` column from `SrsReviewRecord` so we never
+   * guess from an `itemId` string prefix. Returning null falls back
+   * to `"vocabulary"` (the safe default — the dashboard tile already
+   * surfaces the orphan in its "Item not found in current curriculum"
+   * copy, so a wrong kind badge is the lesser cosmetic issue).
+   */
+  kindForItem?: (itemId: string) => SrsItemKind | null;
   now: number;
   windowDays?: number;
   limit?: number;
@@ -79,9 +89,13 @@ export function aggregateRecentMistakes(args: {
   const items: RecentMistakeItem[] = [];
   for (const bucket of ranked) {
     const lookup = args.lookupItem(bucket.itemId);
+    const kind: SrsItemKind =
+      lookup?.kind ??
+      args.kindForItem?.(bucket.itemId) ??
+      "vocabulary";
     items.push({
       itemId: bucket.itemId,
-      kind: lookup?.kind ?? defaultKindForId(bucket.itemId),
+      kind,
       pt: lookup?.pt ?? bucket.itemId,
       gloss: lookup?.gloss ?? "Item not found in current curriculum",
       lapses: bucket.lapses,
@@ -105,8 +119,4 @@ function clampDays(value: number): number {
 function clampLimit(value: number): number {
   if (!Number.isFinite(value) || value <= 0) return DEFAULT_RECENT_MISTAKES_LIMIT;
   return Math.min(MAX_RECENT_MISTAKES_LIMIT, Math.floor(value));
-}
-
-function defaultKindForId(itemId: string): "vocabulary" | "grammar" {
-  return itemId.startsWith("grammar-") ? "grammar" : "vocabulary";
 }

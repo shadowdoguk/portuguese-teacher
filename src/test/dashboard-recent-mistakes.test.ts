@@ -204,7 +204,35 @@ describe("aggregateRecentMistakes", () => {
     expect(result.items[0]?.kind).toBe("vocabulary");
   });
 
-  it("identifies grammar items by their 'grammar-' prefix when lookup misses", () => {
+  it("uses kindForItem as the orphan fallback when the curriculum lookup misses", () => {
+    const events: SrsRecallEvent[] = [
+      makeEvent({
+        grade: "again",
+        itemId: "grammar-orphan-1",
+        timestamp: NOW - 1 * DAY_MS,
+      }),
+      makeEvent({
+        grade: "again",
+        itemId: "v-orphan-2",
+        timestamp: NOW - 1 * DAY_MS,
+      }),
+    ];
+    const result = aggregateRecentMistakes({
+      events,
+      lookupItem: () => null,
+      kindForItem: (itemId) =>
+        itemId.startsWith("grammar-") ? "grammar" : null,
+      now: NOW,
+    });
+    expect(result.items[0]?.kind).toBe("grammar");
+    expect(result.items[1]?.kind).toBe("vocabulary");
+  });
+
+  it("never infers kind from the itemId string prefix", () => {
+    // Pin: the aggregator does NOT call any `itemId.startsWith("grammar-")`
+    // itself. The only allowed kind sources are (1) the curriculum lookup,
+    // (2) the persisted `kindForItem` callback (which should read from
+    // SrsReviewRecord), (3) the safe default `"vocabulary"`.
     const events: SrsRecallEvent[] = [
       makeEvent({
         grade: "again",
@@ -215,9 +243,12 @@ describe("aggregateRecentMistakes", () => {
     const result = aggregateRecentMistakes({
       events,
       lookupItem: () => null,
+      // kindForItem also returns null — simulates the orphaned case
+      // where no SrsReviewRecord exists either.
+      kindForItem: () => null,
       now: NOW,
     });
-    expect(result.items[0]?.kind).toBe("grammar");
+    expect(result.items[0]?.kind).toBe("vocabulary");
   });
 
   it("uses the grammar lookup when provided", () => {

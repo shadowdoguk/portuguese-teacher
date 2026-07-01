@@ -13,13 +13,6 @@ type Fetched = {
   error: string | null;
 };
 
-const EMPTY_RESULT: RecentMistakesResult = {
-  items: [],
-  totalLapses: 0,
-  windowMs: 0,
-  uniqueItems: 0,
-};
-
 export function RecentMistakesTile({ learnerId }: { learnerId: string }) {
   const [data, setData] = useState<Fetched>({
     status: "loading",
@@ -147,5 +140,3 @@ export function RecentMistakesTile({ learnerId }: { learnerId: string }) {
     </Card>
   );
 }
-
-export const RECENT_MISTAKES_TILE_DEFAULT_RESULT = EMPTY_RESULT;

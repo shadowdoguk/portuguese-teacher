@@ -247,4 +247,54 @@ describe("GET /api/dashboard/recent-mistakes", () => {
     expect(body.result.items).toEqual([]);
     expect(body.result.windowMs).toBe(3 * 24 * 60 * 60 * 1000);
   });
+
+  it("falls back to the persisted SrsReviewRecord.kind when the curriculum lookup misses", async () => {
+    const learnerId = `learner-${Date.now()}-orphan`;
+    const repo = createSrsRepository(prisma);
+    const now = Date.now();
+
+    // 'grammar-orphan-x' is NOT seeded into VocabularyItem / GrammarPattern.
+    // The SrsReviewRecord carries kind='grammar' (post-#109 the typed
+    // RecordRecallInput guarantees this is the persisted truth).
+    await repo.applyRecall({
+      learnerId,
+      itemId: "grammar-orphan-x",
+      kind: "grammar",
+      grade: "again",
+      record: {
+        itemId: "grammar-orphan-x",
+        halfLifeMs: 600_000,
+        lastReviewedAt: null,
+        dueAt: now,
+        reviewCount: 1,
+        lapses: 1,
+      },
+      event: {
+        event: "srs_recall",
+        learnerId,
+        itemId: "grammar-orphan-x",
+        grade: "again",
+        halfLifeBeforeMs: 600_000,
+        halfLifeAfterMs: 150_000,
+        dueAt: now,
+        timestamp: now - 1 * 24 * 60 * 60 * 1000,
+      },
+    });
+
+    const res = await getRecentMistakes(
+      new Request(
+        `http://localhost/api/dashboard/recent-mistakes?learnerId=${learnerId}`,
+      ),
+    );
+    const body = (await res.json()) as {
+      result: {
+        items: Array<{ itemId: string; kind: string }>;
+      };
+    };
+    expect(body.result.items).toHaveLength(1);
+    expect(body.result.items[0]?.itemId).toBe("grammar-orphan-x");
+    // The aggregator must NOT guess 'grammar' from the itemId prefix.
+    // It must read the persisted kind from SrsReviewRecord via loadItemKind.
+    expect(body.result.items[0]?.kind).toBe("grammar");
+  });
 });
