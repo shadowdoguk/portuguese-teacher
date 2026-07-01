@@ -121,8 +121,11 @@ jobs:
           NEXT_PUBLIC_MOCK: "1"
           DATABASE_URL: file:./prisma/dev.db
 
-      - name: Run Playwright E2E
-        run: pnpm test:e2e
+      - name: Run Playwright E2E (PR-time smoke — desktop only)
+        # PR-time fast path: smoke projects only (chromium, webkit,
+        # firefox-smoke). The full device matrix + visual regression runs
+        # in `.github/workflows/cross-device-smoke.yml` on nightly + tags.
+        run: pnpm test:e2e --project=chromium --project=webkit --project=firefox-smoke --grep-invert="@visual"
         env:
           NEXT_PUBLIC_MOCK: "1"
           DATABASE_URL: file:./prisma/dev.db
