@@ -66,6 +66,30 @@ export const AuthContext = createContext<AuthContextValue | null>(null);
 
 const STORAGE_KEY = "portuguese-teacher:user";
 
+// Mirrored into a same-name cookie so the edge middleware
+// (`src/middleware.ts`) can gate protected routes with a server-side
+// redirect (issues #T-022, #T-302, #T-456). The cookie value is just the
+// Learner ID — no sensitive data — so even a sniffed cookie can't reveal
+// more than "this browser signed in as <id>". Cleared on sign-out.
+export const AUTH_COOKIE_NAME = "portuguese-teacher:auth";
+const AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
+
+function writeAuthCookie(userId: string): void {
+  if (typeof document === "undefined") return;
+  const value = encodeURIComponent(userId);
+  const maxAge = `Max-Age=${AUTH_COOKIE_MAX_AGE_SECONDS}`;
+  const sameSite = "SameSite=Lax";
+  // Path=/ so it covers every route. Secure flag is left off so the
+  // dev server on http://localhost can set it; production should layer
+  // a stricter cookie policy on top.
+  document.cookie = `${AUTH_COOKIE_NAME}=${value}; Path=/; ${maxAge}; ${sameSite}`;
+}
+
+function clearAuthCookie(): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${AUTH_COOKIE_NAME}=; Path=/; Max-Age=0; SameSite=Lax`;
+}
+
 function withDefaults(user: Learner): Learner {
   return {
     ...user,
@@ -88,9 +112,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       const user = withDefaults(JSON.parse(raw) as Learner);
+      writeAuthCookie(user.id);
       setState({ status: "authenticated", user });
     } catch {
       window.localStorage.removeItem(STORAGE_KEY);
+      clearAuthCookie();
       setState({ status: "anonymous", user: null });
     }
   }, []);
@@ -99,8 +125,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return;
     if (user) {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+      writeAuthCookie(user.id);
     } else {
       window.localStorage.removeItem(STORAGE_KEY);
+      clearAuthCookie();
     }
   }, []);
 
