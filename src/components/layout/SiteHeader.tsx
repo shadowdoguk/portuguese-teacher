@@ -38,27 +38,66 @@ function MarketingNav() {
 }
 
 function AppNav() {
+  const linkClass =
+    "rounded-full px-3 py-1.5 text-ink-soft hover:bg-paper-warm hover:text-ink";
+
   return (
     <nav aria-label="Primary" className="flex items-center gap-1 text-sm">
-      <Link href="/dashboard" className="rounded-full px-3 py-1.5 text-ink-soft hover:bg-paper-warm hover:text-ink">
-        Dashboard
-      </Link>
-      <Link href="/practice" className="rounded-full px-3 py-1.5 text-ink-soft hover:bg-paper-warm hover:text-ink">
-        Practice
-      </Link>
-      <Link href="/review" className="rounded-full px-3 py-1.5 text-ink-soft hover:bg-paper-warm hover:text-ink">
-        Review
-      </Link>
+      {/* Desktop: inline links (≥ md) */}
+      <div className="hidden items-center gap-1 md:flex">
+        <Link href="/dashboard" className={linkClass}>
+          Dashboard
+        </Link>
+        <Link href="/practice" className={linkClass}>
+          Practice
+        </Link>
+        <Link href="/review" className={linkClass}>
+          Review
+        </Link>
+      </div>
+
+      {/* Mobile (< md): <details>-based menu anchored to the avatar.
+          <details>/<summary> gives us free keyboard + Escape handling + a11y. */}
+      <details className="relative md:hidden">
+        <summary
+          aria-label="Open menu"
+          data-testid="appnav-mobile-toggle"
+          className="ml-2 grid h-8 w-8 cursor-pointer list-none place-items-center rounded-full bg-ink text-paper [&::-webkit-details-marker]:hidden"
+        >
+          <span className="font-mono text-xs">DA</span>
+        </summary>
+        <div
+          data-testid="appnav-mobile-menu"
+          className="absolute right-0 top-full z-50 mt-2 flex w-48 flex-col gap-1 rounded-lg border border-ink/10 bg-paper p-2 shadow-lg"
+        >
+          <Link href="/dashboard" className={linkClass}>
+            Dashboard
+          </Link>
+          <Link href="/practice" className={linkClass}>
+            Practice
+          </Link>
+          <Link href="/review" className={linkClass}>
+            Review
+          </Link>
+          <Link href="/profile" className={linkClass}>
+            Profile
+          </Link>
+          <hr className="my-1 border-ink/10" />
+          <SignOutButton variant="link" className="justify-start" />
+        </div>
+      </details>
+
+      {/* Desktop: avatar link to /profile + inline sign-out (≥ md) */}
       <Link
         href="/profile"
         aria-label="Open profile"
-        className="ml-2 grid h-8 w-8 place-items-center rounded-full bg-ink text-paper"
+        className="ml-2 hidden h-8 w-8 place-items-center rounded-full bg-ink text-paper md:grid"
       >
         <span className="font-mono text-xs">DA</span>
       </Link>
       <SignOutButton
         variant="link"
-        className="ml-1 rounded-full px-3 py-1.5 text-ink-soft hover:bg-paper-warm hover:text-ink"
+        className="ml-1 hidden rounded-full px-3 py-1.5 text-ink-soft hover:bg-paper-warm hover:text-ink md:inline-flex"
       />
     </nav>
   );
