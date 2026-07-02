@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/Card";
 import { DialectPicker } from "@/components/ui/DialectPicker";
 import { ProfileForm } from "@/components/profile/ProfileForm";
+import { SignOutButton } from "@/components/auth/SignOutButton";
 
 export default function ProfilePage() {
   return (
@@ -33,6 +34,18 @@ export default function ProfilePage() {
       </section>
 
       <ProfileForm />
+
+      <section>
+        <Card eyebrow="Session" title="End your session">
+          <p className="text-sm text-ink-soft">
+            Sign out to clear your session on this device. Your progress and
+            settings stay saved against your account.
+          </p>
+          <div className="mt-4">
+            <SignOutButton variant="ghost" />
+          </div>
+        </Card>
+      </section>
     </div>
   );
 }

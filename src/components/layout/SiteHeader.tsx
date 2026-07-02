@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
+import { SignOutButton } from "@/components/auth/SignOutButton";
 
 type Variant = "marketing" | "app";
 
@@ -48,9 +49,17 @@ function AppNav() {
       <Link href="/review" className="rounded-full px-3 py-1.5 text-ink-soft hover:bg-paper-warm hover:text-ink">
         Review
       </Link>
-      <Link href="/profile" className="ml-2 grid h-8 w-8 place-items-center rounded-full bg-ink text-paper">
+      <Link
+        href="/profile"
+        aria-label="Open profile"
+        className="ml-2 grid h-8 w-8 place-items-center rounded-full bg-ink text-paper"
+      >
         <span className="font-mono text-xs">DA</span>
       </Link>
+      <SignOutButton
+        variant="link"
+        className="ml-1 rounded-full px-3 py-1.5 text-ink-soft hover:bg-paper-warm hover:text-ink"
+      />
     </nav>
   );
 }
