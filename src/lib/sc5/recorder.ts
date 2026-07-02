@@ -150,19 +150,43 @@ export function createFireAndForgetRecorder(
 // don't need this default. The default is bound to a no-op recorder until
 // `bindDefaultRecorder` is called by the server runtime
 // (`src/instrumentation.ts`).
+//
+// HMR note (issue #T-482): Next.js dev mode re-evaluates this module when
+// files in src/ change. Each re-evaluation re-runs the `let defaultRecorder`
+// initializer, which resets the binding to the unbound default — the bound
+// recorder set by `bindDefaultRecorder` at server startup is lost, and
+// `sc5Recorder.enqueue` ends up forwarding to an unbound recorder that fails
+// on every sampled event. We mirror the binding onto `globalThis` so it
+// survives module re-evaluation: `bindDefaultRecorder` writes the bound
+// recorder there, and the per-call dispatch reads from `globalThis` first,
+// falling back to the module-local default for tests that don't go through
+// `bindDefaultRecorder`.
+type Sc5Global = typeof globalThis & {
+  __portugueseTeacherSc5Recorder?: Sc5Recorder;
+};
+
+function readGlobalRecorder(): Sc5Recorder | undefined {
+  return (globalThis as Sc5Global).__portugueseTeacherSc5Recorder;
+}
+
+function writeGlobalRecorder(recorder: Sc5Recorder): void {
+  (globalThis as Sc5Global).__portugueseTeacherSc5Recorder = recorder;
+}
+
 let defaultRecorder: Sc5Recorder = createFireAndForgetRecorder();
 
 export function bindDefaultRecorder(recorder: Sc5Recorder): Sc5Recorder {
+  writeGlobalRecorder(recorder);
   defaultRecorder = recorder;
   return defaultRecorder;
 }
 
 export function getDefaultRecorder(): Sc5Recorder {
-  return defaultRecorder;
+  return readGlobalRecorder() ?? defaultRecorder;
 }
 
 export const sc5Recorder: Sc5Recorder = {
   enqueue(blob): void {
-    defaultRecorder.enqueue(blob);
+    (readGlobalRecorder() ?? defaultRecorder).enqueue(blob);
   },
 };

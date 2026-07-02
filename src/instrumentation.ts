@@ -27,7 +27,7 @@ export async function register(): Promise<void> {
   // `setObservabilitySink` to swap to a stub).
   if (process.env.NODE_ENV === "test") return;
 
-  const { PrismaClient } = await import("@prisma/client");
+const { PrismaClient } = await import("@prisma/client");
   const { bindDefaultRecorder } = await import("@/lib/sc5/recorder");
   const { createServerRecorder } = await import("@/lib/sc5/server-recorder");
 
