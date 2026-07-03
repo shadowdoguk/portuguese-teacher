@@ -48,6 +48,18 @@ describe("ProfileForm", () => {
     expect(screen.getByDisplayValue("English")).toBeInTheDocument();
   });
 
+  it("displays the Learner's email (issue #121)", async () => {
+    seedUser();
+    render(<Harness />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Display name/)).toBeInTheDocument();
+    });
+    // Email is rendered as read-only text so the Learner can confirm the
+    // contact channel tied to their account (per FR-DATA-3 + ADR-0005).
+    expect(screen.getByTestId("profile-email")).toHaveValue("demo@portugues.app");
+  });
+
   it("shows the placement entry-point for above-A0 self-assessment", async () => {
     window.localStorage.setItem(
       "portuguese-teacher:user",

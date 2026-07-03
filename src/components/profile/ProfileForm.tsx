@@ -115,6 +115,21 @@ export function ProfileForm() {
     <form onSubmit={handleSubmit} noValidate className="space-y-8">
       <Card eyebrow="Identity" title="Your learner profile">
         <div className="space-y-5">
+          <Field
+            label="Email"
+            hint="The address tied to your account. Read-only in v1 — change via account deletion + re-sign-up."
+          >
+            <input
+              type="email"
+              value={user.email}
+              readOnly
+              aria-readonly="true"
+              aria-label={`Email: ${user.email}`}
+              className={textInputClassName(false)}
+              data-testid="profile-email"
+            />
+          </Field>
+
           <Field label="Display name" name={nameId} required hint="Shown in lessons and progress.">
             <input
               id={nameId}
