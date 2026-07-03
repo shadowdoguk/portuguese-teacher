@@ -12,7 +12,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <aside className="hidden lg:block">
           <SidebarNav />
         </aside>
-        <main className="min-w-0">{children}</main>
+        <main id="main" className="min-w-0">{children}</main>
       </div>
     </div>
   );

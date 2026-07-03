@@ -27,7 +27,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className="grid place-items-center px-6 py-12 lg:py-20">{children}</main>
+      <main id="main" className="grid place-items-center px-6 py-12 lg:py-20">{children}</main>
     </div>
   );
 }

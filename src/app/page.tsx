@@ -33,7 +33,7 @@ export default function HomePage() {
   return (
     <>
       <SiteHeader variant="marketing" />
-      <main>
+      <main id="main">
         <Hero />
         <Marquee />
         <PrincipleSection />
