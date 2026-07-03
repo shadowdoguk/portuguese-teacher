@@ -2,11 +2,31 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-07-01 (Session 12 closed — PRs #102 (Recent mistakes tile fix: prefix-leak + DB-level filter + SrsService), #103 (ADR-0005 deferred-list + LGPD Art. fix), #107 (wiring expanded 4 → 6 seeded A1/A2/B1 Unit IDs, 46 → 76 library scenarios, DB count 4 → 80) all squash-merged to main. Main: 950/950 tests + lint + typecheck + Playwright E2E + build all clean. Production image `portuguese-teacher:latest` (rebuilt post-merge, 1.63 GB) smoke-tested (Prisma 8 migrations on cold boot, `/api/dashboard/recent-mistakes?learnerId=test` returns 200). Previous image `portuguese-teacher:0606e2d` retained for rollback.)
+**Last updated:** 2026-07-03 (Session 16 — fix-all pass on Session 15's 10 bugs. **6 new fix PRs filed (#126–#131)** for issues #120–#125; the 4 Session 14 fix PRs (#114–#117 + #119) already existed and are still open awaiting review. All 10 fixes have TDD-pinned tests; lint + typecheck + perf:budget clean per branch. Branch test count: 950 → 951+ depending on fix.)
 
 ## Session 12 picks shipped
 
 - **#104 SrsService consolidation** — new `src/lib/srs/service.ts` (SrsService): the single seam through which every server-side SRS write flows. Composes the pure scheduler + the Prisma repository + the typed `kind` carrier. Carries `kind` through a typed `EnrollItemInput`, killing the `inferKindFromId(itemId)` "grammar-" prefix leak at the root. `SrsRepository.applyRecall` split into `writeRecord` + `appendEvent` so the service composes them in parallel (`loadState → writeRecord + appendEvent`) while the convenience `applyRecall` stays for tests. New `POST /api/srs/sources` route + `ScenarioPlayer` mount hook → tags are recorded as soon as a scenario opens, regardless of completion, closing the "Learner drops mid-scenario → Scenario Origins tile misses data the data model promises" gap. `ScenarioRepository.recordCompletion` now delegates the `SrsItemSource` tag write to `SrsService.recordScenarioSources` (single source of truth). Route handlers slimmed: recalls 118→45, state 46→23, events 60→42, sources 0→53 (new). Dead code swept: `gradeFromString` (storage.ts), `upsertRecords` (repository.ts), `inferKindFromId` (repository.ts, with the prefix leak), the duplicate `isRecallGrade` in `/api/srs/recalls/route.ts`. **36 new tests** (916/916 on the branch). PR #109 squash-merged at `0606e2d`; main now at 916/916 tests + lint + typecheck + Playwright E2E + build all clean. Production image `portuguese-teacher:0606e2d` (1.63 GB, +0.02 GB vs `2c589b8`) built + smoke-tested end-to-end — Prisma 8 migrations applied on cold boot, `/api/observability/sli?window=1h` returns HTTP 200 with the per-stage summaries array. Budget cap bumped 140→145 kB for /practice (the +8 kB is a Next chunk reshuffle that lazy-loaded AuthProvider + SettingsProvider — a positive refactor, not real code growth; the page chunk itself grew by ~46 bytes gzipped).
+
+## Session 15 — E2E QA pass (2026-07-03)
+
+- **Full E2E sweep against current `main @ 883fd50`** (Session 12 baseline). 110 test cases across 7 phases (88 inherited from Session 14 + 22 new). 83 pass / 16 fail / 16 warn; of the 16 failures, **10 are real product bugs** filed as issues #120–#125.
+- **Confirmed: Session 14 defects are still live.** `reports/qa-e2e-20260702/defects.md` claimed PRs #114, #115, #116, #117, #119 were merged to `main`. They are NOT (`git log main --grep="114|115|116|117"` returns nothing). Issues #110, #111, #112, #113 are still OPEN and defects still reproduce on `main`. Session 14 defects.md "Resolution status" table is misleading.
+- **New bugs filed**: #120 (assess 404), #121 (profile email), #122 (skip link), #123 (html lang), #124 (scenario aria-labels), #125 (footer Accessibility link).
+- Full report at `reports/qa-e2e-20260703/final-report.md`. Branch `qa/2026-07-03-e2e-full` (no commits).
+
+## Session 16 — Fix-all pass on Session 15's 10 bugs (2026-07-03)
+
+- **Cherry-pick + TDD fix-all.** Session 14 branches had real code+tests that just weren't merged; brought them forward + drafted 6 new branches for #120–#125. All 10 branches pushed; 6 new PRs filed (#126–#131); Session 14 PRs already exist (#114–#117 + #119) and got a "ready for review" comment.
+- **Fixes shipped (all green: lint + typecheck + 950+ tests + perf:budget per branch)**:
+  - **#120 / PR #126** — `src/app/(app)/assess/[boundary]/page.tsx` now a server component: normalises case, validates `isLevelBoundary`, confirms milestone registered. Invalid URLs → HTTP 404. Also fixes the 500 from `collectAssessmentPool` on A1-A2 / A2-B1 (no milestone seeded). +4 unit tests + 1 Playwright E2E spec.
+  - **#121 / PR #127** — `ProfileForm` adds read-only `Email` field with `aria-readonly="true"` + `aria-label="Email: <address>"`. +1 unit test.
+  - **#122 / PR #128** — new `SkipToMain` component mounted as first focusable element in root layout; `id="main"` on all four `<main>` landmarks (`/`, `/not-found`, `/(auth)/*`, `/(app)/*`). +3 unit tests.
+  - **#123 / PR #129** — `<html lang="en">` → `<html lang="pt-PT">` in root layout. +1 unit test.
+  - **#124 / PR #130** — every scenario CTA carries `aria-label={\`Start scenario: \${scenario.goal}\`}`. Enhanced existing `scenarios-library-ui.test.tsx`.
+  - **#125 / PR #131** — Footer `Accessibility` link → `/accessibility`. `Privacy & data` and `Settings` keep `/settings`. +3 unit tests.
+- **Build verification**: `pnpm build` clean; `pnpm perf:budget` clean (no route breaches caps; `/practice` 141 kB under 145 kB cap).
+- **Cumulative**: +13 new tests across the 6 PRs when all land.
 
 ## Session 7 picks shipped
 
