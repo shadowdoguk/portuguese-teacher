@@ -115,10 +115,8 @@ export function ProfileForm() {
     <form onSubmit={handleSubmit} noValidate className="space-y-8">
       <Card eyebrow="Identity" title="Your learner profile">
         <div className="space-y-5">
-          <Field
-            label="Email"
-            hint="The address tied to your account. Read-only in v1 — change via account deletion + re-sign-up."
-          >
+          <div>
+            <span className="stage-stamp block pb-1.5">Email</span>
             <input
               type="email"
               value={user.email}
@@ -128,7 +126,11 @@ export function ProfileForm() {
               className={textInputClassName(false)}
               data-testid="profile-email"
             />
-          </Field>
+            <span className="mt-1 block text-xs text-ink-mute">
+              The address tied to your account. Read-only in v1 — change via
+              account deletion + re-sign-up.
+            </span>
+          </div>
 
           <Field label="Display name" name={nameId} required hint="Shown in lessons and progress.">
             <input
