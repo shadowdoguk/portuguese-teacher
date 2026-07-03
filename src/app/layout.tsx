@@ -46,7 +46,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
-      lang="en"
+      lang="pt-PT"
       className={`${fraunces.variable} ${dmSans.variable} ${jetbrains.variable}`}
     >
       <body className="min-h-screen">
