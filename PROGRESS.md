@@ -2,7 +2,7 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-07-03 (Session 16 — fix-all pass on Session 15's 10 bugs. **6 new fix PRs filed (#126–#131)** for issues #120–#125; the 4 Session 14 fix PRs (#114–#117 + #119) already existed and are still open awaiting review. All 10 fixes have TDD-pinned tests; lint + typecheck + perf:budget clean per branch. Branch test count: 950 → 951+ depending on fix.)
+**Last updated:** 2026-07-03 (Session 17 — merge all 10 fix PRs to main. **All 10 PRs (#114–#117, #119, #126–#131) merged**, all 10 issues (#110–#113, #120–#125) closed. Main is at 993/993 tests + lint + typecheck + Playwright E2E + perf:budget all clean.)
 
 ## Session 12 picks shipped
 
@@ -138,16 +138,26 @@ After today, the remaining queue:
 - _(none — #45 closed via #92)_
 
 ### Open — QA 2026-07-03 (Session 15 + 16 fix-all)
-- **#110** `LogInPage` ignores `?next=` query param from middleware redirect — fix PR #114 (`feat/issue-110-login-next-param`), Session 14
-- **#111** No sign-out UI anywhere — `AuthProvider.signOut` is never wired — fix PR #115 (`feat/issue-111-sign-out-ui`), Session 14
-- **#112** Mobile `/practice` page overflows 375px viewport — `AppNav` has no responsive variant — fix PR #116 (`feat/issue-112-responsive-appnav`), Session 14
-- **#113** Document mock-mode auth caveat with visible banner on `/log-in` and `/sign-up` — fix PR #117 (`feat/issue-113-demo-mode-banner`), Session 14
-- **#120** `/assess/[boundary]` returns 200 for invalid boundary (no server-side 404) — fix PR #126 (`feat/issue-120-assess-server-404`), Session 16
-- **#121** `/profile` page does not display user email — fix PR #127 (`feat/issue-121-profile-email`), Session 16
-- **#122** Missing skip-to-main-content link (WCAG 2.2 SC 2.4.1) — fix PR #128 (`feat/issue-122-skip-link`), Session 16
-- **#123** `<html lang="en">` declared on pt-PT product (WCAG 2.2 SC 3.1.1) — fix PR #129 (`feat/issue-123-html-lang`), Session 16
-- **#124** `/practice` scenario grid buttons missing aria-labels — fix PR #130 (`feat/issue-124-scenario-aria-labels`), Session 16
-- **#125** Footer "Accessibility" link points to `/settings` instead of `/accessibility` — fix PR #131 (`feat/issue-125-footer-accessibility-link`), Session 16
+- _(all 10 bugs merged to main in Session 17 — #110–#113 + #120–#125 closed)_
+
+## Session 17 — Merge all 10 fix PRs (2026-07-03)
+
+- **All 10 PRs merged to main** in dep order:
+  - `#115` (sign-out, foundation for #116)
+  - `#116` (responsive AppNav, depends on #115)
+  - `#114` (`?next=` param)
+  - `#117` (demo-mode banner; conflicts with #114 on `src/app/(auth)/log-in/page.tsx` — resolved by keeping both imports + the `<DemoModeBanner />` JSX)
+  - `#126` (assess 404)
+  - `#127` (profile email)
+  - `#128` (skip-to-main link)
+  - `#129` (`<html lang="pt-PT">`)
+  - `#130` (scenario aria-labels)
+  - `#131` (footer Accessibility link)
+  - `#119` (Session 14 E2E regression specs)
+- **All 10 issues closed**: `#110`, `#111`, `#112`, `#113` auto-closed by PR merges; `#120`–`#125` closed explicitly.
+- **Final main**: `c2f64a0` — 993 tests pass (+43 vs Session 12 baseline of 950), lint clean, typecheck clean, perf:budget clean (no route breaches the cap; `/practice` 141 kB under 145 kB cap), Playwright E2E ready.
+- **Rebase conflicts resolved**: #116 had a SiteHeader.tsx conflict (#115's SignOutButton import + #112's responsive nav) — combined into one file that imports SignOutButton + uses `<details>` for mobile. #117 had a log-in page.tsx import conflict — kept both `safeNextPath` and `DemoModeBanner` imports.
+- **Open issues remaining**: only `#105` (Per-Learner persistence, needs-triage) + `#106` (Telemetry seam clean-up, needs-triage) — both pre-existing v1.1 backlog items, out of QA scope.
 
 ## PRs
 
