@@ -77,6 +77,7 @@ function ScenarioCard({
         onClick={() => onSelect(scenario)}
         className="btn-primary self-start"
         data-testid={`scenario-start-${scenario.id}`}
+        aria-label={`${completed ? "Re-run scenario" : "Start scenario"}: ${scenario.goal}`}
       >
         {completed ? "Re-run scenario" : "Start scenario"}
         <span aria-hidden>→</span>

@@ -25,6 +25,12 @@ describe("ScenarioLibrary", () => {
     expect(starts.length).toBe(SCENARIO_LIBRARY.length);
     for (const btn of starts) {
       expect(btn.tagName).toBe("BUTTON");
+      // Issue #124: every scenario CTA must have an aria-label so
+      // screen-reader users hear the scenario title (the visible text
+      // is the pt-PT "Start scenario" / "Re-run scenario" button).
+      const ariaLabel = btn.getAttribute("aria-label");
+      expect(ariaLabel, `scenario button missing aria-label: ${btn.outerHTML}`).toBeTruthy();
+      expect(ariaLabel).toMatch(/^(Start|Re-run) scenario:/);
     }
   });
 
