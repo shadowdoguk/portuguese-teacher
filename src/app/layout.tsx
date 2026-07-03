@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, DM_Sans, JetBrains_Mono } from "next/font/google";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
+import { SkipToMain } from "@/components/a11y/SkipToMain";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${fraunces.variable} ${dmSans.variable} ${jetbrains.variable}`}
     >
       <body className="min-h-screen">
+        <SkipToMain />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
