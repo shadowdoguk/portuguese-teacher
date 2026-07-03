@@ -6,6 +6,7 @@ import { useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth/useAuth";
 import { LEVELS, type Level } from "@/lib/auth/types";
 import { Select } from "@/components/ui/Select";
+import { DemoModeBanner } from "@/components/auth/DemoModeBanner";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -44,6 +45,7 @@ export default function SignUpPage() {
 
   return (
     <div className="w-full max-w-md">
+      <DemoModeBanner />
       <span className="stage-stamp">Sign up</span>
       <h1 className="mt-3 text-display-md font-display font-light text-pretty">
         Begin where you are.

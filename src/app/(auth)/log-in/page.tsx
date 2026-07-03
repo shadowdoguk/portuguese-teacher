@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth/useAuth";
 import { safeNextPath } from "@/lib/auth/safeNextPath";
+import { DemoModeBanner } from "@/components/auth/DemoModeBanner";
 
 export default function LogInPage() {
   const router = useRouter();
@@ -40,6 +41,7 @@ export default function LogInPage() {
 
   return (
     <div className="w-full max-w-md">
+      <DemoModeBanner />
       <span className="stage-stamp">Log in</span>
       <h1 className="mt-3 text-display-md font-display font-light text-pretty">
         Welcome back.
