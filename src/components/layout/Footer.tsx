@@ -33,7 +33,7 @@ export function Footer() {
           links={[
             { href: "/settings", label: "Privacy & data" },
             { href: "/settings", label: "Settings" },
-            { href: "/settings", label: "Accessibility" },
+            { href: "/accessibility", label: "Accessibility" },
           ]}
         />
       </div>
