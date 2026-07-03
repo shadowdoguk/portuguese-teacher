@@ -1,12 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth/useAuth";
+import { safeNextPath } from "@/lib/auth/safeNextPath";
 
 export default function LogInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signIn } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,11 +24,13 @@ export default function LogInPage() {
       return;
     }
 
+    const next = safeNextPath(searchParams.get("next"));
+
     setSubmitting(true);
     setError(null);
     try {
       await signIn(email, password);
-      router.push("/dashboard");
+      router.push(next);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Something went wrong.");
     } finally {
