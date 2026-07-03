@@ -137,6 +137,18 @@ After today, the remaining queue:
 ### Open — scenarios + voice-loop subsystems
 - _(none — #45 closed via #92)_
 
+### Open — QA 2026-07-03 (Session 15 + 16 fix-all)
+- **#110** `LogInPage` ignores `?next=` query param from middleware redirect — fix PR #114 (`feat/issue-110-login-next-param`), Session 14
+- **#111** No sign-out UI anywhere — `AuthProvider.signOut` is never wired — fix PR #115 (`feat/issue-111-sign-out-ui`), Session 14
+- **#112** Mobile `/practice` page overflows 375px viewport — `AppNav` has no responsive variant — fix PR #116 (`feat/issue-112-responsive-appnav`), Session 14
+- **#113** Document mock-mode auth caveat with visible banner on `/log-in` and `/sign-up` — fix PR #117 (`feat/issue-113-demo-mode-banner`), Session 14
+- **#120** `/assess/[boundary]` returns 200 for invalid boundary (no server-side 404) — fix PR #126 (`feat/issue-120-assess-server-404`), Session 16
+- **#121** `/profile` page does not display user email — fix PR #127 (`feat/issue-121-profile-email`), Session 16
+- **#122** Missing skip-to-main-content link (WCAG 2.2 SC 2.4.1) — fix PR #128 (`feat/issue-122-skip-link`), Session 16
+- **#123** `<html lang="en">` declared on pt-PT product (WCAG 2.2 SC 3.1.1) — fix PR #129 (`feat/issue-123-html-lang`), Session 16
+- **#124** `/practice` scenario grid buttons missing aria-labels — fix PR #130 (`feat/issue-124-scenario-aria-labels`), Session 16
+- **#125** Footer "Accessibility" link points to `/settings` instead of `/accessibility` — fix PR #131 (`feat/issue-125-footer-accessibility-link`), Session 16
+
 ## PRs
 
 ### Open — Session 6 (CI-green locally, awaiting review/merge)
