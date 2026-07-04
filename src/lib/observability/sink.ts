@@ -4,6 +4,7 @@ export type ObservabilityEventKind =
   | "srs_recall"
   | "voice_loop_latency"
   | "voice_loop_error"
+  | "voice_loop_rerank_telemetry"
   | "degradation"
   | "sc5_sample";
 
@@ -71,6 +72,26 @@ export type VoiceLoopErrorEvent = {
   learnerId?: string;
 };
 
+/**
+ * Rerank orchestrator telemetry (issue #106-4). Emitted by the
+ * /api/voice-loop/turn rerank path on every turn so the SLI dashboard
+ * can surface which candidate won, what its score was, and how many
+ * candidates were scored. Previously this was only `console.info`-ed
+ * (and silently lost in any structured observability pipeline).
+ */
+export type VoiceLoopRerankTelemetryEvent = {
+  kind: "voice_loop_rerank_telemetry";
+  occurredAt: number;
+  tier: 1 | 2;
+  scoredCandidatesCount: number;
+  chosenIndex: number;
+  chosenScore: number;
+  chosenUtterance: string;
+  latencyMs: number;
+  mock: boolean;
+  learnerId?: string;
+};
+
 export type DegradationStatus = "degraded" | "down" | "recovered";
 
 export type DegradationEvent = {
@@ -108,6 +129,7 @@ export type ObservabilityEvent =
   | SrsRecallObservabilityEvent
   | VoiceLoopLatencyEvent
   | VoiceLoopErrorEvent
+  | VoiceLoopRerankTelemetryEvent
   | DegradationEvent
   | Sc5SampleObservabilityEvent;
 

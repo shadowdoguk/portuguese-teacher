@@ -11,9 +11,9 @@ import {
   createPronunciationService,
   generateAndRerankTurn,
   runTurn,
-  telemetryLogLine,
   vocabularyFor,
 } from "@/lib/voice-loop";
+import { getObservabilitySink } from "@/lib/observability/sink";
 import {
   isBrowserTier,
   isPracticeMode,
@@ -143,7 +143,21 @@ export async function POST(request: Request): Promise<NextResponse> {
       result.latencyMs,
       result.mock,
     );
-    console.info(telemetryLogLine(telemetry));
+    // Issue #106-4: route the rerank telemetry through the active
+    // ObservabilitySink so the SLI dashboard can see it. Previously
+    // this was only console.info-ed and silently lost in any structured
+    // observability pipeline.
+    getObservabilitySink().emit({
+      kind: "voice_loop_rerank_telemetry",
+      occurredAt: Date.now(),
+      tier: (tier === 1 || tier === 2 ? tier : 1) as 1 | 2,
+      scoredCandidatesCount: telemetry.scoredCandidatesCount,
+      chosenIndex: telemetry.chosenIndex,
+      chosenScore: telemetry.chosenScore,
+      chosenUtterance: telemetry.chosenUtterance,
+      latencyMs: telemetry.latencyMs,
+      mock: telemetry.mock,
+    });
 
     const response: VoiceLoopTurnResponse = {
       ok: true,
