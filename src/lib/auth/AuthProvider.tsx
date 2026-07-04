@@ -65,6 +65,25 @@ export type AuthContextValue = {
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
 const STORAGE_KEY = "portuguese-teacher:user";
+const COOKIE_KEY = "portuguese-teacher:auth";
+const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24; // 24h
+
+/**
+ * Mirrors the Learner ID into a short-lived cookie so the edge middleware
+ * can gate protected routes. The cookie value is the ID only — no PII.
+ * Issue #133.
+ */
+function writeAuthCookie(learnerId: string): void {
+  if (typeof document === "undefined") return;
+  document.cookie =
+    `${COOKIE_KEY}=${encodeURIComponent(learnerId)}; ` +
+    `Max-Age=${COOKIE_MAX_AGE_SECONDS}; Path=/; SameSite=Lax`;
+}
+
+function clearAuthCookie(): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${COOKIE_KEY}=; Max-Age=0; Path=/`;
+}
 
 function withDefaults(user: Learner): Learner {
   return {
@@ -99,8 +118,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return;
     if (user) {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+      // Mirror the Learner ID into a short-lived cookie so the edge
+      // middleware (src/middleware.ts) can gate protected routes
+      // without a server-side session lookup on every request.
+      // The cookie carries the ID only — no sensitive data.
+      // Issue #133.
+      writeAuthCookie(user.id);
     } else {
       window.localStorage.removeItem(STORAGE_KEY);
+      clearAuthCookie();
     }
   }, []);
 
