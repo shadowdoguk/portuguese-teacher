@@ -218,4 +218,93 @@ describe("GET /api/observability/sli", () => {
     expect(body.alert.breached).toBe(true);
     expect(body.alert.sampleCount).toBe(5);
   });
+
+  // Issue #106-3: when the alert window is contained within the summary
+  // window, the route must derive the alert samples from the already-loaded
+  // summary batch instead of issuing a second DB query.
+  it("issues only one DB loadSamples call when alert window ≤ summary window", async () => {
+    await seedLatencySamples();
+
+    const { createLatencyRepository } = await import(
+      "@/lib/observability/repository"
+    );
+    let loadCallCount = 0;
+    const originalLoad = createLatencyRepository(prisma).loadSamples;
+    const wrapped = {
+      ...createLatencyRepository(prisma),
+      loadSamples: async (args: Parameters<typeof originalLoad>[0]) => {
+        loadCallCount += 1;
+        return originalLoad(args);
+      },
+    };
+    const { createLatencyRepository: factory } = await import(
+      "@/lib/observability/repository"
+    );
+    void wrapped;
+    void factory;
+
+    // Spy on the factory — replace its return for this test only.
+    const vi = (await import("vitest")).vi;
+    const realRepo = createLatencyRepository(prisma);
+    const spy = vi
+      .spyOn(
+        await import("@/lib/observability/repository"),
+        "createLatencyRepository",
+      )
+      .mockReturnValue({
+        ...realRepo,
+        loadSamples: async (args: Parameters<typeof realRepo.loadSamples>[0]) => {
+          loadCallCount += 1;
+          return realRepo.loadSamples(args);
+        },
+      });
+
+    try {
+      // alertWindowMs (default 300_000) is contained in windowMs (1h =
+      // 3_600_000). The route should only load samples once.
+      const res = await getSli(request("http://localhost/api/observability/sli"));
+      expect(res.status).toBe(200);
+      expect(loadCallCount, "must only hit loadSamples once").toBe(1);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  // Issue #106-3 follow-up: when stages filter excludes 'client.total',
+  // the route can't derive the alert samples from the summary batch, so a
+  // second loadSamples call is still required.
+  it("issues a second DB loadSamples call when summary filters exclude client.total", async () => {
+    await seedLatencySamples();
+
+    const vi = (await import("vitest")).vi;
+    const { createLatencyRepository } = await import(
+      "@/lib/observability/repository"
+    );
+    const realRepo = createLatencyRepository(prisma);
+    let loadCallCount = 0;
+    const spy = vi
+      .spyOn(
+        await import("@/lib/observability/repository"),
+        "createLatencyRepository",
+      )
+      .mockReturnValue({
+        ...realRepo,
+        loadSamples: async (args: Parameters<typeof realRepo.loadSamples>[0]) => {
+          loadCallCount += 1;
+          return realRepo.loadSamples(args);
+        },
+      });
+
+    try {
+      // stages=llm excludes client.total, so the alert still needs its own
+      // query.
+      const res = await getSli(
+        request("http://localhost/api/observability/sli?stages=llm"),
+      );
+      expect(res.status).toBe(200);
+      expect(loadCallCount, "needs 2 calls when summary stages exclude client.total").toBe(2);
+    } finally {
+      spy.mockRestore();
+    }
+  });
 });
