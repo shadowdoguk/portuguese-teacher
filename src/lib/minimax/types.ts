@@ -99,44 +99,11 @@ export type PronunciationScoreResult = {
   perPhoneme: ReadonlyArray<PronunciationPhonemeScore>;
 };
 
-export type LatencyLog = {
-  type: "minimax_latency";
-  endpoint: LatencyStage;
-  durationMs: number;
-  ok: boolean;
-};
-
-export type LatencySink = (entry: LatencyLog) => void;
-
-const defaultLatencySink: LatencySink = (entry) => {
-  // Issue #106-2: route ONLY through the active ObservabilitySink.
-  // Previously this also called console.info directly, but the active
-  // sink in default mode is consoleObservabilitySink which itself calls
-  // console.info — so one withLatencyMetric call produced two stdout
-  // lines with slightly different shapes. One source of truth.
-  getObservabilitySink().emit({
-    kind: "voice_loop_latency",
-    occurredAt: Date.now(),
-    stage: entry.endpoint as LatencyStage,
-    latencyMs: entry.durationMs,
-    ok: entry.ok,
-  });
-};
-
-export async function withLatencyMetric<T>(
-  endpoint: LatencyStage,
-  fn: () => Promise<T>,
-  sink: LatencySink = defaultLatencySink,
-): Promise<T> {
-  const start = performance.now();
-  let ok = true;
-  try {
-    return await fn();
-  } catch (error) {
-    ok = false;
-    throw error;
-  } finally {
-    const durationMs = Math.round(performance.now() - start);
-    sink({ type: "minimax_latency", endpoint, durationMs, ok });
-  }
-}
+// withLatencyMetric was inverted — it lived in this MiniMax types module,
+// which meant MiniMax client wrappers → observability. The dependency
+// arrow goes the wrong way (observability belongs below MiniMax in the
+// stack). Issue #106-1 moves it to `@/lib/observability/latency` so an
+// OpenTelemetry swap touches one observability file, not four MiniMax
+// files. These re-exports keep every existing call site working without
+// churn.
+export { withLatencyMetric, type LatencyLog, type LatencySink } from "@/lib/observability/latency";
