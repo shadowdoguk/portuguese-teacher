@@ -2,7 +2,7 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-07-03 (Session 19 — addressed remaining open issues. **#133** fixed (AuthProvider cookie write, prereq for middleware); **#106-5** fixed (LLM graceful degradation in /api/voice-loop/turn per ADR-0002); **#106-3** fixed (single-query SLI dashboard); **#106-2** fixed (withLatencyMetric double-write). All 4 branches pushed + ready to merge. 1005/1005 tests pass. Auth expired — PR URLs provided for manual filing.)
+**Last updated:** 2026-07-03 (Session 21 — production deployment. **PR #141** (test type safety) merged. **Production image `portuguese-teacher:latest` rebuilt + smoke-tested**: all 10 health endpoints return correct status codes, Prisma 8 migrations apply on cold boot, `<html lang="pt-PT">` + skip-to-main + footer Accessibility link all wired. Final main: 1013/1013 tests + lint + typecheck + perf:budget clean. **Only #105 remains open**.)
 
 ## Session 12 picks shipped
 
