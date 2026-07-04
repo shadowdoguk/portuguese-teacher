@@ -109,17 +109,11 @@ export type LatencyLog = {
 export type LatencySink = (entry: LatencyLog) => void;
 
 const defaultLatencySink: LatencySink = (entry) => {
-  if (typeof console !== "undefined") {
-    console.info(
-      `[observability] ${JSON.stringify({
-        source: "portuguese-teacher",
-        kind: "voice_loop_latency",
-        stage: entry.endpoint,
-        latencyMs: entry.durationMs,
-        ok: entry.ok,
-      })}`,
-    );
-  }
+  // Issue #106-2: route ONLY through the active ObservabilitySink.
+  // Previously this also called console.info directly, but the active
+  // sink in default mode is consoleObservabilitySink which itself calls
+  // console.info — so one withLatencyMetric call produced two stdout
+  // lines with slightly different shapes. One source of truth.
   getObservabilitySink().emit({
     kind: "voice_loop_latency",
     occurredAt: Date.now(),

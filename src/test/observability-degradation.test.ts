@@ -230,6 +230,26 @@ describe("withLatencyMetric default sink → ObservabilitySink", () => {
     expect(firstCall).toContain("\"stage\":\"tts\"");
     info.mockRestore();
   });
+
+  // Issue #106-2: the default latency sink must not double-write.
+  // Previously it called console.info directly AND routed through the
+  // active observability sink — the active sink in default mode IS
+  // consoleObservabilitySink which itself calls console.info. One
+  // withLatencyMetric call therefore produced two stdout lines with
+  // slightly different shapes. After the fix exactly one.
+  it("default sink does not double-write to console", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    const { withLatencyMetric } = await import("@/lib/minimax/types");
+    await withLatencyMetric("asr", async () => "ok");
+
+    // Exactly one voice_loop_latency line per call.
+    const latencyCalls = info.mock.calls.filter((call) => {
+      const arg = call[0];
+      return typeof arg === "string" && arg.includes("\"kind\":\"voice_loop_latency\"");
+    });
+    expect(latencyCalls.length, "must emit exactly one voice_loop_latency line").toBe(1);
+    info.mockRestore();
+  });
 });
 
 describe("consoleObservabilitySink", () => {
