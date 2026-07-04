@@ -71,6 +71,11 @@ function isTransientError(error: unknown): boolean {
   return error.status === 0 || error.status === 408 || error.status === 429 || error.status >= 500;
 }
 
+// Re-exported for callers outside this module (route-level fallback in
+// /api/voice-loop/turn/route.ts needs to check the same predicate).
+// Issue #106-5.
+export { isTransientError };
+
 export async function withAsrFallback(
   primary: AsrTranscriber,
   audio: Blob,

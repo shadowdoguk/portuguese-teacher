@@ -6,7 +6,7 @@ export * from "./level-vocabulary";
 export * from "./structured-output";
 export * from "./system-prompt";
 export * from "./mock";
-export { runTurn, buildInput, type TurnResult, type TurnDependencies } from "./orchestrator";
+export { runTurn, buildInput, buildDegradedTurn, type TurnResult, type TurnDependencies } from "./orchestrator";
 export {
   generateAndRerankTurn,
   type RerankDeps,

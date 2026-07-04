@@ -21,6 +21,60 @@ export type TurnResult = {
   mock: boolean;
 };
 
+/**
+ * Build a canned degraded teacher turn (issue #106-5 + ADR-0002
+ * §"Graceful degradation"). Used by the route-level fallback when the
+ * LLM call throws a transient MiniMaxError so the Learner still receives
+ * a teacher turn instead of an HTTP 500.
+ *
+ * The returned turn is structurally identical to a normal turn but
+ * carries `mock: false` + `degraded: true` so the client can distinguish.
+ */
+export function buildDegradedTurn(input: VoiceLoopTurnInput, generatedAt: number): VoiceLoopTurn {
+  const lastUser = (input.learnerText ?? "").trim();
+  const utterance = cannedReplyFor(lastUser);
+  return {
+    turnId: `turn-degraded-${generatedAt}`,
+    utteranceId: input.learnerUtteranceId,
+    teacherUtterance: utterance,
+    feedback: [
+      {
+        kind: "formative",
+        text: "(O professor está temporariamente indisponível; resposta predefinida.)",
+      },
+    ],
+    pronunciationScore: 0,
+    pronunciationSource: "default",
+    nextDifficultyTarget: input.difficultyTarget,
+    comprehensionOk: false,
+    generatedAt,
+    mock: false,
+    degraded: true,
+  };
+}
+
+// Locally inlined to avoid the orchestrator pulling in MiniMax fallbacks
+// (which would create a circular import: fallbacks.ts → observability →
+// voice-loop). Keep this in sync with `cannedReplyFor` in
+// `src/lib/minimax/fallbacks.ts`.
+const CANNED_REPLIES_FALLBACK: Array<{ test: (text: string) => boolean; reply: string }> = [
+  { test: (t) => /^(ol[áa]|oi)/i.test(t), reply: "Ol\u00e1! Como est\u00e1s? Vamos continuar a praticar." },
+  { test: (t) => /^(adeus|at\u00e9|at\u00e9 logo)/i.test(t), reply: "At\u00e9 logo! Bom estudo." },
+  { test: (t) => /^(sim|s)/i.test(t), reply: "Muito bem. Continuamos." },
+  { test: (t) => /^(n\u00e3o|n)/i.test(t), reply: "Ok, vamos tentar de outra forma." },
+  { test: (t) => /^\?/.test(t), reply: "Boa pergunta. Quando o professor voltar, eu ajudo-te a explorar isso." },
+];
+const GENERIC_FALLBACK_REPLY =
+  "Estou com dificuldades em responder agora. Tenta outra vez, ou avan\u00e7a para o pr\u00f3ximo exerc\u00edcio.";
+
+function cannedReplyFor(text: string): string {
+  const trimmed = text.trim();
+  for (const candidate of CANNED_REPLIES_FALLBACK) {
+    if (candidate.test(trimmed)) return candidate.reply;
+  }
+  return GENERIC_FALLBACK_REPLY;
+}
+
 export type TurnDependencies = {
   llm: LlmCaller;
   generateId: () => string;

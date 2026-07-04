@@ -63,6 +63,13 @@ export type VoiceLoopTurn = {
   fluencyMsPerWord?: number;
   generatedAt: number;
   mock: boolean;
+  /**
+   * True when this turn was produced by the ADR-0002 graceful-degradation
+   * fallback because the LLM call failed with a transient error. Clients
+   * can use this to surface a banner like "O professor está temporariamente
+   * indisponível". Issue #106-5.
+   */
+  degraded?: boolean;
 };
 
 export type VoiceLoopLLMPayload = {
