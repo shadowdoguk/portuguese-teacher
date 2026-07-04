@@ -3,3 +3,4 @@ export * from "./aggregate";
 export * from "./sli";
 export * from "./health";
 export * from "./repository";
+export * from "./latency";
