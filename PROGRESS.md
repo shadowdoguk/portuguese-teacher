@@ -2,7 +2,7 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-07-03 (Session 18 — post-merge cleanup + Docker production image rebuilt. **PR #132** (LogInForm Suspense boundary) merged; **PR #118** closed as superseded; **#105 + #106** triaged ready-for-agent; **#133** filed for middleware cookie prereq. **Production image `portuguese-teacher:latest` rebuilt + smoke-tested** — Prisma 8 migrations apply on cold boot, all 5 health checks return 200, all 4 landing-page fixes verified via headless Chromium against the container.)
+**Last updated:** 2026-07-03 (Session 19 — addressed remaining open issues. **#133** fixed (AuthProvider cookie write, prereq for middleware); **#106-5** fixed (LLM graceful degradation in /api/voice-loop/turn per ADR-0002); **#106-3** fixed (single-query SLI dashboard); **#106-2** fixed (withLatencyMetric double-write). All 4 branches pushed + ready to merge. 1005/1005 tests pass. Auth expired — PR URLs provided for manual filing.)
 
 ## Session 12 picks shipped
 
@@ -158,6 +158,23 @@ After today, the remaining queue:
 - **Final main**: `c2f64a0` — 993 tests pass (+43 vs Session 12 baseline of 950), lint clean, typecheck clean, perf:budget clean (no route breaches the cap; `/practice` 141 kB under 145 kB cap), Playwright E2E ready.
 - **Rebase conflicts resolved**: #116 had a SiteHeader.tsx conflict (#115's SignOutButton import + #112's responsive nav) — combined into one file that imports SignOutButton + uses `<details>` for mobile. #117 had a log-in page.tsx import conflict — kept both `safeNextPath` and `DemoModeBanner` imports.
 - **Open issues remaining**: only `#105` (Per-Learner persistence, needs-triage) + `#106` (Telemetry seam clean-up, needs-triage) — both pre-existing v1.1 backlog items, out of QA scope.
+
+## Session 19 — Address remaining open issues (2026-07-03)
+
+Four branches ready to merge, addressing the 4 remaining concrete bugs:
+
+| Issue | Branch | PR (file manually) | Fix |
+|---|---|---|---|
+| #133 | `feat/issue-133-auth-cookie` | https://github.com/shadowdoguk/portuguese-teacher/compare/main...feat/issue-133-auth-cookie?expand=1 | AuthProvider mirrors Learner ID into `portuguese-teacher:auth` cookie (Max-Age=86400, Path=/, SameSite=Lax). 5 new tests pin the contract. Prereq for the staged `src/middleware.ts`. |
+| #106-5 | `feat/issue-106-5-wire-llm-fallback` | https://github.com/shadowdoguk/portuguese-teacher/compare/main...feat/issue-106-5-wire-llm-fallback?expand=1 | /api/voice-loop/turn wraps both `runTurn` + `generateAndRerankTurn` in try/catch + transient-error detection. On LLM outage returns a `degraded: true` canned teacher turn instead of HTTP 500. ADR-0002 graceful-degradation compliance. New `buildDegradedTurn` helper + `VoiceLoopTurn.degraded?: boolean` flag. |
+| #106-3 | `feat/issue-106-3-sli-double-read` | https://github.com/shadowdoguk/portuguese-teacher/compare/main...feat/issue-106-3-sli-double-read?expand=1 | /api/observability/sli halves DB load: when alert window ≤ summary window AND summary includes 'client.total', derive alert samples from the already-loaded batch via `Array.filter`. Falls back to a 2nd query only when the summary filter excludes client.total. |
+| #106-2 | `feat/issue-106-2-no-double-write` | https://github.com/shadowdoguk/portuguese-teacher/compare/main...feat/issue-106-2-no-double-write?expand=1 | `defaultLatencySink` no longer calls `console.info` directly + routes through the active sink. The active sink in default mode is `consoleObservabilitySink` which itself calls `console.info` — so one `withLatencyMetric` call was producing two stdout lines. Now exactly one. |
+
+Each branch: `pnpm typecheck` clean, `pnpm lint` clean, `pnpm test` clean (`src/test/{auth-cookie,voice-loop-turn-api,observability-sli-api,observability-degradation}.test.*`).
+
+**Auth expired** — `gh` CLI can't file the PRs from this session. Branch comparison URLs provided above for manual filing. After merge, the 4 fix-PRs close the corresponding issues (#133 stays open because the middleware still needs to be wired into the deploy + AuthProvider needs to write the cookie on first hydration, which is a separate concern).
+
+`#105` (Per-Learner persistence) and `#106-1/4/6` (Telemetry seam remaining items) are deferred to a future session — they're substantial multi-file refactors / Prisma migrations out of scope for a single session.
 
 ## Session 18 — Post-merge cleanup (2026-07-03)
 
