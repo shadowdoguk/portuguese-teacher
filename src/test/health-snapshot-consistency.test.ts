@@ -25,10 +25,11 @@ beforeEach(() => {
 
 describe("Health snapshot — probe vs fallback consistency (issue #106-6)", () => {
   it("a successful probe records the service as 'ok' (matches emitDegradation mapping)", async () => {
-    const events: { kind: string; status: string }[] = [];
+    const events: Array<{ kind: string; status?: string; service?: string }> = [];
     setObservabilitySink({
       name: "stub",
-      emit: (e) => events.push({ kind: e.kind, status: e.status }),
+      emit: (e) =>
+        events.push(e as { kind: string; status?: string; service?: string }),
       flush: async () => {},
     });
 
@@ -36,28 +37,31 @@ describe("Health snapshot — probe vs fallback consistency (issue #106-6)", () 
     recordProbeHit("llm", true, "eu-west-1", t0);
 
     // Event shape: kind=degradation, status=recovered (matches emitDegradation).
-    expect(events).toEqual([
-      { kind: "degradation", status: "recovered" },
-    ]);
+    expect(events.length).toBe(1);
+    expect(events[0]?.kind).toBe("degradation");
+    expect(events[0]?.status).toBe("recovered");
+    expect(events[0]?.service).toBe("llm");
     // Health snapshot: service recorded as "ok" (the same final state
     // emitDegradation reaches via its `status === "recovered" ? "ok" : status` map).
     expect(getHealthSnapshot().services.llm.status).toBe("ok");
   });
 
   it("a failed probe records the service as 'down' (matches emitDegradation mapping)", async () => {
-    const events: { kind: string; status: string }[] = [];
+    const events: Array<{ kind: string; status?: string; service?: string }> = [];
     setObservabilitySink({
       name: "stub",
-      emit: (e) => events.push({ kind: e.kind, status: e.status }),
+      emit: (e) =>
+        events.push(e as { kind: string; status?: string; service?: string }),
       flush: async () => {},
     });
 
     const t0 = 1_700_000_000_000;
     recordProbeHit("llm", false, "us-east-1", t0);
 
-    expect(events).toEqual([
-      { kind: "degradation", status: "down" },
-    ]);
+    expect(events.length).toBe(1);
+    expect(events[0]?.kind).toBe("degradation");
+    expect(events[0]?.status).toBe("down");
+    expect(events[0]?.service).toBe("llm");
     expect(getHealthSnapshot().services.llm.status).toBe("down");
     expect(getHealthSnapshot().status).toBe("down");
   });
