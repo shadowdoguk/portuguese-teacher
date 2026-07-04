@@ -101,14 +101,29 @@ export function getServiceAvailability(
 }
 
 export function recordProbeHit(service: ServiceId, ok: boolean, region: string, now: number = Date.now()): void {
-  recordServiceStatus(service, ok ? "ok" : "down", `probe:${region}`, now);
+  // Issue #106-6: route through the same `emitDegradation` shape as the
+  // fallback path so both paths agree on the event vocabulary. Previously
+  // the probe path emitted `status: "recovered"` for a successful probe
+  // (treating "recovered" as the default ok-state) AND set service status
+  // to "ok" directly, which is inconsistent with the fallback path
+  // (status="degraded" → recorded status="degraded", status="recovered"
+  // → recorded status="ok"). Now: probe path emits the same shape
+  // (`status: "recovered"` for ok, `"down"` for not-ok) AND records the
+  // canonical ok/down status the same way the fallback path does.
+  const status: DegradationStatus = ok ? "recovered" : "down";
+  const detail = `synthetic probe region=${region}`;
   getObservabilitySink().emit({
     kind: "degradation",
     occurredAt: now,
     service,
-    status: ok ? "recovered" : "down",
-    detail: `synthetic probe region=${region}`,
+    status,
+    detail,
   });
+  // Issue #106-6: map "recovered" event → recorded service status "ok"
+  // (the same mapping `emitDegradation` uses in `src/lib/minimax/fallbacks.ts`).
+  // Previously the probe path called `recordServiceStatus(service, ok ? "ok" : "down", ...)`
+  // directly, which bypassed the "recovered → ok" mapping convention.
+  recordServiceStatus(service, status === "recovered" ? "ok" : status, detail, now);
 }
 
 export function resetHealthStateForTests(): void {
