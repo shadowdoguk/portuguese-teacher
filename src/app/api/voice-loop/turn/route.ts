@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getMiniMaxClients } from "@/lib/minimax";
+import { isTransientError } from "@/lib/minimax/fallbacks";
 import type { LlmMessage } from "@/lib/minimax/types";
 import {
+  buildDegradedTurn,
   buildInput,
   buildMockRerankLlm,
   buildRerankTelemetry,
