@@ -173,16 +173,27 @@ export async function GET(request: Request): Promise<NextResponse> {
     ...(practiceMode ? { practiceMode } : {}),
   });
 
-  // Alert is always evaluated over the alert window (independent of the
-  // summary window) so the dashboard can show the latest 5-minute p95
-  // regardless of whether the user is looking at the 1h or 7d window.
-  const alertSamples = await repo.loadSamples({
-    since: now - alertWindowMs,
-    stages: ["client.total"],
-    ...(learnerId ? { learnerId } : {}),
-    ...(tier !== undefined ? { tier } : {}),
-    ...(practiceMode ? { practiceMode } : {}),
-  });
+  // Issue #106-3: when the alert window is contained in the summary
+  // window AND the summary fetch includes `client.total`, derive the
+  // alert samples from the already-loaded batch instead of issuing a
+  // second DB query. This halves the per-dashboard-load DB cost for
+  // the common 1h/7d case.
+  const summaryIncludesClientTotal = !stages || stages.includes("client.total");
+  let alertSamples: ReadonlyArray<LatencySample>;
+  if (alertWindowMs <= windowMs && summaryIncludesClientTotal) {
+    const alertSince = now - alertWindowMs;
+    alertSamples = samples.filter(
+      (s) => s.occurredAt >= alertSince && s.stage === "client.total",
+    );
+  } else {
+    alertSamples = await repo.loadSamples({
+      since: now - alertWindowMs,
+      stages: ["client.total"],
+      ...(learnerId ? { learnerId } : {}),
+      ...(tier !== undefined ? { tier } : {}),
+      ...(practiceMode ? { practiceMode } : {}),
+    });
+  }
   const alert = evaluateLatencyAlert({
     samples: alertSamples,
     thresholdMs,
