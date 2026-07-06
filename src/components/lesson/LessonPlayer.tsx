@@ -22,8 +22,7 @@ import {
   type LessonExercise,
 } from "@/lib/lesson/player";
 import type { Lesson, PracticeExercise } from "@/lib/curriculum";
-
-const SESSION_LEARNER_ID = "demo-learner";
+import { useLearnerId } from "@/lib/auth/useLearnerId";
 
 function formatHalfLife(ms: number): string {
   if (ms < 60_000) return "< 1 min";
@@ -74,12 +73,16 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
   const [authoredRevealed, setAuthoredRevealed] = useState<Record<string, boolean>>({});
   const [authoredDone, setAuthoredDone] = useState<Record<string, boolean>>({});
 
+  const learnerId = useLearnerId();
+
   useEffect(() => {
     let cancelled = false;
     async function load(): Promise<void> {
+      const id = learnerId;
+      if (!id) return;
       try {
         const res = await fetch(
-          `/api/srs/state?learnerId=${encodeURIComponent(SESSION_LEARNER_ID)}`,
+          `/api/srs/state?learnerId=${encodeURIComponent(id)}`,
         );
         if (!res.ok) {
           throw new Error(`Failed to load SRS state (${res.status})`);
@@ -115,16 +118,17 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
     return () => {
       cancelled = true;
     };
-  }, [baseRefs, lesson.exercises]);
+  }, [baseRefs, lesson.exercises, learnerId]);
 
   const handleReviewGrade = useCallback(
     async (review: LessonExercise & { kind: "review" }, grade: RecallGrade) => {
+      if (!learnerId) return;
       try {
         const res = await fetch("/api/srs/recalls", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
-            learnerId: SESSION_LEARNER_ID,
+            learnerId,
             itemId: review.ref.itemId,
             kind: review.ref.kind,
             grade,
@@ -155,7 +159,7 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
         setError(err instanceof Error ? err.message : "Network error");
       }
     },
-    [refs, srsState],
+    [refs, srsState, learnerId],
   );
 
   const authoredCompleted = Object.values(authoredDone).filter(Boolean).length;
