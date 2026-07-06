@@ -85,6 +85,7 @@ export function PracticeSession() {
   const { settings } = useSettings();
   const { user } = useAuth();
   const unitId = user?.currentUnitId;
+  const learnerId = user?.id ?? null;
   const [capabilities, setCapabilities] = useState<VoiceLoopTierCapabilities | null>(null);
   const [practiceMode, setPracticeMode] = useState<PracticeMode>("free-form");
   const [difficulty, setDifficulty] = useState<DifficultyState>(() =>
@@ -187,6 +188,7 @@ export function PracticeSession() {
 
   const handleGrade = useCallback(
     async (grade: "again" | "hard" | "good" | "easy") => {
+      if (!learnerId) return;
       const head = history[history.length - 1];
       if (!head) return;
       try {
@@ -194,7 +196,7 @@ export function PracticeSession() {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
-            learnerId: "demo-learner",
+            learnerId,
             turnId: head.turnId,
             grade,
           }),
@@ -207,7 +209,7 @@ export function PracticeSession() {
         setError(err instanceof Error ? err.message : "Network error");
       }
     },
-    [history],
+    [history, learnerId],
   );
 
   const startListening = useCallback(async () => {
