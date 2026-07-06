@@ -21,8 +21,7 @@ import {
 import { resolveRetrievalMode, surfaceForMode } from "@/lib/settings";
 import { useSettings } from "@/lib/settings/SettingsProvider";
 import { ReviewCardMedia } from "@/components/review/ReviewCardMedia";
-
-const SESSION_LEARNER_ID = "demo-learner";
+import { useLearnerId } from "@/lib/auth/useLearnerId";
 
 function formatRelativeDue(dueAt: number, now: number): string {
   const delta = dueAt - now;
@@ -73,12 +72,16 @@ export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink 
   const [now, setNow] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
+  const learnerId = useLearnerId();
+
   useEffect(() => {
     let cancelled = false;
     async function load(): Promise<void> {
+      const id = learnerId;
+      if (!id) return;
       try {
         const res = await fetch(
-          `/api/srs/state?learnerId=${encodeURIComponent(SESSION_LEARNER_ID)}`,
+          `/api/srs/state?learnerId=${encodeURIComponent(id)}`,
         );
         if (!res.ok) {
           throw new Error(`Failed to load SRS state (${res.status})`);
@@ -116,7 +119,7 @@ export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink 
     return () => {
       cancelled = true;
     };
-  }, [baseRefs]);
+  }, [baseRefs, learnerId]);
 
   const queue = useMemo(() => {
     if (!state || now === 0) return [];
@@ -130,7 +133,7 @@ export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink 
 
   const handleGrade = useCallback(
     async (grade: RecallGrade) => {
-      if (!state || queue.length === 0) return;
+      if (!state || queue.length === 0 || !learnerId) return;
       const head = queue[0]!;
       const at = Date.now();
       try {
@@ -138,7 +141,7 @@ export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink 
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
-            learnerId: SESSION_LEARNER_ID,
+            learnerId,
             itemId: head.ref.itemId,
             kind: head.ref.kind,
             grade,
@@ -172,7 +175,7 @@ export function ReviewQueue({ onRecall = consoleRecallSink }: { onRecall?: Sink 
         setError(err instanceof Error ? err.message : "Network error");
       }
     },
-    [state, queue, onRecall, refs],
+    [state, queue, onRecall, refs, learnerId],
   );
 
   if (state === null) {
