@@ -2,7 +2,25 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-07-03 (Session 21 — production deployment. **PR #141** (test type safety) merged. **Production image `portuguese-teacher:latest` rebuilt + smoke-tested**: all 10 health endpoints return correct status codes, Prisma 8 migrations apply on cold boot, `<html lang="pt-PT">` + skip-to-main + footer Accessibility link all wired. Final main: 1013/1013 tests + lint + typecheck + perf:budget clean. **Only #105 remains open**.)
+**Last updated:** 2026-07-06 (Session 22 — issue #105 PR #1 of 4. **`PR #142`** filed on `feat/issue-105-pr1-learner-id`: new `useLearnerId()` hook + 5 hard-coded `"demo-learner"` strings replaced across LessonPlayer / ReviewQueue / ScenarioPlayer / ScenarioWorkspace / PracticeSession. 1013 → 1023 tests (+10). Lint + typecheck + build + perf:budget + a11y + asr:regress all green. **#105 still open** — PRs #2–#4 to follow.)
+
+## Session 22 — Issue #105 PR #1 of 4 (2026-07-06)
+
+- **`PR #142`** on `feat/issue-105-pr1-learner-id`: new `useLearnerId(): string | null` hook + 5 hard-coded `"demo-learner"` constants replaced.
+- New `src/lib/auth/useLearnerId.ts` — wraps `useAuth()`, returns `user?.id ?? null`.
+- New `src/test/auth-helpers.tsx` — shared `seedLearner({ id, level? })` + `clearLearner()` + `withAuth(node)` used by all 4 component test files.
+- New `src/test/use-learner-id.test.tsx` — 2 contract assertions (anonymous + authenticated). Dropped the "loading" assertion because React 18 + @testing-library/react flushes `useEffect` synchronously inside `render()`, making the loading state unobservable.
+- 5 components updated:
+  - `src/components/lesson/LessonPlayer.tsx` — SRS state load + `/api/srs/recalls` POST. TS narrowing fix: guard inside async closure (not at effect top) so `learnerId` stays narrowed to `string` past the `await`.
+  - `src/components/review/ReviewQueue.tsx` — same shape.
+  - `src/components/practice/ScenarioPlayer.tsx` — SRS state load + `/api/srs/sources` POST. Extended existing `useAuth()` destructure.
+  - `src/components/practice/ScenarioWorkspace.tsx` — scenarios snapshot + `/complete` POST. Empty-Learner path sets `hydrated=true` so the library renders.
+  - `src/components/practice/PracticeSession.tsx` — `/api/voice-loop/turn/grade`. `handleGrade` is dead code today (no UI calls it), so the fix is verified by `grep` rather than a runtime test.
+- Test additions: `src/test/{lesson-player,review-queue,scenario-adaptive,scenario-workspace,practice-session}.test.{tsx,}` — 10 new tests total. Net 1013 → 1023.
+- All 5 sites skip their fetch/handler when `learnerId` is null (loading or anonymous). Existing empty-state UI surfaces cover the no-Learner case.
+- **Verification**: `pnpm typecheck` clean · `pnpm lint` clean · `pnpm test` 1023/1023 · `pnpm build` clean (145 kB /practice unchanged) · `pnpm perf:budget` clean · `pnpm test:a11y` 9/9 · `pnpm asr:regress` 1.08%/4.04% unchanged · `grep -rn '"demo-learner"' src/components src/lib/auth` returns empty.
+
+**Next**: PR #2 (Provider consolidation: Auth + Settings + Affective → one shared `learnerState.ts`) + PR #3 (`Learner.weeklyMinutes` + `streakDays` writers + Dashboard reads) + PR #4 (Server-side `sc5OptOut` gate keyed on authenticated Learner row). Each is independently revertable.
 
 ## Session 12 picks shipped
 
