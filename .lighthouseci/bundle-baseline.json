@@ -1,82 +1,82 @@
 {
   "schemaVersion": 1,
-  "takenAt": "2026-07-01T08:21:17.710Z",
-  "buildId": "issue-47-scenario-library-expansion",
+  "takenAt": "2026-07-07T08:34:05.070Z",
+  "buildId": "xTqkTgbbF_4gAAss8_WKJ",
   "entries": {
     "/": {
-      "firstLoadJsBytes": 94139,
+      "firstLoadJsBytes": 96432,
       "firstLoadCssBytes": 0,
-      "totalAssetsBytes": 94139
+      "totalAssetsBytes": 96432
     },
     "/accessibility": {
-      "firstLoadJsBytes": 87300,
+      "firstLoadJsBytes": 87329,
       "firstLoadCssBytes": 0,
-      "totalAssetsBytes": 87300
-    },
-    "/dashboards/voice-loop-latency": {
-      "firstLoadJsBytes": 89500,
-      "firstLoadCssBytes": 0,
-      "totalAssetsBytes": 89500
+      "totalAssetsBytes": 87329
     },
     "/assess/[boundary]": {
-      "firstLoadJsBytes": 112338,
+      "firstLoadJsBytes": 111718,
       "firstLoadCssBytes": 0,
-      "totalAssetsBytes": 112338
+      "totalAssetsBytes": 111718
     },
     "/confidence": {
-      "firstLoadJsBytes": 100317,
+      "firstLoadJsBytes": 100626,
       "firstLoadCssBytes": 0,
-      "totalAssetsBytes": 100317
+      "totalAssetsBytes": 100626
     },
     "/dashboard": {
-      "firstLoadJsBytes": 107487,
+      "firstLoadJsBytes": 110316,
       "firstLoadCssBytes": 0,
-      "totalAssetsBytes": 107487
+      "totalAssetsBytes": 110316
+    },
+    "/dashboards/voice-loop-latency": {
+      "firstLoadJsBytes": 89559,
+      "firstLoadCssBytes": 0,
+      "totalAssetsBytes": 89559
     },
     "/lesson/[lessonId]": {
-      "firstLoadJsBytes": 108883,
+      "firstLoadJsBytes": 110775,
       "firstLoadCssBytes": 0,
-      "totalAssetsBytes": 108883
+      "totalAssetsBytes": 110775
     },
     "/log-in": {
-      "firstLoadJsBytes": 96762,
+      "firstLoadJsBytes": 97240,
       "firstLoadCssBytes": 0,
-      "totalAssetsBytes": 96762
+      "totalAssetsBytes": 97240
     },
     "/placement": {
-      "firstLoadJsBytes": 107381,
+      "firstLoadJsBytes": 107552,
       "firstLoadCssBytes": 0,
-      "totalAssetsBytes": 107381
+      "totalAssetsBytes": 107552
     },
     "/practice": {
-      "firstLoadJsBytes": 133100,
+      "firstLoadJsBytes": 146461,
       "firstLoadCssBytes": 0,
-      "totalAssetsBytes": 133100
+      "totalAssetsBytes": 146461
     },
     "/profile": {
-      "firstLoadJsBytes": 106753,
+      "firstLoadJsBytes": 107353,
       "firstLoadCssBytes": 0,
-      "totalAssetsBytes": 106753
+      "totalAssetsBytes": 107353
     },
     "/progress": {
-      "firstLoadJsBytes": 109794,
+      "firstLoadJsBytes": 109897,
       "firstLoadCssBytes": 0,
-      "totalAssetsBytes": 109794
+      "totalAssetsBytes": 109897
     },
     "/review": {
-      "firstLoadJsBytes": 102145,
+      "firstLoadJsBytes": 104022,
       "firstLoadCssBytes": 0,
-      "totalAssetsBytes": 102145
+      "totalAssetsBytes": 104022
     },
     "/settings": {
-      "firstLoadJsBytes": 93894,
+      "firstLoadJsBytes": 96689,
       "firstLoadCssBytes": 0,
-      "totalAssetsBytes": 93894
+      "totalAssetsBytes": 96689
     },
     "/sign-up": {
-      "firstLoadJsBytes": 97506,
+      "firstLoadJsBytes": 97886,
       "firstLoadCssBytes": 0,
-      "totalAssetsBytes": 97506
+      "totalAssetsBytes": 97886
     }
   }
 }

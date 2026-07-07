@@ -58,15 +58,17 @@ export type RouteGroupKey = "public" | "app" | "auth" | "system";
 export const PER_ROUTE_BUDGETS: Record<RouteGroupKey, number> = {
   // Numbers are gzipped First Load JS bytes — matches what Next.js prints
   // for "First Load JS" and what users actually download on a slow network.
-  // Tuned from the current build: /practice sits at ~141 kB gzipped after
-  // the #104 SrsService consolidation. The /practice page chunk itself grew
-  // by ~46 bytes gz (the ScenarioPlayer mount hook for partial-completion
-  // tag writes) but Next split AuthProvider + SettingsProvider into their
-  // own chunks (now lazy-loaded only by pages that use them) — a positive
-  // refactor that pushed /practice over the previous 140 kB cap. The new
-  // 145 kB cap keeps ~4 kB of headroom over the current build.
+  //
+  // 2026-07-06 — `app` cap bumped 145_000 → 155_000: PR #143
+  // (Provider consolidation via `LearnerStateProvider`) pushed /practice
+  // from ~141 kB to ~147 kB gzipped. The `LearnerStateProvider` adds
+  // ~3 kB gz to the (app) routes' shared chunk (it owns both Settings
+  // and Affective under one hydration lifecycle now). Future PRs (#105
+  // PR #3/#4) will add more bytes — bump leaves ~7 kB headroom over the
+  // current build. The previous cap was set after the #104 SrsService
+  // consolidation (2026-06-29) with the same rationale.
   public: 100_000,
-  app: 145_000,
+  app: 155_000,
   auth: 110_000,
   system: 100_000,
 };
