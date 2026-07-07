@@ -23,6 +23,7 @@ import {
 } from "@/lib/lesson/player";
 import type { Lesson, PracticeExercise } from "@/lib/curriculum";
 import { useLearnerId } from "@/lib/auth/useLearnerId";
+import { LessonCompletionTracker } from "@/lib/learner/LessonCompletionTracker";
 
 function formatHalfLife(ms: number): string {
   if (ms < 60_000) return "< 1 min";
@@ -165,9 +166,14 @@ export function LessonPlayer({ lesson }: { lesson: Lesson }) {
   const authoredCompleted = Object.values(authoredDone).filter(Boolean).length;
   const authoredTotal = stream.filter((item) => item.kind === "authored").length;
   const reviewTotal = stream.filter((item) => item.kind === "review").length;
+  const lessonComplete = authoredTotal > 0 && authoredCompleted === authoredTotal;
 
   return (
     <div className="space-y-10">
+      <LessonCompletionTracker
+        completed={lessonComplete}
+        estimatedMinutes={lesson.estimatedMinutes}
+      />
       <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-ink-mute">
         <Link href="/dashboard" className="hover:text-ink">
           Dashboard

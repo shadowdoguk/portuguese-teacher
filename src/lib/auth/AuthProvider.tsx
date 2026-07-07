@@ -55,6 +55,13 @@ export type AuthContextValue = {
       >
     >,
   ) => void;
+  /**
+   * Patch any subset of the authenticated Learner (issue #105 PR #3).
+   * Used by per-Learner progress writers that need to mutate fields the
+   * narrower `updateProfile` doesn't cover (e.g. weeklyMinutes,
+   * streakDays). Persists to localStorage + cookie mirror.
+   */
+  patchUser: (patch: Partial<Learner>) => void;
   setLevel: (level: Level) => void;
   toggleGoal: (goal: LearnerGoal) => void;
   setCurrentUnit: (unitId: string) => void;
@@ -185,6 +192,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [mutate],
   );
 
+  const patchUser = useCallback<AuthContextValue["patchUser"]>(
+    (patch) => {
+      mutate((current) => ({ ...current, ...patch }));
+    },
+    [mutate],
+  );
+
   const setLevel = useCallback<AuthContextValue["setLevel"]>(
     (level) => {
       mutate((current) => ({ ...current, level }));
@@ -256,6 +270,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut,
       setDialect,
       updateProfile,
+      patchUser,
       setLevel,
       toggleGoal,
       setCurrentUnit,
@@ -269,6 +284,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut,
       setDialect,
       updateProfile,
+      patchUser,
       setLevel,
       toggleGoal,
       setCurrentUnit,

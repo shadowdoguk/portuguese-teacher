@@ -193,4 +193,34 @@ describe("LessonPlayer", () => {
     const summary = screen.getByTestId("lesson-stream-summary");
     expect(summary.textContent).toMatch(/0 reviews injected/);
   });
+
+  it("exposes a single authored-done list-of-buttons surface (placeholder for #105 PR 3 wiring; full coverage in learner-progress.test.ts)", async () => {
+    // The lesson-completion integration test (PR 3) is exercised at the
+    // pure-function layer in src/test/learner-progress.test.ts (19 tests).
+    // Driving every authored button via React Testing Library is brittle
+    // (radio-button ordering changes), so we keep an explicit smoke here
+    // asserting that authored buttons render and can be marked done once.
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify({ ok: true, state: { items: {} }, sources: [] }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    );
+    const lesson = pickLesson();
+    render(withAuth(<LessonPlayer lesson={lesson} />));
+
+    await waitFor(() => {
+      expect(
+        screen.getAllByTestId("lesson-authored-mark-done").length,
+      ).toBeGreaterThan(0);
+    });
+
+    const first = screen.getAllByTestId("lesson-authored-mark-done")[0]!;
+    first.click();
+
+    await waitFor(() => {
+      const summary = screen.getByTestId("lesson-stream-summary");
+      expect(summary.textContent).toMatch(/1\/\d+ authored complete/);
+    });
+  });
 });
