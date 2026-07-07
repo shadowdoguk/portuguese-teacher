@@ -2,7 +2,7 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-07-07 (Merge wave in flight. PRs #142 + #143 + #144 merged; #144 adds Learner.weeklyMinutes + streakDays writers + Dashboard reads. Full PROGRESS rewrite at end of merge wave.)
+**Last updated:** 2026-07-07 (Merge wave in flight. PRs #142 + #143 + #144 + #145 + #146 + #147 all merged; #147 adds auth-cookie-mirror fixture + 4-route authenticated smoke spec. Full PROGRESS rewrite at end of merge wave.)
 
 ## Session 22 — Issue #105 PR #1 of 4 (2026-07-06)
 
