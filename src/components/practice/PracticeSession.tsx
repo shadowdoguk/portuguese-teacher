@@ -186,31 +186,12 @@ export function PracticeSession() {
     [unitId, settings.sc5OptOut],
   );
 
-  const handleGrade = useCallback(
-    async (grade: "again" | "hard" | "good" | "easy") => {
-      if (!learnerId) return;
-      const head = history[history.length - 1];
-      if (!head) return;
-      try {
-        const res = await fetch("/api/voice-loop/turn/grade", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            learnerId,
-            turnId: head.turnId,
-            grade,
-          }),
-        });
-        if (!res.ok) {
-          const body = (await res.json().catch(() => ({}))) as { error?: string };
-          setError(body.error ?? `Grade failed (${res.status})`);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Network error");
-      }
-    },
-    [history, learnerId],
-  );
+  // `handleGrade` (POST to /api/voice-loop/turn/grade) was a v0 placeholder
+  // for a free-form turn grade UI. As of issue #105 PR 4 the route was
+  // wired with useLearnerId, but no JSX invokes the handler today — making
+  // it dead code. The grade UI is a separate v1.1 follow-up; for now the
+  // function is removed entirely so the bundle + the dep graph stay tight.
+  // Reference the git history if you need to reinstate the placeholder.
 
   const startListening = useCallback(async () => {
     if (!useAudio) return;

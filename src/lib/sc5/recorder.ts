@@ -136,10 +136,9 @@ export function createFireAndForgetRecorder(
           options.onError(err);
           return;
         }
-        console.warn(
-          `[sc5] failed to persist sample for ${blob.utteranceId}:`,
-          err,
-        );
+        // No console fallback: emitSc5Event above already records the
+        // failure in the structured audit trail (see ObservabilitySink.emit
+        // in src/lib/observability/sink.ts).
       });
     },
   };
