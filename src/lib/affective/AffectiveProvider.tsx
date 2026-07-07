@@ -1,24 +1,29 @@
 "use client";
 
+import { createContext, useEffect, useState, type ReactNode } from "react";
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  type ReactNode,
-} from "react";
-import { useAuth } from "@/lib/auth/useAuth";
-import { useSettings } from "@/lib/settings";
+  LearnerStateProvider,
+  useLearnerState,
+} from "@/lib/learner/LearnerStateProvider";
 import {
   DEFAULT_WINDOW_DAYS,
   type AffectiveFilterScore,
+  type AffectiveFilterSignal,
   type SignalKind,
   type SignalSource,
 } from "./types";
-import { affectiveFilterScore } from "./scoring";
-import { recordSignal, type RecordSignalInput } from "./store";
+import type { RecordSignalInput } from "./store";
+
+/**
+ * Backwards-compat: `AffectiveProvider` is now an alias for the unified
+ * `LearnerStateProvider` (issue #105 PR 2 — Provider consolidation). The
+ * Affective signals stream is owned by LearnerStateProvider, hydrated
+ * alongside Settings when the authenticated Learner changes.
+ *
+ * `AffectiveContext` is kept as a legacy context for back-compat exports.
+ * All consumers should use `useAffective()` (a thin wrapper around
+ * `useLearnerState()`).
+ */
 
 export type AffectiveContextValue = {
   isReady: boolean;
@@ -29,73 +34,58 @@ export type AffectiveContextValue = {
 
 export const AffectiveContext = createContext<AffectiveContextValue | null>(null);
 
-export function AffectiveProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
-  const { settings } = useSettings();
-  const learnerId = user?.id ?? null;
-  const learnerIdRef = useRef<string | null>(learnerId);
-  useEffect(() => {
-    learnerIdRef.current = learnerId;
-  }, [learnerId]);
-
-  const isReady = learnerId !== null;
-
-  const record = useCallback<AffectiveContextValue["record"]>(
-    (input) => {
-      const id = learnerIdRef.current;
-      if (!id) return;
-      recordSignal({
-        ...input,
-        learnerId: id,
-        confidenceCheckinEnabled: settings.confidenceCheckinOptIn,
-      });
-    },
-    [settings.confidenceCheckinOptIn],
+export function AffectiveProvider({
+  children,
+  initialSignals,
+  initialLearnerId,
+}: {
+  children: ReactNode;
+  initialSignals?: AffectiveFilterSignal[];
+  initialLearnerId?: string | null;
+}) {
+  return (
+    <LearnerStateProvider
+      initialSignals={initialSignals}
+      initialLearnerId={initialLearnerId}
+    >
+      {children}
+    </LearnerStateProvider>
   );
-
-  const computeScore = useCallback<AffectiveContextValue["computeScore"]>(
-    (windowDays = DEFAULT_WINDOW_DAYS) => {
-      const id = learnerIdRef.current;
-      if (!id) return null;
-      return affectiveFilterScore(id, windowDays);
-    },
-    [],
-  );
-
-  const value = useMemo<AffectiveContextValue>(
-    () => ({ isReady, learnerId, record, computeScore }),
-    [isReady, learnerId, record, computeScore],
-  );
-
-  return <AffectiveContext.Provider value={value}>{children}</AffectiveContext.Provider>;
 }
 
 export function useAffective(): AffectiveContextValue {
-  const ctx = useContext(AffectiveContext);
-  if (!ctx) {
-    return {
-      isReady: false,
-      learnerId: null,
-      record: () => undefined,
-      computeScore: () => null,
-    };
-  }
-  return ctx;
+  const s = useLearnerState();
+  return {
+    isReady: s.isHydrated,
+    learnerId: s.learnerId,
+    record: s.recordAffectiveSignal,
+    computeScore: s.computeAffectiveScore,
+  };
 }
 
 export function useClientSignal(kind: SignalKind) {
   const { record } = useAffective();
-  return useCallback(
-    (value?: number) => {
-      const input: Omit<RecordSignalInput, "learnerId" | "confidenceCheckinEnabled"> = {
-        kind,
-        source: "client" as SignalSource,
-      };
-      if (value !== undefined) input.value = value;
-      record(input);
-    },
-    [kind, record],
-  );
+  return (value?: number) => {
+    const input: Omit<RecordSignalInput, "learnerId" | "confidenceCheckinEnabled"> = {
+      kind,
+      source: "client" as SignalSource,
+    };
+    if (value !== undefined) input.value = value;
+    record(input);
+  };
+}
+
+export function useScoreSnapshot(windowDays?: number): AffectiveFilterScore | null {
+  const { computeScore, isReady } = useAffective();
+  const [snapshot, setSnapshot] = useState<AffectiveFilterScore | null>(null);
+  useEffect(() => {
+    if (!isReady) {
+      setSnapshot(null);
+      return;
+    }
+    setSnapshot(computeScore(windowDays));
+  }, [isReady, computeScore, windowDays]);
+  return snapshot;
 }
 
 export function useDocumentVisibilityTracker() {
@@ -122,17 +112,4 @@ export function useDocumentVisibilityTracker() {
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [record]);
-}
-
-export function useScoreSnapshot(windowDays?: number): AffectiveFilterScore | null {
-  const { computeScore, isReady } = useAffective();
-  const ref = useRef<AffectiveFilterScore | null>(null);
-  useEffect(() => {
-    if (!isReady) {
-      ref.current = null;
-      return;
-    }
-    ref.current = computeScore(windowDays);
-  }, [isReady, computeScore, windowDays]);
-  return ref.current;
 }
