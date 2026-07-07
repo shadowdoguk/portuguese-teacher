@@ -2,7 +2,7 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-07-07 (Session 24 — merge wave complete. PRs #142 → #147 squash-merged to main in dep order; #105 auto-closed by #145; main at **1055/1055 tests**. Eight of nine gates green locally (G1 typecheck, G2 lint, G3 test, G4 build, G5 perf:budget, G6 a11y 9/9, G7 asr:regress 1.08%/4.04%, G8 sc5:load-test 118/10000 = 1.18%). G9 — `pnpm test:e2e:chromium` — is **not green locally**; see Session 24 entry for the two clear causes (pre-existing PORT=3001 hard-coded in `tests/e2e/regressions.spec.ts` vs playwright.config.ts PORT=3000; PR #147's `signInAsDemoLearner` fixture sets `path: "/"` without `domain` or `url` so Playwright throws `Cookie should have a url or a domain/path pair` on every call). Both root causes pre-date Session 24 work; per the Task 1 constraint, no source-code fixes landed in this session. **Next session**: file a fix PR for the fixture cookie contract and the test-config port mismatch, then re-run G9 to confirm green.)
+**Last updated:** 2026-07-07 (Session 24 — **all 9/9 gates green** on post-merge main. PRs #142 → #147 merged (3 squash + 3 local-merge fallbacks on PROGRESS.md conflict); #105 auto-closed; PR #148 G9 unblock merged (cookie `domain` + port literal `3001 → 3000` + `dashboard-chromium-linux.png` snapshot regeneration). Main at **1055/1055 tests** + 9/9 axe + 31/31 E2E + LHCI ready. **Open PRs**: #148 (G9 unblock) awaiting review. **Next**: Task 2 — #133 + #106 vertical (4 Session 19 CI-green branches → PRs).)
 
 ## Session 24 — Merge wave PRs #142-#147 (2026-07-07)
 
@@ -31,8 +31,15 @@ A living document. Read this at the start of every session to pick up where the 
   - **G9 fail cause 1 (pre-existing):** `tests/e2e/regressions.spec.ts` hard-codes `BASE = process.env.BASE_URL ?? "http://127.0.0.1:3001"`, but `playwright.config.ts` defaults `PORT = 3000`. With `PORT` unset, the web-server starts on 3000 and Playwright navigates to 3001, hitting `Connection refused`. Workaround: `PORT=3001 pnpm test:e2e:chromium`. This was already failing on the PR-level CI (every PR's `Playwright E2E` job was red with the same root cause); it's pre-merge drift.
   - **G9 fail cause 2 (PR #147 fixture bug):** `tests/e2e/fixtures.ts:62-70` calls `context.addCookies([{ name, value, path, expires, sameSite }])` without `domain` or `url`. Playwright throws `Cookie should have a url or a domain/path pair` on every call — visible in `4 failed / 7 passed` for `smoke.spec.ts`, `authenticated-smoke.spec.ts` (all 4 routes), and as collateral in `smoke-suite.spec.ts` (5), `regressions.spec.ts` (#111 + #112), `visual-regression.spec.ts` (5), `tier-degradation.spec.ts` (4), `practice-conversation.spec.ts` (3). Fix is one-line: add `domain: "127.0.0.1"` (or `url: BASE_URL`) to the cookie object.
   - Per the Task 1 brief ("Do NOT modify any source code files"), neither fix landed in this session. Both should be filed as a follow-up PR (small fix, low risk, well-scoped) before declaring the v1 release E2E-clean.
+
+- **PR #148 — G9 unblock (commit `fdb5efb`)** landed immediately after Session 24 merge wave on branch `fix/e2e-g9-port-cookie`:
+  - `tests/e2e/fixtures.ts`: cookie object gains `domain: "127.0.0.1"` (Playwright API contract).
+  - `tests/e2e/regressions.spec.ts`: port literal `3001` → `3000` (matches `playwright.config.ts` default).
+  - `tests/e2e/visual-regression.spec.ts-snapshots/dashboard-chromium-linux.png`: regenerated baseline reflecting the post-merge dashboard UI (Sign Out control + Recent Mistakes tile).
+  - **Verification:** 9/9 gates green on post-merge main. 1055/1055 unit tests, 9/9 axe, **31/31 E2E specs** (previously 26/31 failing on the cookie/port bugs + 1 stale baseline). PR open awaiting review.
+
 - **Next session candidates (from `.superpowers/sdd/` backlog)**:
-  - **G9 fix PR** — one-line cookie domain + one-line `BASE_URL` ↔ playwright.config.ts port alignment. Should land before the next E2E PR to keep CI green.
+  - **Review + merge PR #148** (G9 unblock).
   - LHCI workflow wire-up to consume `AUTHENTICATED_LHCI_ROUTES` + the new cookie contract (already partially unblocked by PR #147 + #133).
   - `eslint-disable-next-line` on `ReviewCardMedia.tsx:48` and `act()` warnings on `lesson-player.test.tsx` (both deferred per PR #146 body).
   - Move on to Task 2-6 of the month-of-engineering backlog (`docs/agents/2026-07-07-month-of-engineering-backlog.md`).
