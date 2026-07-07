@@ -2,7 +2,40 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-07-07 (Merge wave in flight. PRs #142 + #143 + #144 + #145 + #146 + #147 all merged; #147 adds auth-cookie-mirror fixture + 4-route authenticated smoke spec. Full PROGRESS rewrite at end of merge wave.)
+**Last updated:** 2026-07-07 (Session 24 — merge wave complete. PRs #142 → #147 squash-merged to main in dep order; #105 auto-closed by #145; main at **1055/1055 tests**. Eight of nine gates green locally (G1 typecheck, G2 lint, G3 test, G4 build, G5 perf:budget, G6 a11y 9/9, G7 asr:regress 1.08%/4.04%, G8 sc5:load-test 118/10000 = 1.18%). G9 — `pnpm test:e2e:chromium` — is **not green locally**; see Session 24 entry for the two clear causes (pre-existing PORT=3001 hard-coded in `tests/e2e/regressions.spec.ts` vs playwright.config.ts PORT=3000; PR #147's `signInAsDemoLearner` fixture sets `path: "/"` without `domain` or `url` so Playwright throws `Cookie should have a url or a domain/path pair` on every call). Both root causes pre-date Session 24 work; per the Task 1 constraint, no source-code fixes landed in this session. **Next session**: file a fix PR for the fixture cookie contract and the test-config port mismatch, then re-run G9 to confirm green.)
+
+## Session 24 — Merge wave PRs #142-#147 (2026-07-07)
+
+- **All 6 Session 23 PRs landed on main in the mandatory dep order.** Three went via `gh pr merge --squash --delete-branch` directly on GitHub (PRs #142, #145, #146 — each produced a single squash commit with the branch deleted in one go); the other three (PRs #143, #144, #147) required a local `git merge --no-ff <origin/branch>` fallback because the GitHub squash endpoint refused with `GraphQL: Pull Request has merge conflicts (mergePullRequest)` on the PROGRESS.md `Last updated:` line (every branch carried its own Session-23 entry that diverged from main's squashed history). Each local fallback was resolved with a single combined placeholder line (will be rewritten in this Session 24 entry), committed, and the branch deleted via `git push origin --delete <branch>`. Same code in either way; different history-shape (3 squash, 3 merge commits).
+- **Merge order & commits** (main's history, oldest → newest):
+  | PR | Commit | How it landed |
+  |---|---|---|
+  | #142 | `8d72f58` | **squash** via `gh pr merge --squash --delete-branch` |
+  | #143 | `568ba47` | local `git merge --no-ff` fallback (gh GraphQL `merge conflicts` on PROGRESS.md); branch deleted via `git push origin --delete` |
+  | #144 | `621193d` | local `git merge --no-ff` fallback (same PROGRESS.md cause as #143) |
+  | #145 | `2a0d782` | **squash** via `gh pr merge --squash --delete-branch` |
+  | #146 | `0c805ab` | **squash** via `gh pr merge --squash --delete-branch` |
+  | #147 | `c0ff72e` | local `git merge --no-ff` fallback (PROGRESS.md `Last updated:` conflict, like #143/#144) |
+  Three of the six landed as local non-squash merge commits because the GitHub squash endpoint refused with a PROGRESS.md content conflict; the underlying code on `main` is identical to the diffs those PRs would have produced under squash. Same code in, slightly different history-shape (squash for 3, merge commit for 3). The branches for the three local-fallback PRs were deleted from origin via `git push origin --delete <branch>` immediately after each merge; the three gh-merged PRs had `--delete-branch` baked in. All 6 PRs reach `state = MERGED` on GitHub; all 6 head branches are gone from `origin`.
+- **Issue #105 auto-closed** by the merge of PR #145 (the GitHub auto-close keyword on the PR body).
+- **Per-PR verification gates** (typecheck + lint + test after each merge):
+  - #142 → typecheck clean · lint clean · **1023/1023** tests ✓
+  - #143 → typecheck clean · lint clean · **1027/1027** tests ✓ (+4)
+  - #144 → typecheck clean · lint clean · **1047/1047** tests ✓ (+20)
+  - #145 → typecheck clean · lint clean · **1055/1055** tests ✓ (+8)
+  - #146 → typecheck clean · lint clean · **1055/1055** tests ✓ (test-neutral as designed)
+  - #147 → typecheck clean · lint clean · **1055/1055** tests ✓ (fixture-only)
+- **Final 9-gate sweep on post-merge main**: 8 of 9 green. G1 typecheck ✓ · G2 lint ✓ · G3 test 1055/1055 ✓ · G4 build ✓ · G5 perf:budget (`/practice` 142.9 kB under 155 kB cap, all routes under cap) ✓ · G6 test:a11y 9/9 ✓ · G7 asr:regress clean 1.08%/4.04% ✓ · G8 sc5:load-test 118/10000 = 1.18% ✓ · **G9 test:e2e:chromium ✗** (see Session 24 concerns).
+- **Visual-regression snapshot handling (Step 2)**: the untracked multi-tier PNGs in `tests/e2e/visual-regression.spec.ts-snapshots/` (e.g. `assess-desktop-chromium-linux.png`) are local-only artifacts from running `pnpm test:e2e` against the `feat/lhci-authenticated-fixture` branch before the merge; they are NOT in any PR's diff (main and all 6 PRs share the same 5-tracked-snapshot state). Step 2 not triggered; no `.gitignore` change needed.
+- **Session 24 concerns (DONE_WITH_CONCERNS, not BLOCKED)**:
+  - **G9 fail cause 1 (pre-existing):** `tests/e2e/regressions.spec.ts` hard-codes `BASE = process.env.BASE_URL ?? "http://127.0.0.1:3001"`, but `playwright.config.ts` defaults `PORT = 3000`. With `PORT` unset, the web-server starts on 3000 and Playwright navigates to 3001, hitting `Connection refused`. Workaround: `PORT=3001 pnpm test:e2e:chromium`. This was already failing on the PR-level CI (every PR's `Playwright E2E` job was red with the same root cause); it's pre-merge drift.
+  - **G9 fail cause 2 (PR #147 fixture bug):** `tests/e2e/fixtures.ts:62-70` calls `context.addCookies([{ name, value, path, expires, sameSite }])` without `domain` or `url`. Playwright throws `Cookie should have a url or a domain/path pair` on every call — visible in `4 failed / 7 passed` for `smoke.spec.ts`, `authenticated-smoke.spec.ts` (all 4 routes), and as collateral in `smoke-suite.spec.ts` (5), `regressions.spec.ts` (#111 + #112), `visual-regression.spec.ts` (5), `tier-degradation.spec.ts` (4), `practice-conversation.spec.ts` (3). Fix is one-line: add `domain: "127.0.0.1"` (or `url: BASE_URL`) to the cookie object.
+  - Per the Task 1 brief ("Do NOT modify any source code files"), neither fix landed in this session. Both should be filed as a follow-up PR (small fix, low risk, well-scoped) before declaring the v1 release E2E-clean.
+- **Next session candidates (from `.superpowers/sdd/` backlog)**:
+  - **G9 fix PR** — one-line cookie domain + one-line `BASE_URL` ↔ playwright.config.ts port alignment. Should land before the next E2E PR to keep CI green.
+  - LHCI workflow wire-up to consume `AUTHENTICATED_LHCI_ROUTES` + the new cookie contract (already partially unblocked by PR #147 + #133).
+  - `eslint-disable-next-line` on `ReviewCardMedia.tsx:48` and `act()` warnings on `lesson-player.test.tsx` (both deferred per PR #146 body).
+  - Move on to Task 2-6 of the month-of-engineering backlog (`docs/agents/2026-07-07-month-of-engineering-backlog.md`).
 
 ## Session 22 — Issue #105 PR #1 of 4 (2026-07-06)
 
@@ -103,7 +136,7 @@ Today's pick (#104, complete and shipped):
 After today, the remaining queue:
 - **v1 release readiness** — §10 sign-off + 5 external dependencies + 4 ops items per ADR-0005 §2. The Session 11 open PRs (#102, #103, #107) are still awaiting review.
 - **Phase 3 content** (v1.1 backlog): additional A1/A2/B1 Units.
-- **Architecture deepening** (v1.1 backlog): #105 per-Learner persistence + #106 telemetry seam. (#104 done.)
+- **Architecture deepening** (v1.1 backlog): ~~#105 per-Learner persistence~~ (closed in Session 24 via PRs #142 → #145) + #106 telemetry seam. (#104 done.)
 
 ## In progress
 
@@ -116,6 +149,9 @@ After today, the remaining queue:
 - **#19** Pronunciation Score phoneme-distance endpoint — merged via #87
 - **#38** ASR language-model biasing per current Unit vocabulary — merged via #88
 - **#13** ASR accuracy regression test suite — merged via #89
+
+### Closed (Session 24)
+- **#105** Per-Learner persistence (5 hard-coded `"demo-learner"` IDs + dashboard numbers that don't update + SC-5 opt-out that's client-trusted) — closed in full by the merge of PRs #142 + #143 + #144 + #145. 4/4 vertical slices shipped.
 
 ### Closed (Session 4)
 - **#33** Tier 1 (Web Speech API) + Tier 2 (MediaRecorder) audio capture — merged via #83
