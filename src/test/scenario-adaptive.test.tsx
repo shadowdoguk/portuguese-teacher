@@ -287,3 +287,78 @@ describe("ScenarioPlayer — partial-completion tag write (#104)", () => {
     expect(sourcesCall).toBeUndefined();
   });
 });
+
+describe("ScenarioPlayer — useLearnerId (#105 PR 1)", () => {
+  it("skips the SRS state fetch when no Learner is signed in", async () => {
+    // localStorage is cleared in beforeEach; no seedUser call.
+    fetchMock.mockResolvedValue(
+      jsonResponse({ ok: true, state: { items: {} }, sources: [] }),
+    );
+    const scenario = scenarioAt("A1", ["a1-1-v-bilhete"]);
+    render(
+      <AuthProvider>
+        <SettingsProvider>
+          <ScenarioPlayer
+            scenario={scenario}
+            onExit={() => undefined}
+            onComplete={() => undefined}
+          />
+        </SettingsProvider>
+      </AuthProvider>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("scenario-level-mismatch")).toBeInTheDocument();
+    });
+    const stateCall = fetchMock.mock.calls.find((call) => {
+      const url = typeof call[0] === "string" ? call[0] : (call[0] as Request).url;
+      return url.includes("/api/srs/state");
+    });
+    expect(stateCall).toBeUndefined();
+  });
+
+  it("tags scenario sources with the authenticated Learner's id (not demo-learner)", async () => {
+    window.localStorage.setItem(
+      "portuguese-teacher:user",
+      JSON.stringify({
+        id: "scenario-learner-xyz",
+        name: "Scenario Learner",
+        email: "scenario@example.com",
+        dialect: "pt-PT",
+        level: "A1",
+        streakDays: 0,
+        weeklyMinutes: 0,
+        createdAt: "2026-07-01T00:00:00.000Z",
+      }),
+    );
+    fetchMock.mockResolvedValue(
+      jsonResponse({ ok: true, state: { items: {} }, sources: [] }),
+    );
+    const scenario = scenarioAt("A1", ["a1-1-v-bilhete", "a1-1-v-passaporte"]);
+    render(
+      <AuthProvider>
+        <SettingsProvider>
+          <ScenarioPlayer
+            scenario={scenario}
+            onExit={() => undefined}
+            onComplete={() => undefined}
+          />
+        </SettingsProvider>
+      </AuthProvider>,
+    );
+    await waitFor(() => {
+      const sourcesCall = fetchMock.mock.calls.find((call) => {
+        const url = typeof call[0] === "string" ? call[0] : (call[0] as Request).url;
+        return url.includes("/api/srs/sources");
+      });
+      expect(sourcesCall).toBeDefined();
+    });
+    const sourcesCall = fetchMock.mock.calls.find((call) => {
+      const url = typeof call[0] === "string" ? call[0] : (call[0] as Request).url;
+      return url.includes("/api/srs/sources");
+    })!;
+    const body = JSON.parse(String((sourcesCall[1] as RequestInit)?.body)) as {
+      learnerId: string;
+    };
+    expect(body.learnerId).toBe("scenario-learner-xyz");
+  });
+});

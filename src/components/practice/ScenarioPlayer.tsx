@@ -47,7 +47,6 @@ type ApiError = {
 type ApiResponse = ApiSuccess | ApiError;
 
 const SCENARIO_TIER_FALLBACK: BrowserTier = 3;
-const SCENARIO_SRS_LEARNER_ID = "demo-learner";
 
 export function ScenarioPlayer({
   scenario,
@@ -65,6 +64,7 @@ export function ScenarioPlayer({
 }) {
   const { user } = useAuth();
   const learnerLevel = user?.level ?? "A0";
+  const learnerId = user?.id ?? null;
   const [capabilities, setCapabilities] = useState<VoiceLoopTierCapabilities | null>(null);
   const [state, setState] = useState<RunnerState>(() => initialState(scenario));
   const [history, setHistory] = useState<VoiceLoopTurn[]>([]);
@@ -92,9 +92,11 @@ export function ScenarioPlayer({
     if (typeof window === "undefined") return;
     let cancelled = false;
     async function load(): Promise<void> {
+      const id = learnerId;
+      if (!id) return;
       try {
         const res = await fetch(
-          `/api/srs/state?learnerId=${encodeURIComponent(SCENARIO_SRS_LEARNER_ID)}`,
+          `/api/srs/state?learnerId=${encodeURIComponent(id)}`,
         );
         if (!res.ok) return;
         const body = (await res.json()) as {
@@ -115,10 +117,11 @@ export function ScenarioPlayer({
     return () => {
       cancelled = true;
     };
-  }, [scenario.id]);
+  }, [scenario.id, learnerId]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!learnerId) return;
     if (scenario.vocabularyRefs.length === 0) return;
     async function tagScenarioVocabulary(): Promise<void> {
       try {
@@ -126,7 +129,7 @@ export function ScenarioPlayer({
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
-            learnerId: SCENARIO_SRS_LEARNER_ID,
+            learnerId,
             scenarioId: scenario.id,
             itemIds: scenario.vocabularyRefs,
           }),
@@ -136,7 +139,7 @@ export function ScenarioPlayer({
       }
     }
     void tagScenarioVocabulary();
-  }, [scenario.id, scenario.vocabularyRefs]);
+  }, [scenario.id, scenario.vocabularyRefs, learnerId]);
 
   const tier: BrowserTier = capabilities?.tier ?? SCENARIO_TIER_FALLBACK;
 

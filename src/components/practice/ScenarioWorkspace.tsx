@@ -10,8 +10,7 @@ import {
 import { ScenarioLibrary } from "@/components/practice/ScenarioLibrary";
 import { ScenarioPlayer } from "@/components/practice/ScenarioPlayer";
 import type { Scenario } from "@/lib/scenarios";
-
-const SESSION_LEARNER_ID = "demo-learner";
+import { useLearnerId } from "@/lib/auth/useLearnerId";
 
 export function ScenarioWorkspace() {
   const [snapshot, setSnapshot] = useState<ScenarioStoreSnapshot>(emptySnapshot);
@@ -19,12 +18,19 @@ export function ScenarioWorkspace() {
   const [hydrated, setHydrated] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const learnerId = useLearnerId();
+
   useEffect(() => {
     let cancelled = false;
     async function load(): Promise<void> {
+      const id = learnerId;
+      if (!id) {
+        setHydrated(true);
+        return;
+      }
       try {
         const res = await fetch(
-          `/api/scenarios?learnerId=${encodeURIComponent(SESSION_LEARNER_ID)}`,
+          `/api/scenarios?learnerId=${encodeURIComponent(id)}`,
         );
         if (!res.ok) {
           throw new Error(`Failed to load scenario progress (${res.status})`);
@@ -51,7 +57,7 @@ export function ScenarioWorkspace() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [learnerId]);
 
   const onComplete = useCallback(
     async (result: {
@@ -60,7 +66,7 @@ export function ScenarioWorkspace() {
       turnsTaken: number;
       reasons: ReadonlyArray<string>;
     }) => {
-      if (!active) return;
+      if (!active || !learnerId) return;
       const completedAt = Date.now();
       const optimistic = recordCompletion(snapshot, {
         scenarioId: active.id,
@@ -77,7 +83,7 @@ export function ScenarioWorkspace() {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
-              learnerId: SESSION_LEARNER_ID,
+              learnerId,
               passed: result.passed,
               stars: result.stars,
               turnsTaken: result.turnsTaken,
@@ -94,7 +100,7 @@ export function ScenarioWorkspace() {
         setError(err instanceof Error ? err.message : "Network error");
       }
     },
-    [active, snapshot],
+    [active, snapshot, learnerId],
   );
 
   if (active) {
