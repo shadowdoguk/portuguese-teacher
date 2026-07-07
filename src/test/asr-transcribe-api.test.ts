@@ -6,6 +6,7 @@ import {
   setObservabilitySink,
 } from "@/lib/observability/sink";
 import { POST as postTranscribe } from "@/app/api/asr/transcribe/route";
+import { readAuthLearnerId } from "@/lib/auth/cookies";
 import {
   transcribeFromForm,
   type AsrTranscribeDeps,
@@ -472,5 +473,116 @@ describe("transcribeFromForm — SC-5 sampling integration", () => {
     const elapsed = Date.now() - start;
     expect(res.status).toBe(200);
     expect(elapsed).toBeLessThan(500);
+  });
+});
+
+describe("readAuthLearnerId (issue #105 PR 4 — server-side cookie gate)", () => {
+  function req(cookie: string | null): Request {
+    const headers: Record<string, string> = {};
+    if (cookie !== null) headers.cookie = cookie;
+    return new Request("http://localhost/api/asr/transcribe", {
+      method: "POST",
+      headers,
+    });
+  }
+
+  it("returns null when no cookie header is present (anonymous request)", () => {
+    expect(readAuthLearnerId(req(null))).toBeNull();
+  });
+
+  it("returns null when no portuguese-teacher:auth cookie is present", () => {
+    expect(readAuthLearnerId(req("session=abc; other=xyz"))).toBeNull();
+  });
+
+  it("returns the Learner ID for a well-formed cookie", () => {
+    expect(
+      readAuthLearnerId(req("portuguese-teacher:auth=test-learner-abc; Path=/")),
+    ).toBe("test-learner-abc");
+  });
+
+  it("URL-decodes percent-encoded Learner IDs", () => {
+    expect(
+      readAuthLearnerId(req("portuguese-teacher:auth=learner%2Dwith%2Ddash; Path=/")),
+    ).toBe("learner-with-dash");
+  });
+
+  it("returns null for an empty cookie value", () => {
+    expect(readAuthLearnerId(req("portuguese-teacher:auth=; Path=/"))).toBeNull();
+  });
+
+  it("tolerates cookies without Path attribute", () => {
+    expect(readAuthLearnerId(req("portuguese-teacher:auth=lone-id"))).toBe("lone-id");
+  });
+});
+
+describe("transcribeFromForm — server-side opt-out contract (#105 PR 4)", () => {
+  function makeRecorderProbe() {
+    const received: Array<{
+      optOut: boolean | undefined;
+      bodyLen: number;
+      utteranceId: string;
+    }> = [];
+    const recorder = {
+      enqueue(input: {
+        utteranceId: string;
+        body: Uint8Array;
+        contentType: string;
+        signedUrlExpiresIn: number;
+        optOut?: boolean;
+      }): void {
+        received.push({
+          optOut: input.optOut,
+          bodyLen: input.body.byteLength,
+          utteranceId: input.utteranceId,
+        });
+      },
+    };
+    return { recorder, received };
+  }
+
+  it("anonymous request (sc5OptOut=true) records an opt-out sample with no body (server is authoritative, no client trust)", async () => {
+    const { recorder, received } = makeRecorderProbe();
+    const deps: AsrTranscribeDeps = {
+      transcriber: async () => FAKE_RESULT,
+      isMock: () => true,
+      sc5Recorder: recorder,
+      generateSc5UtteranceId: () => "u-anon",
+      sc5OptOut: true,
+    };
+    const form = new FormData();
+    form.append(
+      "audio",
+      new Blob([new Uint8Array(2048)], { type: "audio/webm" }),
+      "u.webm",
+    );
+    form.append("lang", "pt-PT");
+    const res = await transcribeFromForm(form, deps);
+    expect(res.status).toBe(200);
+    expect(received).toHaveLength(1);
+    expect(received[0]?.optOut).toBe(true);
+    expect(received[0]?.bodyLen).toBe(0);
+  });
+
+  it("authenticated request (sc5OptOut=false) records normally with full audio body", async () => {
+    const { recorder, received } = makeRecorderProbe();
+    const deps: AsrTranscribeDeps = {
+      transcriber: async () => FAKE_RESULT,
+      isMock: () => true,
+      sc5Recorder: recorder,
+      generateSc5UtteranceId: () => "u-authed",
+      sc5OptOut: false,
+    };
+    const form = new FormData();
+    form.append(
+      "audio",
+      new Blob([new Uint8Array(2048)], { type: "audio/webm" }),
+      "u.webm",
+    );
+    form.append("lang", "pt-PT");
+    const res = await transcribeFromForm(form, deps);
+    expect(res.status).toBe(200);
+    expect(received).toHaveLength(1);
+    expect(received[0]?.optOut).toBeUndefined();
+    expect(received[0]?.bodyLen).toBe(2048);
   });
 });
