@@ -2,7 +2,7 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-07-06 (Session 23 roadmap laid out — see `docs/agents/2026-07-06-week-roadmap.md` for the agreed Tier A + Tier B plan: finish the #105 vertical (PRs #2/#3/#4) + 5 small hygiene wins + LHCI authenticated fixture. Picks up after Session 22's #142 lands. No active branches awaiting merge.)
+**Last updated:** 2026-07-07 (Merge wave in flight. PRs #142 + #143 merged; #143 added LearnerStateProvider consolidating Settings + Affective behind one hydration lifecycle; full PROGRESS rewrite at end of merge wave.)
 
 ## Session 22 — Issue #105 PR #1 of 4 (2026-07-06)
 

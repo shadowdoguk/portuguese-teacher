@@ -1,22 +1,22 @@
 "use client";
 
+import { createContext, type ReactNode } from "react";
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
-import { useAuth } from "@/lib/auth/useAuth";
-import { loadSettings, saveSettings } from "./store";
-import {
-  DEFAULT_SETTINGS,
-  applySettingsPatch,
-  type Settings,
-  type SettingsPatch,
-} from "./types";
+  LearnerStateProvider,
+  useLearnerState,
+} from "@/lib/learner/LearnerStateProvider";
+import type { Settings, SettingsPatch } from "./types";
+
+/**
+ * Backwards-compat: `SettingsProvider` is now an alias for the unified
+ * `LearnerStateProvider` (issue #105 PR 2 — Provider consolidation).
+ * Existing call sites and tests continue to wrap in `<SettingsProvider>`,
+ * which now also owns Affective signals under the same hydration lifecycle.
+ *
+ * `SettingsContext` is kept as a legacy context for back-compat exports. All
+ * consumers should use `useSettings()` (now a thin wrapper around
+ * `useLearnerState()`).
+ */
 
 export type SettingsContextValue = {
   settings: Settings;
@@ -26,61 +26,25 @@ export type SettingsContextValue = {
 
 export const SettingsContext = createContext<SettingsContextValue | null>(null);
 
-export function SettingsProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
-  const [settings, setSettings] = useState<Settings>({ ...DEFAULT_SETTINGS });
-  const [hydratedFor, setHydratedFor] = useState<string | null>(null);
-
-  const userId = user?.id ?? null;
-
-  useEffect(() => {
-    if (!userId) {
-      setSettings({ ...DEFAULT_SETTINGS });
-      setHydratedFor(null);
-      return;
-    }
-    if (hydratedFor === userId) return;
-    setSettings(loadSettings(userId));
-    setHydratedFor(userId);
-  }, [userId, hydratedFor]);
-
-  const update = useCallback<SettingsContextValue["update"]>(
-    (patch) => {
-      setSettings((current) => {
-        const next = applySettingsPatch(current, patch);
-        if (userId) saveSettings(userId, next);
-        return next;
-      });
-    },
-    [userId],
+export function SettingsProvider({
+  children,
+  initialSettings,
+}: {
+  children: ReactNode;
+  initialSettings?: Settings;
+}) {
+  return (
+    <LearnerStateProvider initialSettings={initialSettings}>
+      {children}
+    </LearnerStateProvider>
   );
-
-  const reset = useCallback<SettingsContextValue["reset"]>(() => {
-    setSettings({ ...DEFAULT_SETTINGS });
-    if (userId) saveSettings(userId, { ...DEFAULT_SETTINGS });
-  }, [userId]);
-
-  const value = useMemo<SettingsContextValue>(
-    () => ({ settings, update, reset }),
-    [settings, update, reset],
-  );
-
-  return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 }
 
 export function useSettings(): SettingsContextValue {
-  const ctx = useContext(SettingsContext);
-  if (!ctx) {
-    return {
-      settings: { ...DEFAULT_SETTINGS },
-      update: () => undefined,
-      reset: () => undefined,
-    };
-  }
-  return ctx;
-}
-
-export function useSettingsOrAuth(): { userId: string | null } {
-  const auth = useAuth();
-  return { userId: auth.user?.id ?? null };
+  const s = useLearnerState();
+  return {
+    settings: s.settings,
+    update: s.updateSettings,
+    reset: s.resetSettings,
+  };
 }
