@@ -2,7 +2,7 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-07-06 (Session 23 roadmap laid out — see `docs/agents/2026-07-06-week-roadmap.md` for the agreed Tier A + Tier B plan: finish the #105 vertical (PRs #2/#3/#4) + 5 small hygiene wins + LHCI authenticated fixture. Picks up after Session 22's #142 lands. No active branches awaiting merge.)
+**Last updated:** 2026-07-06 (Session 23 in progress. **Day 1 done**: `feat/issue-105-pr2-provider-consolidation` shipped as **PR #143**. New `LearnerStateProvider` consolidates Settings + Affective under one hydration lifecycle, closing the §1.4 bug. SettingsProvider + AffectiveProvider stay as backwards-compat wrappers. 1023 → 1027 tests (+4). Lint + typecheck + build + a11y + asr:regress green. perf:budget alarm is pre-existing on main (verified via `git stash` — same 143 kB without my changes), not caused by this PR. **Day 2 starting**: PR #3 — `Learner.weeklyMinutes` + `streakDays` Prisma migration + writers + Dashboard reads. PR #142 + #143 still in CI.)
 
 ## Session 22 — Issue #105 PR #1 of 4 (2026-07-06)
 
