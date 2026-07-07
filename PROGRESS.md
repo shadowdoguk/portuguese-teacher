@@ -2,7 +2,7 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-07-06 (Session 22 — issue #105 PR #1 of 4. **`PR #142`** filed on `feat/issue-105-pr1-learner-id`: new `useLearnerId()` hook + 5 hard-coded `"demo-learner"` strings replaced across LessonPlayer / ReviewQueue / ScenarioPlayer / ScenarioWorkspace / PracticeSession. 1013 → 1023 tests (+10). Lint + typecheck + build + perf:budget + a11y + asr:regress all green. **Bonus**: stale `tests/e2e/assess-404.spec.ts` test (expected A1-A2/A2-B1 → 200, but PR #126 intentionally made them 404 due to no milestone seeded) updated to match the intended behaviour — committed on the same branch so CI goes green. **#105 still open** — PRs #2–#4 to follow.)
+**Last updated:** 2026-07-06 (Session 23 roadmap laid out — see `docs/agents/2026-07-06-week-roadmap.md` for the agreed Tier A + Tier B plan: finish the #105 vertical (PRs #2/#3/#4) + 5 small hygiene wins + LHCI authenticated fixture. Picks up after Session 22's #142 lands. No active branches awaiting merge.)
 
 ## Session 22 — Issue #105 PR #1 of 4 (2026-07-06)
 
