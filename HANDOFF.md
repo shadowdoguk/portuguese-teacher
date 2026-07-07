@@ -1,6 +1,6 @@
 # Session Handoff
 
-**Snapshot date:** 2026-07-01 (Session 12 closed — PR #109 (SrsService consolidation, #104) + PRs #102/#103/#107 (review-feedback follow-ups) all squash-merged to `main`. Main: 950/950 tests + lint + typecheck + Playwright E2E + build all clean. Production image rebuilt + smoke-tested post-merge.)
+**Snapshot date:** 2026-07-06 (Session 22 closed — issue #105 PR #1 of 4 filed as PR #142 on `feat/issue-105-pr1-learner-id`. New `useLearnerId()` hook + 5 hard-coded `"demo-learner"` strings replaced across LessonPlayer / ReviewQueue / ScenarioPlayer / ScenarioWorkspace / PracticeSession. 1013 → 1023 tests (+10). Bonus: stale `tests/e2e/assess-404.spec.ts` test fixed (PR #126's intended behaviour). Branch pushed, PR body updated, awaiting CI re-run + review/merge.)
 **Repo:** `shadowdoguk/portuguese-teacher`
 
 > **This file is a point-in-time snapshot.** For the living, agent-picked-up
