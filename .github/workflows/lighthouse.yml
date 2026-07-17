@@ -89,3 +89,5 @@ jobs:
 
       - name: Run Lighthouse CI (authenticated)
         run: pnpm exec lhci autorun --config=lighthouserc.auth.json
+        env:
+          CHROME_PATH: /opt/hostedtoolcache/setup-chrome/chrome/stable/x64/chrome
