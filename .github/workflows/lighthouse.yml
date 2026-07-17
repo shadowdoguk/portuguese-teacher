@@ -57,6 +57,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Chrome (puppeteerScript requires explicit install)
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
