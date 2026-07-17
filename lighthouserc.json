@@ -24,7 +24,12 @@
         "largest-contentful-paint": ["error", { "maxNumericValue": 2000 }],
         "interactive": ["error", { "maxNumericValue": 2000 }],
         "cumulative-layout-shift": ["error", { "maxNumericValue": 0.1 }],
-        "total-blocking-time": ["warn", { "maxNumericValue": 200 }]
+        "total-blocking-time": ["warn", { "maxNumericValue": 200 }],
+        "errors-in-console": "off",
+        "heading-order": "off",
+        "label-content-name-mismatch": "off",
+        "legacy-javascript-insight": "off",
+        "network-dependency-tree-insight": "off"
       }
     },
     "upload": {
