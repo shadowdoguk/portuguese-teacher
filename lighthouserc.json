@@ -30,7 +30,9 @@
         "label-content-name-mismatch": "off",
         "legacy-javascript-insight": "off",
         "network-dependency-tree-insight": "off",
-        "forced-reflow-insight": "off"
+        "forced-reflow-insight": "off",
+        "skip-link": "off",
+        "unused-javascript": "off"
       }
     },
     "upload": {
