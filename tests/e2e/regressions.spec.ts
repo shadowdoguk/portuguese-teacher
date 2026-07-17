@@ -18,7 +18,7 @@ import { signInAsDemoLearner } from "./fixtures";
  *         credentials are not validated
  */
 
-const BASE = process.env.BASE_URL ?? "http://127.0.0.1:3001";
+const BASE = process.env.BASE_URL ?? "http://127.0.0.1:3000";
 
 async function signOutViaUI(page: Page): Promise<void> {
   // The header AppNav has the sign-out control; click it and wait for

@@ -63,6 +63,7 @@ export async function signInAsDemoLearner(
     {
       name: AUTH_COOKIE_NAME,
       value: encodeURIComponent(DEMO_USER.id),
+      domain: "127.0.0.1",
       path: "/",
       expires: Math.floor(Date.now() / 1000) + AUTH_COOKIE_MAX_AGE_SECONDS,
       sameSite: "Lax",
