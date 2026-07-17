@@ -12,6 +12,9 @@
       ],
       "numberOfRuns": 1,
       "puppeteerScript": "./scripts/lhci-sign-in.js",
+      "puppeteerLaunchOptions": {
+        "args": ["--no-sandbox", "--disable-setuid-sandbox"]
+      },
       "settings": {
         "preset": "desktop",
         "skipAudits": ["uses-http2", "is-on-https"],
