@@ -170,7 +170,7 @@ Every Unit module imports `scenariosForUnit` from `../scenarios-extended` and `U
 - Modify: `CONTEXT.md:57`
 - Modify: `docs/adr/0005-v1-release-scope-and-readiness.md:22-66,90-96`
 - Modify: `PROGRESS.md:5,145-160,348-353`
-- Modify: `docs/superpowers/specs/2026-07-17-a1-curriculum-production-week-design.md:3-4`
+- Add: `docs/superpowers/specs/2026-07-17-a1-curriculum-production-week-design.md:3-4`
 
 **Interfaces:**
 - Consumes: PR #149 evidence already recorded in `HANDOFF.md:17,39`.
