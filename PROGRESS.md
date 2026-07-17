@@ -150,8 +150,14 @@ Today's pick (#104, complete and shipped):
 - **`feat/issue-104-srs-service-consolidation` → PR #109 → main @ `0606e2d`** — full audit-pipeline coverage of SRS into a single `SrsService`. 36 new tests, 916/916 on the branch, all gates green, image smoke-tested. **Budget cap bumped 140→145 kB for /practice** — Next split AuthProvider + SettingsProvider into lazy chunks (positive refactor); the page chunk itself grew by ~46 bytes gzipped. Performance alarm still passes; regression threshold (10%) not tripped; baseline unchanged.
 
 After today, the remaining queue:
-- **v1 release readiness** — §10 sign-off + 5 external dependencies + 4 ops items per ADR-0005 §2. The Session 11 open PRs (#102, #103, #107) are still awaiting review.
-- **Phase 3 content** (v1.1 backlog): additional A1/A2/B1 Units.
+- **v1 release readiness** — §10 sign-off + 4 external dependencies + 4 ops items per ADR-0005 §2. The Session 11 open PRs (#102, #103, #107) are still awaiting review.
+- **Phase 3 content — A1 production week** (v1.1 backlog; sequential blocker chain):
+  - **#150** Complete the A1 Viagens Unit — no blocker.
+  - **#151** Complete the A1 Alimentação Unit — blocked by #150.
+  - **#152** Add the A1 Mercearia Unit — blocked by #151.
+  - **#153** Add the A1 Saúde Unit — blocked by #152.
+  - **#154** Add the A1 Roupa Unit — blocked by #153.
+- **Phase 3 content after the A1 production week** (v1.1 backlog): additional A1/A2/B1 Units.
 - **Architecture deepening** (v1.1 backlog): ~~#105 per-Learner persistence~~ (closed in Session 24 via PRs #142 → #145) + #106 telemetry seam. (#104 done.)
 
 ## In progress
@@ -349,7 +355,6 @@ Each branch: `pnpm typecheck` clean, `pnpm lint` clean, `pnpm test` clean (`src/
 
 - **§10 sign-off on ADR-0003 + amended requirements doc** — Product, Pedagogy, Engineering leads. Work proceeds in parallel since the spec is captured in code; this gates release, not development.
 - **Live MiniMax LLM credentials** for #42's ≥75% in-band acceptance target (ADR-0004 §8). Sandbox creds provisioning blocks the production-WER acceptance run; the harness + CLI are wired and tested with mocks.
-- **Authenticated LHCI runs for `/dashboard`, `/review`, etc.** — needs a learner fixture + cookie. The follow-up is captured in `docs/perf-budget.md`'s 'Lighthouse CI' section.
 
 ## Conventions reminder
 

@@ -46,6 +46,7 @@ We adopt the following **v1 release scope and readiness checklist** as the singl
 | Recent mistakes tile on dashboard (FR-WEB-4 #3) | ✅ shipped | PR #102; `src/components/dashboard/RecentMistakesTile.tsx` |
 | Accessibility (WCAG 2.2 AA) — axe-core gate + statement page | ✅ shipped | PR #84; `pnpm test:a11y` (9/9); `/accessibility` page |
 | Per-route bundle budgets + LHCI on `main` | ✅ shipped | PR #85; `pnpm perf:budget` |
+| Authenticated app-route LHCI | ✅ shipped | PR #149; `lighthouserc.auth.json`; `scripts/lhci-sign-in.js` |
 | Browser support matrix (Chromium / Webkit / Firefox tiers) | ✅ shipped | PR #93 + PR #100; `playwright.config.ts` (11 projects) + nightly matrix |
 | Cross-device compatibility smoke tests | ✅ shipped | PR #100; `tests/e2e/smoke-suite.spec.ts` + `cross-device-smoke.yml` |
 | Production Dockerfile + Prisma migrate-on-start | ✅ shipped | Session 6 close-out; `Dockerfile` at commit `2c589b8` |
@@ -61,7 +62,6 @@ We adopt the following **v1 release scope and readiness checklist** as the singl
 | **Additional A1 / A2 / B1 curriculum content** | The v1 minimum-viable 2 Units per Level ships with stubs (1 lesson each, empty vocab/grammar arrays). The 100-scenario library covers all 10 categories. | v1.1 expands the seed files to 8-10 Units per Level per requirements §3.2 FR-LP-1. |
 | **Scenario-to-Unit DB wiring beyond A0** | The 4 A0 scenarios are in the DB. After PR #107, all 6 seeded A1/A2/B1 Unit IDs are wired to library scenarios (a1-1-viagens, a1-2-alimentacao, a2-1-rotina-trabalho, a2-2-viagens-saude, b1-1-gastronomia, b1-2-servicos) — DB scenario count 4 → 80. The remaining 24 library scenarios reference Unit IDs the A1/A2/B1 seeds haven't authored yet (a1-2-mercearia, a1-3-roupa, a1-4-familia, a1-5-rotinas, a2-1-compras, a2-2-restaurante, a2-3-banco, a2-4-sociais, b1-1-emprego, b1-2-sociais, b1-3-cultura, …). | v1.1 expands the seed files to author those additional Unit IDs. |
 | **Live MiniMax LLM credentials + production WER acceptance run** | Sandbox creds are provisioned; live creds need a sandbox-to-prod credential bridge. | Ops ticket: provision live creds + schedule the SC-5 acceptance run against the held-out reference ASR pipeline. |
-| **Authenticated LHCI runs for `/dashboard`, `/review`, etc.** | Needs a Learner fixture + cookie; the seam is captured in `docs/perf-budget.md`'s 'Lighthouse CI' section. | v1.1 wires the auth cookie + the Learner fixture in the LHCI config. |
 | **Real Grafana + 60 s × 3-region synthetic-probe scheduling** | The endpoint + data model ship (`POST /api/probes/heartbeat`); the scheduler doesn't. | Ops ticket: provision Grafana + 3-region probe workers. |
 | **Server-side authoritative SC-5 opt-out** | v1 ships a client-side opt-out toggle + the per-Learner SC-5 surface. A server-side authoritative gate is a GDPR follow-up. | v1.1 routes the opt-out through `/api/sc5/health` + a per-IP/cookie gate. |
 | **C1 / C2 curriculum** | v1 ceiling is B1. | v2+ content team staffing plan. |
@@ -90,7 +90,7 @@ This is the single source of truth for "is v1 GA?" Each row is signed by the nam
 #### External dependencies
 
 - [ ] Live MiniMax LLM credentials provisioned for production WER acceptance run (`#42` ≥ 75 % in-band target).
-- [ ] Authenticated Learner fixture + cookie for LHCI's `/dashboard`, `/review`, `/practice` runs.
+- [x] Authenticated Learner fixture + cookie for LHCI's `/dashboard`, `/review`, `/practice` runs.
 - [ ] Grafana + 3-region synthetic-probe workers scheduled at 60 s intervals (drives NFR-3 ≥ 95 % monthly uptime measurement).
 - [ ] Slack webhook for `cross-device-smoke` nightly workflow (DPO to provision).
 - [ ] External legal sign-off on `docs/agents/sc5-gdpr-review.md` (DPA + Art. 6 / 9 review).
