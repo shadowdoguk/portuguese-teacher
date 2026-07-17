@@ -75,6 +75,9 @@ importers:
       prisma:
         specifier: 5.22.0
         version: 5.22.0
+      puppeteer-core:
+        specifier: ^24.43.1
+        version: 24.43.1
       tailwindcss:
         specifier: 3.4.14
         version: 3.4.14
