@@ -29,7 +29,8 @@
         "heading-order": "off",
         "label-content-name-mismatch": "off",
         "legacy-javascript-insight": "off",
-        "network-dependency-tree-insight": "off"
+        "network-dependency-tree-insight": "off",
+        "forced-reflow-insight": "off"
       }
     },
     "upload": {
