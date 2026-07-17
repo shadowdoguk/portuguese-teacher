@@ -5,15 +5,20 @@
       "startServerReadyPattern": "Ready in",
       "startServerReadyTimeout": 60000,
       "url": [
-        "http://localhost:3000/",
-        "http://localhost:3000/log-in",
-        "http://localhost:3000/sign-up",
-        "http://localhost:3000/accessibility"
+        "http://localhost:3000/dashboard",
+        "http://localhost:3000/review",
+        "http://localhost:3000/practice",
+        "http://localhost:3000/profile"
       ],
       "numberOfRuns": 1,
+      "puppeteerScript": "./scripts/lhci-sign-in.js",
+      "puppeteerLaunchOptions": {
+        "args": ["--no-sandbox", "--disable-setuid-sandbox"]
+      },
       "settings": {
         "preset": "desktop",
-        "skipAudits": ["uses-http2", "is-on-https"]
+        "skipAudits": ["uses-http2", "is-on-https"],
+        "disableStorageReset": true
       }
     },
     "assert": {
