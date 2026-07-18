@@ -2,7 +2,20 @@
 
 A living document. Read this at the start of every session to pick up where the last one left off. Update it whenever an issue transitions state, a branch lands, a decision is made, or a blocker appears or clears.
 
-**Last updated:** 2026-07-17 (Session 25 — A+B+C closed. PR #148 (G9 E2E unblock) and PR #149 (Authenticated LHCI wire-up per ADR-0005 §2) both merged. Main at **1055/1055 tests** + 9/9 axe + 31/31 E2E + LHCI now CI-green on BOTH the public 4-route job and the new authenticated 4-route job. CI LHCI had been red on every scheduled run since 2026-07-03 (LH 12 preset audits + Chrome-detection on puppeteerScript) — now fixed via `browser-actions/setup-chrome@v2` + CHROME_PATH + `--no-sandbox` + targeted preset audit `off`s in both configs. **Open PRs**: none. **Next**: §10 sign-off + content backlog (A1/A2/B1 additional Units) or next v1.1 ticket.)
+**Last updated:** 2026-07-18 (Session 26 — 6 v1 GA blocker tickets filed. Engineering work for v1 is done; the open work is now 6 external/human gates per ADR-0005 §2. **Open PRs**: none. **Open issues**: 11 (5 A1 curriculum tickets #150–#154 + 6 new GA blockers #155–#160). **Next**: drive one of the 6 GA blockers to closure — see Session 26 entry for the ticket-by-ticket breakdown.)
+
+## Session 26 — v1 GA blocker tickets filed (2026-07-18)
+
+- **6 new GA-blocker tickets opened** to make ownership visible on the 6 v1 release gates that ADR-0005 §2 declares open. Each ticket lifts its Why/What/Acceptance from the ADR and adds concrete references (file paths, exact env-var names, what evidence attests to closure). 5 are `ready-for-human` (Ops / DPO / external counsel / multi-lead coordination), 1 is `ready-for-agent` (production registry push — engineering-actionable once the registry credential is supplied):
+  - **#155** (ready-for-agent) — *Push portuguese-teacher image to production registry (v1 GA cut)*. Motion: confirm local `portuguese-teacher:latest` present → `docker tag` with GA-cut SHA → `docker push <registry>/portuguese-teacher:<sha>` → orchestrator-side pull + start + 4-check Session 12 smoke-test sequence (`GET /` 200 with `<html lang="pt-PT">`, `GET /api/health` 200, `GET /api/observability/sli?window=1h` 200, `GET /api/sc5/health` 200) → digest attached to ticket. Only human input needed: the registry credential itself (must stay out of any committed file).
+  - **#156** (ready-for-human) — *Drive §10 sign-off motion (Product + Pedagogy + Design + QA + Security)*. Motion: draft one-page cover memo with all 6 roles + ADR-0005 §2 as acceptance surface → route to the 5 remaining leads with 10-WD deadline → pre-tick Engineering row with today's 9/9 + 4/4 evidence → capture any contestations in `docs/decisions/sign-off-contestations.md` → close once 6 rows are signed.
+  - **#157** (ready-for-human) — *Provision Grafana + 3-region synthetic-probe workers (60 s cadence)*. Motion: Ops ticket → Grafana + Prometheus backend → 3 probe workers at 60 s hitting `POST /api/probes/heartbeat` for `asr|llm|tts` from `eu-west|us-east|ap-southeast` → SC-2 dashboard with rolling-30-day up-percent per region+service + aggregated NFR-3 ≥ 95 % SLO alert → 7-day measurement window before GA.
+  - **#158** (ready-for-human) — *Provision live MiniMax LLM credentials for SC-5 production WER acceptance run*. Motion: Ops ticket → live creds in production secret store (NOT `.env`) → `pnpm sc5:load-test` against live creds (10k utterances → ~1% sample) → schedule `pnpm sc5:aggregate` weekly → first measurement run captured. ADR-0005 §2 line "(#42 ≥ 75 % in-band target)" tells Ops what to schedule against.
+  - **#159** (ready-for-human) — *External legal sign-off on docs/agents/sc5-gdpr-review.md (DPA + Art. 6 / 9)*. Motion: DPO ticket → external counsel (privacy + AI/ML specialism) → route doc + one-page summary → receive sign-off or redline → commit redlines → re-confirm → close with counsel email/file attached. Any new product requirements from counsel redline become v1.1 follow-ups.
+  - **#160** (ready-for-human) — *Provision Slack webhook for cross-device-smoke nightly workflow*. Motion: DPO ticket → Slack incoming-webhook for `#portuguese-teacher-nightly` → webhook URL stored as GitHub Actions secret `SLACK_WEBHOOK_CROSS_DEVICE_SMOKE` → final step in `.github/workflows/cross-device-smoke.yml` POSTs run summary → one end-to-end run confirms the digest lands → `CONTEXT.md` *Cross-device compatibility smoke tests* glossary entry updated with sink + retention note.
+- **New triage label `ready-for-human` created** on the repo (didn't exist before this session) — AGENTS.md says it gets auto-created on first use, but `gh issue create --add-label` rejected it with `not found` because no issue had ever carried it; `gh label create ready-for-human --color FBCA04` is the explicit boot per AGENTS.md "Defaults" note. The other 4 triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `wontfix`) were already present and unchanged.
+- **`pnpm progress:check` now reports 11 open, 56 closed, 126 unique issues referenced** (was 5/56/126). The new "v1 GA blockers" subsection in `Issues status` below keeps the tracker aligned.
+- **No code changes this session.** Engineering work was last touched in Session 25 (PR #149 at `b19eb99`). Main is now at `a89ad37` docs(Session 25 close-out handoff) — `07ccf3f` is the last code-change commit on `main`; gates still 9/9 local + 4/4 CI green at the new HEAD.
 
 ## Session 25 — A+B+C unblock (2026-07-17)
 
@@ -215,6 +228,16 @@ After today, the remaining queue:
 
 ### Open — QA 2026-07-03 (Session 15 + 16 fix-all)
 - _(all 10 bugs merged to main in Session 17 — #110–#113 + #120–#125 closed)_
+
+### Open — v1 GA blockers (ADR-0005 §2 — release gates, NOT engineering work)
+Engineering queues for the v1 GA cut are empty. The remaining v1 ship-blockers are the 6 external/human gates below; each ticket body documents the motion + the evidence that closes the gate. Filed in Session 26.
+
+- **#155** Push `portuguese-teacher` image to production registry (ready-for-agent; only human input: registry credential)
+- **#156** Drive §10 sign-off motion (Product + Pedagogy + Design + QA + Security; Engineering auto-ticked) — ready-for-human
+- **#157** Provision Grafana + 3-region synthetic-probe workers at 60 s cadence (Ops) — ready-for-human
+- **#158** Provision live MiniMax LLM credentials for SC-5 production WER acceptance run (Ops) — ready-for-human
+- **#159** External legal sign-off on `docs/agents/sc5-gdpr-review.md` (DPA + Art. 6 / 9) (DPO + external counsel) — ready-for-human
+- **#160** Provision Slack webhook for `cross-device-smoke` nightly workflow (DPO) — ready-for-human
 
 ## Session 17 — Merge all 10 fix PRs (2026-07-03)
 
