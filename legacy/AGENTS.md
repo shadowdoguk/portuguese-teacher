@@ -1,35 +1,5 @@
 ## Agent skills
 
-### Project state — greenfield rebuild (Session 0, 2026-07-22)
-
-This repository is in the middle of a greenfield rebuild. The legacy
-Next.js application (and its accompanying `prisma/`, `scripts/`,
-`Dockerfile`, root `package.json`, root `pnpm-lock.yaml`, root
-`pnpm-workspace.yaml`, `tests/e2e/`, `playwright.config.ts`,
-`vitest.config.ts`, `lighthouserc*`, `.lighthouseci/`, the entire
-legacy `docs/` tree except `docs/superpowers/`, the legacy
-`AGENTS.md`/`HANDOFF.md`/`PROGRESS.md`/`CONTEXT.md`, and the legacy
-`docs/adr/*.md`) is being **archived** into `legacy/` on a single
-chore branch — that archive is **Task 0** of the Phase A
-implementation plan. As of Session 0, the archive is staged in the
-working tree (legacy files moved into `legacy/`; new governance at
-the root). It awaits the first commit on `chore/archive-legacy`.
-
-If you are reading this on disk and `legacy/` is empty (or absent),
-the greenfield archive has not yet landed. Do not modify any legacy
-file in place; either start the archive yourself on
-`chore/archive-legacy`, or wait for the next session to begin Task 0.
-
-The authoritative artefacts that drive the rebuild are:
-
-- Spec: `docs/superpowers/specs/2026-07-22-portuguese-teacher-rebuild.md`
-- Phase A plan: `docs/superpowers/plans/2026-07-22-portuguese-teacher-phase-a-foundation.md`
-- Source planning archive: `docs/superpowers/specs/2026-07-22-european-portuguese-learning-platform-design.md`
-  + `docs/superpowers/plans/2026-07-22-european-portuguese-foundation-curriculum-api.md`
-  + `docs/superpowers/plans/2026-07-22-european-portuguese-foundation-vertical-slice.md`
-- Research: `docs/reports/european-portuguese-tts-options-july-2026.md`
-- ADR counter restarts at `0001` after the legacy archive
-
 ### Session start
 
 At the **start of every session**, before opening an issue or touching code:
@@ -38,9 +8,8 @@ At the **start of every session**, before opening an issue or touching code:
 2. Skim [`HANDOFF.md`](./HANDOFF.md) — the point-in-time snapshot from the previous session. It tells you what landed, what's queued, what's still pending.
 3. Read [`CONTEXT.md`](./CONTEXT.md) — domain glossary and conventions. Use the glossary terms; don't invent synonyms.
 4. Skim [`docs/adr/`](./docs/adr/) — existing architectural decisions. Surface relevant ADRs in any plan rather than re-deciding.
-5. Read the rebuild spec and the latest phase plan under `docs/superpowers/`.
-6. `git checkout main && git pull` and `git status` — confirm what is on disk matches what PROGRESS.md claims. If `legacy/` is empty or absent, the greenfield archive has not landed; begin Task 0 before anything else.
-7. If the legacy tree has been archived into `legacy/`, the canonical `pnpm progress:check` script may need to be re-introduced by the Phase A plan; otherwise skip it during the rebuild phase.
+5. Run `pnpm progress:check` — confirms the tracker agrees with the live GitHub issue list. If it fails, update PROGRESS.md (or close the missing issue) before continuing.
+6. `git checkout main && git pull` and `git status` — confirm a clean working tree on `main` before branching.
 
 A new session that ignores this list will start with stale assumptions and will duplicate work or contradict the decisions log.
 
@@ -150,13 +119,9 @@ domain language read `CONTEXT.md`; skills that need past decisions read
 
 ```
 <repo root>/
-├── CONTEXT.md                 # Domain language, key concepts, glossary
-├── docs/
-│   ├── adr/                  # Architectural Decision Records (one .md per decision)
-│   └── superpowers/
-│       ├── specs/            # Approved rebuild specs
-│       └── plans/            # Phase-level implementation plans
-└── /tmp/opencode/planning/   # Source planning archive (reference only)
+├── CONTEXT.md           # Domain language, key concepts, glossary
+└── docs/
+    └── adr/             # Architectural Decision Records (one .md per decision)
 ```
 
 #### Consumer rules
@@ -169,14 +134,10 @@ Skills that consume these docs (`improve-codebase-architecture`, `diagnose`,
 2. **Skim `docs/adr/` for relevant decisions.** When proposing a change,
    check whether an existing ADR already covers it — surface that ADR rather
    than re-deciding.
-3. **Skim `docs/superpowers/specs/` for the current spec.** When proposing
-   architecture, surface the active rebuild spec rather than re-deciding
-   decisions it has already settled.
-4. **Propose new ADRs for non-trivial decisions.** If a change introduces a
+3. **Propose new ADRs for non-trivial decisions.** If a change introduces a
    new architectural pattern, write `docs/adr/<NNNN>-<slug>.md` using
-   Context / Decision / Consequences. ADR numbering restarts at `0001`
-   for the rebuild — do not re-use legacy numbering.
-5. **Keep `CONTEXT.md` in sync.** When a change introduces a new domain
+   Context / Decision / Consequences.
+4. **Keep `CONTEXT.md` in sync.** When a change introduces a new domain
    term, add it to `CONTEXT.md`'s glossary in the same change.
 
 #### When CONTEXT.md is missing
@@ -190,8 +151,7 @@ They will not invent domain terms on the user's behalf.
 
 #### Migrating to multi-context
 
-When the monorepo stabilises, the rebuild product itself is multi-context
-(`apps/web`, `apps/api`, `packages/contracts`, `packages/domain`,
-`packages/content`, `packages/tooling`). A `CONTEXT-MAP.md` at the repo
-root pointing to per-context `CONTEXT.md` files may be introduced in a
-later phase. Until then the single-context layout above applies.
+If this repo grows into a monorepo with separate frontend / backend / shared
+contexts, replace this file with a `CONTEXT-MAP.md` at the repo root pointing
+to per-context `CONTEXT.md` files. The consumer rules above then apply
+per-context, scoped to the subtree being changed.

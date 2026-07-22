@@ -1,97 +1,136 @@
 # Session Handoff
 
-**Snapshot date:** 2026-07-17 (Session 25 closed — **A+B+C landed**. PR #148 + PR #149 both squash-merged to main at `07ccf3f` (PROGRESS bump). 9/9 local gates green + 4/4 CI green including both the public LHCI job (now finally green after 13 days of pre-existing failure) and the new authenticated LHCI job auditing `/dashboard` + `/review` + `/practice` + `/profile`. **Open PRs**: none. **Open v1 GA blockers** per ADR-0005 §2: §10 6-role sign-off + 4 external-dependency gates (live MiniMax LLM creds; Grafana + 3-region probes; Slack webhook; external legal sign-off).)
-**Repo:** `shadowdoguk/portuguese-teacher`
+**Snapshot date:** 2026-07-22 (Session 0 — greenfield rebuild kickoff)
 
-> **This file is a point-in-time snapshot.** For the living, agent-picked-up
-> tracker, see [`PROGRESS.md`](./PROGRESS.md) — it has the current focus, the
-> issue queue, the decisions log, and the conventions reminder. Update
-> `PROGRESS.md` as work progresses; update `HANDOFF.md` only when handing off
-> at the end of a session.
+> **This file is a point-in-time snapshot.** For the living,
+> agent-picked-up tracker, see [`PROGRESS.md`](./PROGRESS.md) — it
+> has the current focus, the issue queue, the decisions log, and the
+> conventions reminder. Update `PROGRESS.md` as work progresses;
+> update `HANDOFF.md` only when handing off at the end of a session.
+
+**Repo:** `shadowdoguk/portuguese-teacher`
 
 ## TL;DR
 
-Session 25 closed three open items from Session 23 → Session 24 close-out:
+The product direction has pivoted from "extend the A0–B1 Portuguese
+teacher Next.js app per ADR-0005" to "deliver a curated A1+A2
+European Portuguese platform on web + Android, written from scratch
+against the reconciled rebuild spec." The legacy Next.js application
+has been **archived** into `legacy/` on the working tree (not yet
+committed). The repo root holds the new governance docs (`AGENTS.md`,
+`CONTEXT.md`, `HANDOFF.md`, `PROGRESS.md`) plus the new
+`docs/superpowers/{specs,plans}/` and `docs/reports/`. After the
+archive lands on `main`, the repo root receives a fresh
+pnpm-workspaces monorepo: `apps/{web,api,android}` +
+`packages/{contracts,domain,content,tooling}`. Nothing of the legacy
+is carried forward into the new project; operational patterns from
+the legacy CI/Docker work may be referenced, not lifted verbatim.
 
-- **PR #148** — `fix(e2e): align regressions.spec.ts port + add domain to addCookies (G9 unblock)` + dashboard baseline refresh. Squash-merged at `1aab82c`. 3 files.
-- **PR #149** — `feat(lhci): authenticated run for /dashboard + /review + /practice + /profile`. Squash-merged at `b19eb99`. 6 files, 194 insertions(+), 3 deletions(-). Closes ADR-0005 §2 "Authenticated LHCI runs" v1 GA blocker.
-- **B was already done** — the user's ask to file the 4 Session 19 PRs (`#133`, `#106-2`, `#106-3`, `#106-5`) discovered they'd already shipped on 2026-07-04 as PRs `#134`–`#137` plus 3 extras (`#138`–`#141`). Issues `#133` + `#106` are CLOSED.
+Authoritative artefacts:
 
-Plus closure hygiene:
-- 9 stale Session 19 / Session 24 branches pruned from origin + local refs.
-- Working tree cleaned (untracked Session 15-16 `reports/`, 40 regenerated visual-regression PNGs).
+- Spec: `docs/superpowers/specs/2026-07-22-portuguese-teacher-rebuild.md`
+- Phase A plan: `docs/superpowers/plans/2026-07-22-portuguese-teacher-phase-a-foundation.md`
+- Tooling: pnpm 10.0.0, Node ≥ 20.0.0, Postgres 16 in Docker (5433),
+  API on 8787, web on 5173
+- Auth: Argon2id + opaque 32-byte hex tokens + SHA-256-hashed cookies
+  (`ptp_access` 15 min, `ptp_refresh` 30 d), no JWT, no token in JSON
+  body
 
 ## Git state
 
 | Branch | Status |
 | --- | --- |
-| `main` | clean; **1055/1055 tests** + lint + typecheck + 4/4 CI green; latest commits `07ccf3f` (PROGRESS bump) → `b19eb99` (PR #149) → `1aab82c` (PR #148) → `b5228ff` (Session 24 PROGRESS) |
-| 9 stale branches pruned | `feat/issue-{133,106-1/2/3/4/5/6}-*`, `feat/lhci-authenticated-fixture`, `fix/e2e-g9-port-cookie` |
+| `main` | Clean. No new commits in Session 0 — every change (the four doc rewrites, the new spec/plan, the source planning archive, and the legacy archive into `legacy/`) is a working-tree change awaiting first commit by the next session. |
+| `chore/archive-legacy` | Not yet cut. Task 0 starts by branching from `main`. |
+| Feature branches for Tasks 2–9 | Not yet cut. |
 
-## Open issues (0 — none open)
+## Open issues
 
-All once-open tickets are CLOSED. The 5 v1 GA blocker gates per `docs/adr/0005-v1-release-scope-and-readiness.md` §2 are tracked in that ADR, NOT the issue tracker (they're cross-functional sign-offs + external dependencies, not engineering work).
+The legacy issue queue on `shadowdoguk/portuguese-teacher` (issues
+#1–#142 from the A0–B1 v1 effort) is not migrated. The rebuild
+starts with a fresh queue. New issues are filed via
+`gh issue create` and labelled per the rebuild's triage vocabulary
+(proposed: `needs-triage`, `needs-info`, `ready-for-agent`,
+`ready-for-human`, `wontfix`).
 
-## Still pending (human / external — now tracked as ADR-0005 release gates)
+## Still pending
 
-- **§10 sign-off on ADR-0005** — Product, Pedagogy, Engineering, Design, QA, Security leads. Engineering sign-off is auto-ticked by today's 9/9 + 4/4 CI green.
-- **Live MiniMax LLM credentials** for the production WER acceptance run (SC-5 weekly aggregation).
-- **Authenticated LHCI runs for `/dashboard`, `/review`, `/practice`** — ✅ **CLOSED** in this session via PR #149.
-- **Real Grafana + 60 s × 3-region synthetic-probe scheduling** for SC-2 / NFR-3 ≥ 95 % monthly uptime.
-- **External legal sign-off** on `docs/agents/sc5-gdpr-review.md`.
-- **Slack webhook** for the cross-device nightly workflow.
-- **Production image push** — `portuguese-teacher:latest` rebuilt + smoke-tested locally. Awaiting user push to the production registry per Session 6 motion.
+External dependencies and sign-offs are inherited from
+`docs/superpowers/specs/2026-07-22-portuguese-teacher-rebuild.md` §16
+and applied to the rebuild's release-scope gate:
+
+- **§10 sign-off on the rebuild spec** — Product, Pedagogy,
+  Engineering, Design, QA, Security leads.
+- **Live MiniMax LLM credentials** for SC-5 production-WER (when
+  Phase D lands).
+- **Azure pt-PT speech resource** + Polly `Inês` IAM credentials for
+  the listening-test gate (Phase C).
+- **Real Grafana + 3-region synthetic-probe scheduling** for the
+  uptime SLO (post-Phase D).
+- **External legal sign-off** on `docs/reports/european-portuguese-tts-options-july-2026.md`
+  and any later AI-conversation provider disclosures.
+- **Coolify (or equivalent) hosting account** for the private VPS
+  deploy (post-Phase D).
+- **Android dev keystore + Play Console** for the Android release
+  build (Phase C + post-Phase D).
 
 ## First action for next session
 
 ```bash
-git checkout main && git pull
-# Main is at 07ccf3f, clean, 9/9 + 4/4 green.
-# Pick from the v1 GA blockers:
-#   1. §10 sign-off motion (6 leads; Engineering auto-ticks today)
-#   2. Live MiniMax LLM creds provisioning (Ops ticket)
-#   3. Grafana + 3-region probe scheduler (Ops ticket)
-#   4. Slack webhook provisioning (DPO-side)
-#   5. External legal sign-off on docs/agents/sc5-gdpr-review.md
-#   6. Production registry push (portuguese-teacher:latest)
-# Recommended next non-blocker:
-#   - Content backlog: A1/A2/B1 additional Units (12 unit IDs still un-authored per ADR-0005 §1)
-#   - Repro the LH 12 audit disabilities when the perf profile clears the new threshold
+cd /home/david/shadowdog-dev/projects/portuguese-teacher
+git status
+# The Session 0 changes — doc rewrites, the new spec/plan, the source
+# planning archive, and the legacy archive into legacy/ — are all
+# working-tree changes awaiting first commit. Begin by either:
+
+# (A) Cutting chore/archive-legacy and bundling the legacy archive
+#     with the new doc rewrites as one chore commit, OR
+# (B) Committing the Session 0 doc rewrites on a separate docs
+#     commit first, then running Task 0's archive on a follow-up
+#     chore commit.
+
+# Read PROGRESS.md, this file, CONTEXT.md, the spec, the plan.
+# Then begin Task 0 (legacy archive) of the Phase A plan.
+git checkout -b chore/archive-legacy
+# Verify: legacy/ should contain the legacy tree; top-level files
+# should match the new monorepo root.
+ls legacy/
+ls
+# Continue from there per the Phase A plan.
 ```
+
+Sessions continuing the rebuild should pick up at **Task 0** unless
+`PROGRESS.md` records further state.
 
 ## Key references
 
 | Topic | File / issue |
-| --- | --- |
-| Domain glossary | [`CONTEXT.md`](./CONTEXT.md) |
-| Spec source of truth | [`docs/requirements/portuguese-teacher-requirements.md`](./docs/requirements/portuguese-teacher-requirements.md) |
-| Scope amendment (pt-PT, 5 stages, anchors, placement, SC-5) | [`docs/adr/0003-v1-scope-amendment.md`](./docs/adr/0003-v1-scope-amendment.md) |
-| Voice Loop architecture (NLU+NLG structured output, Pronunciation Score) | [`docs/adr/0002-voice-loop-architecture.md`](./docs/adr/0002-voice-loop-architecture.md) |
-| Pedagogical model (SRS, i+1, TBLT, ICF) | [`docs/adr/0001-pedagogical-model.md`](./docs/adr/0001-pedagogical-model.md) |
-| LLM difficulty-control pipeline | [`docs/adr/0004-difficulty-control-pipeline.md`](./docs/adr/0004-difficulty-control-pipeline.md) |
-| **v1 release scope & readiness (Session 25 §2 status updated)** | [`docs/adr/0005-v1-release-scope-and-readiness.md`](./docs/adr/0005-v1-release-scope-and-readiness.md) |
-| **Authenticated LHCI (Session 25, PR #149)** | `lighthouserc.auth.json`, `scripts/lhci-sign-in.js`, `.github/workflows/lighthouse.yml:lighthouse-auth` |
-| **G9 E2E unblock (Session 25, PR #148)** | `tests/e2e/fixtures.ts` (cookie domain), `tests/e2e/regressions.spec.ts` (port 3000), `tests/e2e/visual-regression.spec.ts-snapshots/dashboard-chromium-linux.png` (refreshed) |
-| **Cumulative Session 25 PRs** | #148 (G9) + #149 (auth LHCI) |
-| **Disabled LH 12 preset audits** | `lighthouserc.json` + `lighthouserc.auth.json` `assert.assertions` block: `errors-in-console`, `heading-order`, `label-content-name-mismatch`, `legacy-javascript-insight`, `network-dependency-tree-insight`, `forced-reflow-insight`, `skip-link`, `unused-javascript`. NFR-2 perf budgets remain the binding contract. |
-| ADR-0005 in-session §2 close: "Authenticated LHCI" | PR #149 description |
-| GH Actions workflow ID | Lighthouse workflow id `304008172`; first green run id `29575090320` (2026-07-17 10:50) — both jobs pass |
-| Production image (Session 12, post-#102/#107/#103) | `portuguese-teacher:latest` (1.63 GB; rebuilt + smoke-tested post-merge) — unchanged this session |
+|---|---|
+| Rebuild spec | `docs/superpowers/specs/2026-07-22-portuguese-teacher-rebuild.md` |
+| Phase A plan | `docs/superpowers/plans/2026-07-22-portuguese-teacher-phase-a-foundation.md` |
+| Domain glossary | `CONTEXT.md` |
+| Agent process guide | `AGENTS.md` |
+| Living tracker | `PROGRESS.md` |
+| Architectural decisions | `docs/adr/0001-workspace-and-atomic-publish.md`, `docs/adr/0002-shared-credentials-and-android-secure-storage.md` |
+| Cross-link | `docs/superpowers/README.md` |
+| Research (TTS providers) | `docs/reports/european-portuguese-tts-options-july-2026.md` |
+| Source planning archive (reference only) | `/tmp/opencode/planning/` |
 
 ## Conventions to honour
 
-- All non-trivial work happens on a feature branch named `feat/issue-<N>-<slug>` (or `docs/<slug>` for ADR-only branches)
-- Use the glossary in `CONTEXT.md` — do not invent synonyms
-- The 5-state triage vocabulary + 2 categories apply to every issue
-- `pnpm typecheck` / `pnpm lint` / `pnpm test` / `pnpm build` must all pass before commit
-- `pnpm test:a11y` must pass for any UI-affecting change
-- `pnpm perf:budget` must pass before commit (CI required check)
-- `pnpm asr:regress` must pass before commit (CI required check)
-- `pnpm sc5:load-test` must pass before commit (CI required check)
-- `pnpm test:e2e:chromium` must pass before commit (CI required check, smoke layer)
-- One logical unit per commit; commit messages match the repo style
-- Do not commit secrets or `.env` files; `.env.example` is the convention
-- New domain terms go into `CONTEXT.md` in the same change
+- All non-trivial work happens on a feature branch named
+  `feat/issue-<N>-<slug>` (or `chore/<slug>` for chore work,
+  `docs/<slug>` for ADR/spec/PR-description-only changes).
+- Use the glossary in `CONTEXT.md`. If you introduce a new domain
+  term, add it to the glossary in the same change.
+- The 5-state triage vocabulary applies to every issue.
+- `pnpm -r typecheck`, `pnpm -r test`, `pnpm -r build`, `pnpm -r lint`
+  must all pass before commit.
+- New domain terms go into `CONTEXT.md` in the same change.
 - New architectural decisions go into `docs/adr/<NNNN>-<slug>.md`
-- Update `PROGRESS.md` whenever an issue transitions state, a branch lands, or a decision is made
-- Bump `**Last updated:**` to today's date on every `PROGRESS.md` change
+  (numbering starts at 0001; never re-edit legacy ADRs).
+- Update `PROGRESS.md` whenever an issue transitions state, a
+  branch lands, or a decision is made. Bump `**Last updated:**` to
+  today's date on every `PROGRESS.md` change.
+- Commit steps in the plan are review-only. No commit fires without
+  explicit user authorization.
