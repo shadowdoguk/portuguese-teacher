@@ -87,7 +87,11 @@ provider-integration shapes) are referenced during the rebuild.
   The legacy Next.js app, ADRs 0001–0005, v1 release-scope governance,
   and accumulated `PROGRESS.md` history are not carried into the new
   project. The legacy is preserved verbatim under `legacy/` for
-  reference; no new code touches it. The existing
+  **technical reference only** — never for design, pedagogy,
+  curriculum shape, the six-stage loop, the Affective Filter proxy,
+  the SRS scheduler, the voice-loop tier detection, or any product-
+  or pedagogy-shaped decision. `legacy/README.md` codifies this
+  boundary for future agents browsing the archive. The existing
   `shadowdoguk/portuguese-teacher` GitHub repository is reused as the
   host (per user direction), but every file path and toolchain entry
   is reset. The reference spec lives at

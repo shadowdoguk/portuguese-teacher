@@ -1,94 +1,69 @@
-# Português
+# legacy/
 
-> An AI-driven Portuguese language teacher that takes learners from absolute beginner (A0) to conversational fluency (B1).
+This directory holds the **archived** previous version of this project —
+the A0–B1 Next.js + Prisma application that lived at this repo before
+Session 0 of 2026-07-22. It is preserved on disk as reference material
+only.
 
-Built with **Next.js 14**, **TypeScript**, and **Tailwind**. Powered by the **MiniMax AI suite**.
+## What this archive is for
 
-## Quickstart
+**Technical reference only.** When you hit a problem the new stack must
+solve (e.g. a Docker build gotcha, a CI workaround, a Drizzle query
+against a partial unique index, an Argon2id parameter choice that
+matches the legacy deployment, a specific test setup), you may open
+files in `legacy/` to see how it was done there. The pattern, the
+parameter, the build flag — those are reusable.
 
-```bash
-pnpm install
-cp .env.example .env       # if not already present
-pnpm prisma:migrate        # apply the curriculum schema
-pnpm seed                  # seed the A0 curriculum into the dev DB
-pnpm dev
+## What this archive is NOT for
+
+**Do not import design.** The product model, the curriculum model, the
+six-stage unit loop, the Affective Filter proxy, the voice-loop tier
+detection, the SRS scheduler, the scenario level-match logic, the
+lesson-material library, the pronunciation scoring formula, the
+MiniMax adapter shapes, the legacy `docs/adr/0001-*.md`–`0005-*.md`
+decisions, the legacy `CONTEXT.md` glossary entries — these are
+**the legacy's** choices, and they do not carry forward to the new
+build.
+
+If the rebuild spec (`docs/superpowers/specs/2026-07-22-portuguese-teacher-rebuild.md`)
+or the Phase A plan
+(`docs/superpowers/plans/2026-07-22-portuguese-teacher-phase-a-foundation.md`)
+explicitly references a legacy pattern, follow the rebuild spec.
+Otherwise, treat the legacy as "how we did it before, badly, in a
+different product."
+
+## Hard rules
+
+- `apps/{web,api,android}`, `packages/{contracts,domain,content,tooling}`,
+  and any new monorepo workspace **must not import** from `legacy/`.
+  ESLint `no-restricted-imports` enforces this; the rule ships with
+  the greenfield toolchain in Task 1 of the Phase A plan.
+- New domain terms, ADRs, and architectural decisions do not get
+  pulled from the legacy. The rebuild's ADR counter restarts at
+  `0001`; the legacy ADRs are kept only as historical reading.
+- ESLint, typecheck, lint, and tests must run green without ever
+  reading a file under `legacy/`.
+
+## Layout reminder
+
+```
+legacy/
+├── src/             ← Next.js app (App Router, React 18)
+├── prisma/          ← Prisma schema, migrations, SQLite DB
+├── tests/e2e/       ← Playwright suite
+├── scripts/         ← Node CLI scripts (perf budget, ASR regress, etc.)
+├── Dockerfile       ← Production build image
+├── docs/            ← Legacy docs including ADRs 0001–0005
+│   ├── adr/         ← 0001-pedagogical-model.md … 0005-v1-release-scope-and-readiness.md
+│   ├── a11y/, agents/, perf/, postmortems/, requirements/, research/
+│   └── superpowers/
+│       ├── specs/   ← Legacy `2026-07-06-*` specs
+│       └── plans/   ← Legacy `2026-07-06-*` plans
+├── public/          ← Legacy TTS audio assets (Azure MiniMax, mp3)
+├── package.json     ← Legacy root manifest
+├── pnpm-workspace.yaml ← Legacy workspace globs
+└── README.md, AGENTS.md, HANDOFF.md, PROGRESS.md, CONTEXT.md  ← Legacy governance (NOT the rebuild's)
 ```
 
-The home page renders at <http://localhost:3000>.
-
-The seed script (`prisma/seed.ts`) maps the canonical in-memory
-`A0_CURRICULUM` fixture to Prisma rows. It is idempotent (re-running leaves
-row counts unchanged) and refuses to run when the schema has pending
-migrations. Output includes a row-count summary and elapsed time.
-
-## Routes
-
-Per the requirements doc ([docs/requirements/portuguese-teacher-requirements.md](./docs/requirements/portuguese-teacher-requirements.md) §3.4):
-
-| Route | Surface |
-| --- | --- |
-| `/` | Marketing landing |
-| `/sign-up`, `/log-in` | Auth |
-| `/dashboard` | Today's plan, streak, queue |
-| `/lesson/[lessonId]` | Lesson player placeholder |
-| `/practice` | Conversational practice entry point |
-| `/review` | SRS review queue |
-| `/progress` | Per-skill mastery and milestones |
-| `/profile` | Learner profile and dialect |
-| `/settings` | Voice, feedback, accessibility, data |
-
-## Scripts
-
-```bash
-pnpm dev             # Next.js dev server
-pnpm build           # Production build
-pnpm start           # Production server
-pnpm lint            # ESLint
-pnpm typecheck       # tsc --noEmit
-pnpm test            # Vitest run
-pnpm format          # Prettier write
-pnpm prisma:generate # Prisma client generation
-pnpm prisma:migrate  # Prisma migration (dev)
-pnpm prisma:studio   # Prisma data browser
-pnpm seed            # Seed the dev DB from src/lib/curriculum/seed-a0.ts
-pnpm seed:a0         # Alias for pnpm seed (Level A0)
-```
-
-## Architecture
-
-See [docs/adr/0001-pedagogical-model.md](./docs/adr/0001-pedagogical-model.md) for the pedagogical model (SRS + comprehensible input + TBLT + AI tutor) and [docs/adr/0002-voice-loop-architecture.md](./docs/adr/0002-voice-loop-architecture.md) for the tier-aware voice loop.
-
-## Status
-
-**v1 scope** (per [ADR-0003](docs/adr/0003-v1-scope-amendment.md), 2026-06-23):
-
-- **pt-PT only** (Brazilian Portuguese deferred to v1.1).
-- **Five-stage CEFR ladder** A0 → A1 → A2 → B1 with **three Milestones**.
-- Curriculum is a DAG; remediation is via **Remedial Anchors**, not back-edges.
-- Above-A0 self-assessments route through a **Placement Lesson** at sign-up.
-- Production ASR-WER sampling uses a separate **SC-5 Sampling Buffer** (≤ 24 h,
-  not part of opt-in recordings).
-- **OAuth sign-in deferred** to v1.1; v1 is email + password only.
-
-**Bootstrap** (issue #1) is complete — `pnpm dev`, `pnpm build`, `pnpm test`,
-`pnpm typecheck`, and `pnpm lint` all pass; all FR-WEB-4 routes exist.
-
-**Implementation backlog**: issues #2–#14, queued in dependency order
-([#3 MiniMax wrappers](https://github.com/shadowdoguk/portuguese-teacher/issues/3)
-→ #2 curriculum model → #4 HLR scheduler → #5 voice loop → #6 LLM re-rank →
-#7 scenario library → #8 milestone gating → #9 UI surfaces → #13 ASR
-regression → #10/#11/#12/#14 non-functional). Some are stale after
-ADR-0003 (see issue bodies: #2 dialect enum, #8 milestone count, #9
-dialect picker, #13 corpus).
-
-**Missing issues** (added by ADR-0003, not yet filed): Placement Lesson at
-sign-up, SC-5 Sampling Buffer infra, Remedial Anchor routing, Affective
-Filter proxy instrumentation, Pronunciation Score phoneme-distance endpoint.
-
-## Conventions
-
-The repo follows the workspace conventions in [AGENTS.md](./AGENTS.md):
-
-- Domain language lives in [CONTEXT.md](./CONTEXT.md).
-- Architectural decisions live under [docs/adr/](./docs/adr/).
-- Issues are tracked on GitHub Issues and labelled with the five-role triage vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`).
+The rebuild's own governance docs (`AGENTS.md`, `HANDOFF.md`,
+`PROGRESS.md`, `CONTEXT.md`) live at the repo root, NOT in `legacy/`.
