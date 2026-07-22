@@ -41,12 +41,77 @@ describe("MockMiniMaxASR", () => {
   });
 });
 
+function mp3FrameSize(header: Uint8Array): number | null {
+  if (header.length < 4) return null;
+  if (header[0] !== 0xff || (header[1]! & 0xe0) !== 0xe0) return null;
+  const versionId = (header[1]! >> 3) & 0x3;
+  const layerDesc = (header[1]! >> 1) & 0x3;
+  const bitrateIndex = (header[2]! >> 4) & 0xf;
+  const sampleRateIndex = (header[2]! >> 2) & 0x3;
+  const padding = (header[2]! >> 1) & 0x1;
+  if (layerDesc !== 1) return null;
+  if (versionId === 1) return null;
+  if (bitrateIndex === 0 || bitrateIndex === 0xf) return null;
+  if (sampleRateIndex === 0x3) return null;
+  const layer3Bitrate: Record<number, [number[], number[]]> = {
+    3: [
+      [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320],
+      [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160],
+    ],
+    2: [
+      [0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384],
+      [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160],
+    ],
+    0: [
+      [0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448],
+      [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160],
+    ],
+  };
+  const tables = layer3Bitrate[versionId];
+  if (!tables) return null;
+  const bitrateKbps = tables[0][bitrateIndex];
+  if (!bitrateKbps) return null;
+  const sampleRateTable = versionId === 3 ? [44100, 48000, 32000] : [22050, 24000, 16000];
+  const sampleRate = sampleRateTable[sampleRateIndex];
+  if (!sampleRate) return null;
+  const samplesPerFrame = versionId === 3 ? 144 : 72;
+  return Math.floor((samplesPerFrame * bitrateKbps * 1000) / sampleRate) + padding;
+}
+
+async function audioBlobBytes(blob: Blob): Promise<Uint8Array> {
+  if (typeof blob.arrayBuffer === "function") {
+    return new Uint8Array(await blob.arrayBuffer());
+  }
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error ?? new Error("FileReader error"));
+    reader.onload = () => {
+      const result = reader.result;
+      resolve(result instanceof ArrayBuffer ? new Uint8Array(result) : new Uint8Array(0));
+    };
+    reader.readAsArrayBuffer(blob);
+  });
+}
+
 describe("MockMiniMaxTTS", () => {
   it("returns a non-empty audio blob with an estimated duration", async () => {
     const tts = new MockMiniMaxTTS();
     const result = await tts.synthesize("olá mundo", { voice: MOCK_PT_VOICE });
     expect(result.audio.size).toBeGreaterThan(0);
     expect(result.durationMs).toBeGreaterThan(0);
+  });
+
+  it("returns an audio blob that contains at least one decodable MPEG frame", async () => {
+    const tts = new MockMiniMaxTTS();
+    const result = await tts.synthesize("olá mundo", { voice: MOCK_PT_VOICE });
+    const bytes = await audioBlobBytes(result.audio);
+    const frameSize = mp3FrameSize(bytes.subarray(0, 4));
+    expect(frameSize).not.toBeNull();
+    expect(bytes.length).toBeGreaterThanOrEqual(frameSize!);
+    const sideInfoPlusMain = bytes.subarray(4, frameSize!);
+    expect(sideInfoPlusMain.length).toBeGreaterThan(0);
+    const allZero = sideInfoPlusMain.every((b) => b === 0);
+    expect(allZero).toBe(false);
   });
 });
 

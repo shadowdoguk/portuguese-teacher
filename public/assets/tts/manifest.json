@@ -2,7 +2,7 @@
   "version": 1,
   "dialect": "pt-PT",
   "voiceId": "minimax-pt-pt-female-1",
-  "generatedAt": "2026-06-28T17:10:15.218Z",
+  "generatedAt": "2026-07-22T09:32:15.630Z",
   "assets": [
     {
       "assetId": "grammar-a0-1-alfabeto-saudacoes-a0-1-g-artigo-ex0",
@@ -33,6 +33,36 @@
       "text": "os amigos",
       "sourceKind": "grammar-example",
       "sourceRef": "a0-1-g-artigo#2"
+    },
+    {
+      "assetId": "scenario-a0-1-s-apresentar-cafe-goal",
+      "unitId": "a0-1-alfabeto-saudacoes",
+      "url": "/assets/tts/a0-1-alfabeto-saudacoes/scenario-a0-1-s-apresentar-cafe-goal.mp3",
+      "durationMs": 4071,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Entrar num café, saudar e pedir uma bebida em três falas.",
+      "sourceKind": "scenario-briefing",
+      "sourceRef": "a0-1-s-apresentar-cafe#goal"
+    },
+    {
+      "assetId": "scenario-a0-1-s-apresentar-cafe-preTask",
+      "unitId": "a0-1-alfabeto-saudacoes",
+      "url": "/assets/tts/a0-1-alfabeto-saudacoes/scenario-a0-1-s-apresentar-cafe-preTask.mp3",
+      "durationMs": 5929,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Planeia a tua entrada: que horas são? Que saudação é apropriada? Que bebida queres?",
+      "sourceKind": "scenario-briefing",
+      "sourceRef": "a0-1-s-apresentar-cafe#preTask"
+    },
+    {
+      "assetId": "scenario-a0-1-s-apresentar-cafe-setting",
+      "unitId": "a0-1-alfabeto-saudacoes",
+      "url": "/assets/tts/a0-1-alfabeto-saudacoes/scenario-a0-1-s-apresentar-cafe-setting.mp3",
+      "durationMs": 3214,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Balcão de um café em Lisboa, manhã de sábado.",
+      "sourceKind": "scenario-briefing",
+      "sourceRef": "a0-1-s-apresentar-cafe#setting"
     },
     {
       "assetId": "vocab-a0-1-alfabeto-saudacoes-a0-1-v-boa-noite",
@@ -105,6 +135,36 @@
       "sourceRef": "a0-2-g-apresentar#1"
     },
     {
+      "assetId": "scenario-a0-2-s-apresentar-grupo-goal",
+      "unitId": "a0-2-numeros-apresentacoes",
+      "url": "/assets/tts/a0-2-numeros-apresentacoes/scenario-a0-2-s-apresentar-grupo-goal.mp3",
+      "durationMs": 4643,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Apresentar-te a três pessoas novas num grupo, dando nome e idade.",
+      "sourceKind": "scenario-briefing",
+      "sourceRef": "a0-2-s-apresentar-grupo#goal"
+    },
+    {
+      "assetId": "scenario-a0-2-s-apresentar-grupo-preTask",
+      "unitId": "a0-2-numeros-apresentacoes",
+      "url": "/assets/tts/a0-2-numeros-apresentacoes/scenario-a0-2-s-apresentar-grupo-preTask.mp3",
+      "durationMs": 8929,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Prepara uma apresentação de 10 segundos: nome, idade, e de onde vieste. Conta até vinte em voz alta uma vez antes de começar.",
+      "sourceKind": "scenario-briefing",
+      "sourceRef": "a0-2-s-apresentar-grupo#preTask"
+    },
+    {
+      "assetId": "scenario-a0-2-s-apresentar-grupo-setting",
+      "unitId": "a0-2-numeros-apresentacoes",
+      "url": "/assets/tts/a0-2-numeros-apresentacoes/scenario-a0-2-s-apresentar-grupo-setting.mp3",
+      "durationMs": 3643,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Encontro de intercâmbio numa associação em Coimbra.",
+      "sourceKind": "scenario-briefing",
+      "sourceRef": "a0-2-s-apresentar-grupo#setting"
+    },
+    {
       "assetId": "vocab-a0-2-numeros-apresentacoes-a0-2-v-chamar",
       "unitId": "a0-2-numeros-apresentacoes",
       "url": "/assets/tts/a0-2-numeros-apresentacoes/vocab-a0-2-numeros-apresentacoes-a0-2-v-chamar.mp3",
@@ -173,6 +233,36 @@
       "text": "Queria uma água com gás.",
       "sourceKind": "grammar-example",
       "sourceRef": "a0-3-g-condicional-pedir#1"
+    },
+    {
+      "assetId": "scenario-a0-3-s-pedir-cafe-goal",
+      "unitId": "a0-3-cafe-pedidos",
+      "url": "/assets/tts/a0-3-cafe-pedidos/scenario-a0-3-s-pedir-cafe-goal.mp3",
+      "durationMs": 3857,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Pedir uma bebida e um doce, perguntar o preço e pagar.",
+      "sourceKind": "scenario-briefing",
+      "sourceRef": "a0-3-s-pedir-cafe#goal"
+    },
+    {
+      "assetId": "scenario-a0-3-s-pedir-cafe-preTask",
+      "unitId": "a0-3-cafe-pedidos",
+      "url": "/assets/tts/a0-3-cafe-pedidos/scenario-a0-3-s-pedir-cafe-preTask.mp3",
+      "durationMs": 6929,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Lê o menu em silêncio. Decide o que pedes. Prepara a pergunta ‘quanto é?’ antes de pedir a conta.",
+      "sourceKind": "scenario-briefing",
+      "sourceRef": "a0-3-s-pedir-cafe#preTask"
+    },
+    {
+      "assetId": "scenario-a0-3-s-pedir-cafe-setting",
+      "unitId": "a0-3-cafe-pedidos",
+      "url": "/assets/tts/a0-3-cafe-pedidos/scenario-a0-3-s-pedir-cafe-setting.mp3",
+      "durationMs": 3071,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Café tradicional em Lisboa, hora do lanche.",
+      "sourceKind": "scenario-briefing",
+      "sourceRef": "a0-3-s-pedir-cafe#setting"
     },
     {
       "assetId": "vocab-a0-3-cafe-pedidos-a0-3-v-agua",
@@ -283,6 +373,36 @@
       "text": "Almoço ao meio-dia.",
       "sourceKind": "grammar-example",
       "sourceRef": "a0-4-g-rotina#1"
+    },
+    {
+      "assetId": "scenario-a0-4-s-plano-amanha-goal",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/scenario-a0-4-s-plano-amanha-goal.mp3",
+      "durationMs": 7143,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Combinares com um colega português a hora de um encontro para amanhã e descreve a tua rotina actual.",
+      "sourceKind": "scenario-briefing",
+      "sourceRef": "a0-4-s-plano-amanha#goal"
+    },
+    {
+      "assetId": "scenario-a0-4-s-plano-amanha-preTask",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/scenario-a0-4-s-plano-amanha-preTask.mp3",
+      "durationMs": 3500,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Revê os números 1–30 e as horas (que horas são?).",
+      "sourceKind": "scenario-briefing",
+      "sourceRef": "a0-4-s-plano-amanha#preTask"
+    },
+    {
+      "assetId": "scenario-a0-4-s-plano-amanha-setting",
+      "unitId": "a0-4-rotina-e-horas",
+      "url": "/assets/tts/a0-4-rotina-e-horas/scenario-a0-4-s-plano-amanha-setting.mp3",
+      "durationMs": 4857,
+      "voiceId": "minimax-pt-pt-female-1",
+      "text": "Mensagem de telemóvel entre dois colegas que vão ter um café amanhã.",
+      "sourceKind": "scenario-briefing",
+      "sourceRef": "a0-4-s-plano-amanha#setting"
     },
     {
       "assetId": "vocab-a0-4-rotina-e-horas-a0-4-v-acordar",
