@@ -208,7 +208,13 @@ export function PracticeSession() {
     try {
       const result = await voiceCapture.stop();
       let transcript = result.transcript;
-      if (tier === 2 && result.audioBlob) {
+      // `audioBlob` is set whenever the capture session ended up on the
+      // MediaRecorder path — whether that was the original Tier 2 (Safari)
+      // assignment or the automatic Tier 1→2 fallback that fires when the
+      // browser's Web Speech API silently fails to engage. Send it to the
+      // canonical MiniMax ASR endpoint so the learner still gets a
+      // transcript.
+      if (result.audioBlob) {
         try {
           transcript = await sendAudioCanonical(result.audioBlob);
         } catch (err) {
@@ -226,7 +232,7 @@ export function PracticeSession() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to stop capture");
     }
-  }, [useAudio, voiceCapture, tier, sendAudioCanonical, sendTranscript]);
+  }, [useAudio, voiceCapture, sendAudioCanonical, sendTranscript]);
 
   useEffect(() => {
     if (!useAudio) return;

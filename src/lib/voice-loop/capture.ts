@@ -545,3 +545,199 @@ export function defaultPickCapture(
   }
   return createMediaRecorderSession(mediaRecorderConfig, mediaRecorderDeps);
 }
+
+export type FallbackCaptureOptions = {
+  /**
+   * How long to wait for the primary session to reach the `listening` state
+   * before falling back. Default: 1500ms. The Chromium Web Speech API
+   * sometimes returns from `start()` synchronously without ever firing
+   * `onstart` (the network call to Google's speech service hangs in
+   * headless / sandboxed environments); a watchdog is the only way to
+   * detect that path.
+   */
+  primaryEngagementTimeoutMs?: number;
+};
+
+/**
+ * Wraps a primary CaptureSession with a fallback CaptureSession. The primary
+ * is started first; if it fails to reach the `listening` state within
+ * `primaryEngagementTimeoutMs`, the wrapper aborts the primary, surfaces an
+ * error, and starts the fallback so the caller still gets an audio capture.
+ *
+ * This is the seam that lets the Tier 1 (Web Speech API) path in Chromium
+ * automatically degrade to the Tier 2 (MediaRecorder + server-side MiniMax
+ * ASR) path when the browser's speech service is unreachable — the failure
+ * mode observed in headless Chromium, restricted networks, and Linux
+ * Chrome builds without Google APIs.
+ */
+export function createFallbackCaptureSession(
+  primaryFactory: () => CaptureSession,
+  fallbackFactory: () => CaptureSession,
+  options?: FallbackCaptureOptions,
+): CaptureSession {
+  const engagementTimeoutMs = options?.primaryEngagementTimeoutMs ?? 1500;
+
+  const interimListeners = new Set<InterimTranscriptListener>();
+  const finalListeners = new Set<FinalTranscriptListener>();
+  const audioLevelListeners = new Set<AudioLevelListener>();
+  const errorListeners = new Set<CaptureErrorListener>();
+
+  let primarySession: CaptureSession | null = null;
+  let fallbackSession: CaptureSession | null = null;
+  let watchdog: ReturnType<typeof setTimeout> | null = null;
+  let aggregatedInterim = "";
+  let aggregatedFinal = "";
+  let aggregatedAudioBlob: Blob | null = null;
+
+  function emitInterim(text: string): void {
+    aggregatedInterim = text;
+    for (const handler of interimListeners) handler(text);
+  }
+  function emitFinal(text: string): void {
+    aggregatedFinal = text;
+    aggregatedInterim = "";
+    emitInterim("");
+    for (const handler of finalListeners) handler(text);
+  }
+  function emitAudioLevel(level: number): void {
+    for (const handler of audioLevelListeners) handler(level);
+  }
+  function emitError(message: string): void {
+    for (const handler of errorListeners) handler(message);
+  }
+
+  function clearWatchdog(): void {
+    if (watchdog) {
+      clearTimeout(watchdog);
+      watchdog = null;
+    }
+  }
+
+  function activeSession(): CaptureSession | null {
+    return fallbackSession ?? primarySession;
+  }
+
+  function wireSessionListeners(session: CaptureSession): void {
+    session.onInterim(emitInterim);
+    session.onFinal(emitFinal);
+    session.onAudioLevel(emitAudioLevel);
+    session.onError(emitError);
+  }
+
+  function transitionToFallback(reason: string): void {
+    clearWatchdog();
+    if (primarySession) {
+      try {
+        primarySession.abort();
+      } catch {
+        // ignore — session is being torn down
+      }
+      primarySession = null;
+    }
+    emitError(
+      `Speech recognition unavailable (${reason}); falling back to audio recording.`,
+    );
+    fallbackSession = fallbackFactory();
+    wireSessionListeners(fallbackSession);
+    void fallbackSession.start();
+  }
+
+  return {
+    async start(): Promise<void> {
+      clearWatchdog();
+      aggregatedInterim = "";
+      aggregatedFinal = "";
+      aggregatedAudioBlob = null;
+      primarySession = primaryFactory();
+      wireSessionListeners(primarySession);
+      const startedPrimary = primarySession;
+      await startedPrimary.start();
+      // Poll: if the primary session hasn't reached `listening` within the
+      // watchdog window, treat it as a silent-failure and degrade.
+      watchdog = setTimeout(() => {
+        const session = primarySession;
+        if (!session || session !== startedPrimary) return;
+        const s = session.getState();
+        if (s !== "listening") {
+          transitionToFallback(`no engagement within ${engagementTimeoutMs}ms`);
+        } else {
+          clearWatchdog();
+        }
+      }, engagementTimeoutMs);
+    },
+    async stop(): Promise<CaptureResult> {
+      clearWatchdog();
+      const session = activeSession();
+      if (!session) return { transcript: aggregatedFinal, audioBlob: null };
+      const result = await session.stop();
+      aggregatedAudioBlob = result.audioBlob;
+      aggregatedFinal = result.transcript;
+      return result;
+    },
+    abort(): void {
+      clearWatchdog();
+      if (primarySession) {
+        try {
+          primarySession.abort();
+        } catch {
+          // ignore
+        }
+        primarySession = null;
+      }
+      if (fallbackSession) {
+        try {
+          fallbackSession.abort();
+        } catch {
+          // ignore
+        }
+        fallbackSession = null;
+      }
+      aggregatedInterim = "";
+    },
+    getState(): CaptureState {
+      const session = activeSession();
+      if (!session) return "idle";
+      return session.getState();
+    },
+    getInterim(): string {
+      const session = activeSession();
+      if (session) {
+        const live = session.getInterim();
+        if (live) return live;
+      }
+      return aggregatedInterim;
+    },
+    getFinal(): string {
+      const session = activeSession();
+      if (session) {
+        const live = session.getFinal();
+        if (live) return live;
+      }
+      return aggregatedFinal;
+    },
+    getAudioBlob(): Blob | null {
+      const session = activeSession();
+      if (session) {
+        const live = session.getAudioBlob();
+        if (live) return live;
+      }
+      return aggregatedAudioBlob;
+    },
+    onInterim(handler: InterimTranscriptListener): () => void {
+      interimListeners.add(handler);
+      return () => interimListeners.delete(handler);
+    },
+    onFinal(handler: FinalTranscriptListener): () => void {
+      finalListeners.add(handler);
+      return () => finalListeners.delete(handler);
+    },
+    onAudioLevel(handler: AudioLevelListener): () => void {
+      audioLevelListeners.add(handler);
+      return () => audioLevelListeners.delete(handler);
+    },
+    onError(handler: CaptureErrorListener): () => void {
+      errorListeners.add(handler);
+      return () => errorListeners.delete(handler);
+    },
+  };
+}

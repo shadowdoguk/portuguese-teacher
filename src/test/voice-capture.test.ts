@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  createFallbackCaptureSession,
   createMediaRecorderSession,
   createWebSpeechSession,
+  type CaptureSession,
   type MediaRecorderDeps,
   type WebSpeechDeps,
 } from "@/lib/voice-loop/capture";
@@ -408,5 +410,212 @@ describe("createMediaRecorderSession", () => {
     await session.start();
     expect(session.getState()).toBe("unsupported");
     expect(errors.length).toBe(1);
+  });
+});
+
+describe("createFallbackCaptureSession", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("delegates to the primary session when it engages within the timeout", async () => {
+    const primaryEngaged: { ok: boolean } = { ok: false };
+    const primary: CaptureSession = {
+      start: vi.fn(async () => {
+        // Simulate a successful Web Speech start: state becomes "listening"
+        primaryEngaged.ok = true;
+      }),
+      stop: vi.fn(async () => ({ transcript: "olá", audioBlob: null })),
+      abort: vi.fn(),
+      getState: () => (primaryEngaged.ok ? "listening" : "idle"),
+      getInterim: () => "",
+      getFinal: () => "olá",
+      getAudioBlob: () => null,
+      onInterim: () => () => undefined,
+      onFinal: () => () => undefined,
+      onAudioLevel: () => () => undefined,
+      onError: () => () => undefined,
+    };
+    let fallbackUsed = false;
+    const fallback: CaptureSession = {
+      start: vi.fn(async () => {
+        fallbackUsed = true;
+      }),
+      stop: vi.fn(async () => ({ transcript: "", audioBlob: null })),
+      abort: vi.fn(),
+      getState: () => "idle",
+      getInterim: () => "",
+      getFinal: () => "",
+      getAudioBlob: () => null,
+      onInterim: () => () => undefined,
+      onFinal: () => () => undefined,
+      onAudioLevel: () => () => undefined,
+      onError: () => () => undefined,
+    };
+
+    const session = createFallbackCaptureSession(
+      () => primary,
+      () => fallback,
+      { primaryEngagementTimeoutMs: 1500 },
+    );
+
+    await session.start();
+    // Simulate the primary session firing its async onstart hook by polling
+    // through the fallback's internal mechanism. The fallback should NOT
+    // be used if primary's state goes to "listening".
+    primaryEngaged.ok = true;
+    vi.advanceTimersByTime(2000);
+    await flushMicrotasks();
+
+    expect(fallbackUsed).toBe(false);
+    const result = await session.stop();
+    expect(result.transcript).toBe("olá");
+    expect(result.audioBlob).toBeNull();
+  });
+
+  it("starts the fallback session when primary fails to engage within the timeout", async () => {
+    const primary: CaptureSession = {
+      start: vi.fn(async () => {
+        // Simulate Web Speech start() returning normally but never firing
+        // onstart — the bug we're fixing.
+      }),
+      stop: vi.fn(async () => ({ transcript: "", audioBlob: null })),
+      abort: vi.fn(),
+      getState: () => "idle",
+      getInterim: () => "",
+      getFinal: () => "",
+      getAudioBlob: () => null,
+      onInterim: () => () => undefined,
+      onFinal: () => () => undefined,
+      onAudioLevel: () => () => undefined,
+      onError: () => () => undefined,
+    };
+    let fallbackStarted = false;
+    const fallback: CaptureSession = {
+      start: vi.fn(async () => {
+        fallbackStarted = true;
+      }),
+      stop: vi.fn(async () => ({
+        transcript: "",
+        audioBlob: new Blob([new Uint8Array(64)], { type: "audio/webm" }),
+      })),
+      abort: vi.fn(),
+      getState: () => (fallbackStarted ? "listening" : "idle"),
+      getInterim: () => "",
+      getFinal: () => "",
+      getAudioBlob: () =>
+        fallbackStarted ? new Blob([new Uint8Array(64)], { type: "audio/webm" }) : null,
+      onInterim: () => () => undefined,
+      onFinal: () => () => undefined,
+      onAudioLevel: () => () => undefined,
+      onError: () => () => undefined,
+    };
+
+    const errors: string[] = [];
+    const session = createFallbackCaptureSession(
+      () => primary,
+      () => fallback,
+      { primaryEngagementTimeoutMs: 1500 },
+    );
+    session.onError((e) => errors.push(e));
+    await session.start();
+    expect(primary.start).toHaveBeenCalledTimes(1);
+    expect(fallbackStarted).toBe(false);
+
+    // Advance past the engagement timeout.
+    vi.advanceTimersByTime(1600);
+    await flushMicrotasks();
+
+    expect(fallbackStarted).toBe(true);
+    expect(primary.abort).toHaveBeenCalled();
+    expect(session.getState()).toBe("listening");
+
+    const result = await session.stop();
+    expect(result.audioBlob).not.toBeNull();
+    expect(result.audioBlob && result.audioBlob.size).toBe(64);
+  });
+
+  it("aborts cleanly without invoking fallback when aborted before engagement timeout", async () => {
+    const primary: CaptureSession = {
+      start: vi.fn(async () => undefined),
+      stop: vi.fn(async () => ({ transcript: "", audioBlob: null })),
+      abort: vi.fn(),
+      getState: () => "idle",
+      getInterim: () => "",
+      getFinal: () => "",
+      getAudioBlob: () => null,
+      onInterim: () => () => undefined,
+      onFinal: () => () => undefined,
+      onAudioLevel: () => () => undefined,
+      onError: () => () => undefined,
+    };
+    const fallback: CaptureSession = {
+      start: vi.fn(async () => undefined),
+      stop: vi.fn(async () => ({ transcript: "", audioBlob: null })),
+      abort: vi.fn(),
+      getState: () => "idle",
+      getInterim: () => "",
+      getFinal: () => "",
+      getAudioBlob: () => null,
+      onInterim: () => () => undefined,
+      onFinal: () => () => undefined,
+      onAudioLevel: () => () => undefined,
+      onError: () => () => undefined,
+    };
+    const session = createFallbackCaptureSession(
+      () => primary,
+      () => fallback,
+      { primaryEngagementTimeoutMs: 1500 },
+    );
+    await session.start();
+    session.abort();
+    vi.advanceTimersByTime(2000);
+    await flushMicrotasks();
+    expect(fallback.start).not.toHaveBeenCalled();
+  });
+
+  it("emits a 'speech recognition unavailable' error when fallback engages", async () => {
+    const primary: CaptureSession = {
+      start: vi.fn(async () => undefined),
+      stop: vi.fn(async () => ({ transcript: "", audioBlob: null })),
+      abort: vi.fn(),
+      getState: () => "idle",
+      getInterim: () => "",
+      getFinal: () => "",
+      getAudioBlob: () => null,
+      onInterim: () => () => undefined,
+      onFinal: () => () => undefined,
+      onAudioLevel: () => () => undefined,
+      onError: () => () => undefined,
+    };
+    const fallback: CaptureSession = {
+      start: vi.fn(async () => undefined),
+      stop: vi.fn(async () => ({ transcript: "", audioBlob: null })),
+      abort: vi.fn(),
+      getState: () => "listening",
+      getInterim: () => "",
+      getFinal: () => "",
+      getAudioBlob: () => null,
+      onInterim: () => () => undefined,
+      onFinal: () => () => undefined,
+      onAudioLevel: () => () => undefined,
+      onError: () => () => undefined,
+    };
+
+    const errors: string[] = [];
+    const session = createFallbackCaptureSession(
+      () => primary,
+      () => fallback,
+      { primaryEngagementTimeoutMs: 1500 },
+    );
+    session.onError((e) => errors.push(e));
+    await session.start();
+    vi.advanceTimersByTime(1600);
+    await flushMicrotasks();
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors.some((e) => /speech recognition unavailable|fallback/i.test(e))).toBe(true);
   });
 });

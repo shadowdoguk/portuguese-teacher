@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  createFallbackCaptureSession,
   createMediaRecorderSession,
   createWebSpeechSession,
   defaultPickCapture,
@@ -18,6 +19,18 @@ export type UseVoiceCaptureOptions = {
   tier: 1 | 2;
   lang?: string;
   silenceMs?: number;
+  /**
+   * When true (default), wrap the Tier 1 (Web Speech API) session with an
+   * automatic MediaRecorder fallback. The wrapper starts the primary
+   * session, waits up to `webSpeechEngagementTimeoutMs` for it to reach
+   * the `listening` state, and — if the primary's `onstart` callback never
+   * fires (the failure mode observed when Chromium's speech service is
+   * unreachable) — aborts the primary, emits an error, and starts a
+   * MediaRecorder session so the caller still gets an audio capture.
+   */
+  enableFallback?: boolean;
+  /** Watchdog window for the primary Web Speech session. Default: 1500ms. */
+  webSpeechEngagementTimeoutMs?: number;
 };
 
 export type UseVoiceCaptureResult = {
@@ -58,7 +71,13 @@ function defaultGetUserMedia(constraints: MediaStreamConstraints): Promise<Media
 }
 
 export function useVoiceCapture(options: UseVoiceCaptureOptions): UseVoiceCaptureResult {
-  const { tier, lang = "pt-PT", silenceMs = 600 } = options;
+  const {
+    tier,
+    lang = "pt-PT",
+    silenceMs = 600,
+    enableFallback = true,
+    webSpeechEngagementTimeoutMs = 1500,
+  } = options;
   const [state, setState] = useState<CaptureState>("idle");
   const [interimTranscript, setInterim] = useState("");
   const [finalTranscript, setFinal] = useState("");
@@ -84,13 +103,27 @@ export function useVoiceCapture(options: UseVoiceCaptureOptions): UseVoiceCaptur
     const webSpeechConfig: WebSpeechConfig = { lang, interimResults: true, continuous: false };
     const mediaRecorderConfig: MediaRecorderConfig = { lang, silenceMs };
 
-    const session = defaultPickCapture(
+    const baseSession = defaultPickCapture(
       tier,
       webSpeechDeps,
       mediaRecorderDeps,
       webSpeechConfig,
       mediaRecorderConfig,
     );
+    // Tier 1 (Web Speech API) is known to silently fail in some Chromium
+    // environments (headless, restricted networks, Linux builds without
+    // Google APIs): `start()` returns, but `onstart` never fires because
+    // the network call to Google's speech service hangs. Wrap Tier 1 with
+    // an automatic MediaRecorder fallback so the learner still gets a
+    // capture surface.
+    const session =
+      tier === 1 && enableFallback
+        ? createFallbackCaptureSession(
+            () => baseSession,
+            () => createMediaRecorderSession(mediaRecorderConfig, mediaRecorderDeps),
+            { primaryEngagementTimeoutMs: webSpeechEngagementTimeoutMs },
+          )
+        : baseSession;
     sessionRef.current = session;
 
     const offInterim = session.onInterim((text) => setInterim(text));
@@ -114,7 +147,7 @@ export function useVoiceCapture(options: UseVoiceCaptureOptions): UseVoiceCaptur
       session.abort();
       sessionRef.current = null;
     };
-  }, [tier, lang, silenceMs]);
+  }, [tier, lang, silenceMs, enableFallback, webSpeechEngagementTimeoutMs]);
 
   const start = useCallback(async () => {
     const session = sessionRef.current;
@@ -133,6 +166,13 @@ export function useVoiceCapture(options: UseVoiceCaptureOptions): UseVoiceCaptur
     setFinal(result.transcript);
     setAudioBlob(result.audioBlob);
     setState(session.getState());
+    // If the fallback wrapped this session and surfaced an informational
+    // note (e.g. "speech recognition unavailable, falling back"), the
+    // capture has now actually succeeded — drop the note so the UI doesn't
+    // show "Speech recognition unavailable" alongside a successful turn.
+    if (result.audioBlob || result.transcript.trim().length > 0) {
+      setError(null);
+    }
     return result;
   }, []);
 
