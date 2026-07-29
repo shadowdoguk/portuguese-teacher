@@ -1,6 +1,9 @@
 # Session Handoff
 
-**Snapshot date:** 2026-07-22 (Session 0 — greenfield rebuild kickoff)
+**Snapshot date:** 2026-07-29 (Session 4 — Task 0 committed on
+`chore/archive-legacy`: legacy Next.js application archived into
+`legacy/`, repo root replaced with greenfield governance; Tasks 1–9
+of Phase A unblocked)
 
 > **This file is a point-in-time snapshot.** For the living,
 > agent-picked-up tracker, see [`PROGRESS.md`](./PROGRESS.md) — it
@@ -19,30 +22,53 @@ against the reconciled rebuild spec." The legacy Next.js application
 has been **archived** into `legacy/` on the working tree (not yet
 committed). The repo root holds the new governance docs (`AGENTS.md`,
 `CONTEXT.md`, `HANDOFF.md`, `PROGRESS.md`) plus the new
-`docs/superpowers/{specs,plans}/` and `docs/reports/`. After the
-archive lands on `main`, the repo root receives a fresh
-pnpm-workspaces monorepo: `apps/{web,api,android}` +
+`docs/superpowers/{specs,plans}/`, `docs/reports/`, and (Session 1
+addition) `docs/adr/{0001,0002}-*.md`. After the archive lands on
+`main`, the repo root receives a fresh pnpm-workspaces monorepo:
+`apps/{web,api,android}` +
 `packages/{contracts,domain,content,tooling}`. Nothing of the legacy
 is carried forward into the new project; operational patterns from
 the legacy CI/Docker work may be referenced, not lifted verbatim.
+
+Session 1 also resolved every Phase A design-tree ambiguity that
+wasn't already pinned by the rebuild spec: the canonicalization rule
+for `sourceChecksum`, the contributor-controlled `version` semantic,
+the READ COMMITTED `SELECT … FOR UPDATE` atomic-publish
+transaction, the new `cv_sentence_versions` table that lets
+`practice_ratings` keep a globally-stable PK, server-side Origin
+allow-listing for CSRF defense, refresh-reuse-as-compromise,
+session-only logout, `First Publish` / `Idempotent Publish`
+behaviour, `Pre-Phase C Audio` nullable handling, the error-envelope
+shape, the rate-limit discipline, the cache-control discipline,
+`Smart Review` ordering (with `NULLS FIRST`), `Filter` scope,
+`Settings` sync boundaries, `Collection` rating-global rule, and the
+Android bearer-transport shape selected by `X-Client-Platform`.
 
 Authoritative artefacts:
 
 - Spec: `docs/superpowers/specs/2026-07-22-portuguese-teacher-rebuild.md`
 - Phase A plan: `docs/superpowers/plans/2026-07-22-portuguese-teacher-phase-a-foundation.md`
+- **Phase A ADR incorporation plan**: `docs/superpowers/plans/2026-07-23-phase-a-adr-incorporation.md` (7 tasks A1–A7; supersedes Phase A Tasks 5/6/7 step sequences)
+- **Phase B design spec**: `docs/superpowers/specs/2026-07-23-phase-b-practice-surface-design.md` (Approach B: practice surface + six-stage skeleton, 14 sections)
+- **Phase B implementation plan**: `docs/superpowers/plans/2026-07-23-phase-b-practice-surface.md` (10 tasks: contracts, domain, practice API, settings, collections API, collections pages, practice pages, six-stage nav + unit-progress, smoke, verification)
+- ADRs: `docs/adr/0001-workspace-and-atomic-publish.md`,
+  `docs/adr/0002-shared-credentials-and-android-secure-storage.md`
+- Source-archive cross-check reports: `tmp/source-archive-a-crosscheck.md` (1110 lines, source archive A → Phase A/ADRs/contra drift), `tmp/source-archive-b-crosscheck.md` (268 lines, vertical-slice source B → spec §13.3 / Phase A / glossary drift)
 - Tooling: pnpm 10.0.0, Node ≥ 20.0.0, Postgres 16 in Docker (5433),
   API on 8787, web on 5173
 - Auth: Argon2id + opaque 32-byte hex tokens + SHA-256-hashed cookies
-  (`ptp_access` 15 min, `ptp_refresh` 30 d), no JWT, no token in JSON
-  body
+  (`ptp_access` 15 min, `ptp_refresh` 30 d), no JWT, no token in
+  JSON body, server-side Origin allow-listing on every
+  state-changing `/api/auth/*` route
+- Curriculum versioning: `cv_sentence_versions(cv_id, sentence_id, text_pt, text_en, audio_id NULL, …)` projection table; `practice_ratings(user_id, sentence_id, mode)` PK stays globally stable
 
 ## Git state
 
 | Branch | Status |
 | --- | --- |
-| `main` | Clean. No new commits in Session 0 — every change (the four doc rewrites, the new spec/plan, the source planning archive, and the legacy archive into `legacy/`) is a working-tree change awaiting first commit by the next session. |
+| `main` | Working tree still carries every Session 0–3 doc/Session 1–2 ADR/Session 2 plan/Session 3 plan as uncommitted working-tree changes. No `git add` / `git commit` was authorised. |
 | `chore/archive-legacy` | Not yet cut. Task 0 starts by branching from `main`. |
-| Feature branches for Tasks 2–9 | Not yet cut. |
+| Feature branches for Tasks 2–9 / A1–A7 / Phase B Tasks 1–9 | Not yet cut. |
 
 ## Open issues
 
@@ -76,31 +102,33 @@ and applied to the rebuild's release-scope gate:
 
 ## First action for next session
 
+Task 0 (legacy archive) is **done** as of Session 4 on 2026-07-29 —
+the legacy tree is committed to `chore/archive-legacy` and the root
+holds the greenfield governance plus ADR 0001 + ADR 0002. Tasks 1–9
+of Phase A and Tasks A1–A7 of the amendment plan are now unblocked.
+
 ```bash
 cd /home/david/shadowdog-dev/projects/portuguese-teacher
+git checkout chore/archive-legacy
+git pull --ff-only
 git status
-# The Session 0 changes — doc rewrites, the new spec/plan, the source
-# planning archive, and the legacy archive into legacy/ — are all
-# working-tree changes awaiting first commit. Begin by either:
+# Read PROGRESS.md, this file, CONTEXT.md, the spec, the Phase A
+# plan, and the Phase A ADR incorporation plan.
 
-# (A) Cutting chore/archive-legacy and bundling the legacy archive
-#     with the new doc rewrites as one chore commit, OR
-# (B) Committing the Session 0 doc rewrites on a separate docs
-#     commit first, then running Task 0's archive on a follow-up
-#     chore commit.
+# Task 1 (root tooling) is the natural next step:
+# pnpm-workspace.yaml, package.json, tsconfig.base.json,
+# eslint.config.mjs, dotfiles, docs/superpowers/README.md,
+# docs/adr/{0001,0002}, tools/check-android-prereqs.ts.
+# Cut a feature branch off chore/archive-legacy, run pnpm install,
+# and walk the steps in the Phase A plan.
+git checkout -b feat/monorepo-root-tooling
 
-# Read PROGRESS.md, this file, CONTEXT.md, the spec, the plan.
-# Then begin Task 0 (legacy archive) of the Phase A plan.
-git checkout -b chore/archive-legacy
-# Verify: legacy/ should contain the legacy tree; top-level files
-# should match the new monorepo root.
-ls legacy/
-ls
-# Continue from there per the Phase A plan.
+# Per the Phase A plan's Global Constraints, every commit step is
+# review-only — no commit fires without explicit user authorisation.
 ```
 
-Sessions continuing the rebuild should pick up at **Task 0** unless
-`PROGRESS.md` records further state.
+Sessions continuing the rebuild should pick up at **Task 1** of the
+Phase A plan unless `PROGRESS.md` records further state.
 
 ## Key references
 
@@ -108,10 +136,14 @@ Sessions continuing the rebuild should pick up at **Task 0** unless
 |---|---|
 | Rebuild spec | `docs/superpowers/specs/2026-07-22-portuguese-teacher-rebuild.md` |
 | Phase A plan | `docs/superpowers/plans/2026-07-22-portuguese-teacher-phase-a-foundation.md` |
+| Phase A ADR incorporation plan | `docs/superpowers/plans/2026-07-23-phase-a-adr-incorporation.md` (Tasks A1–A7) |
+| Phase B design spec | `docs/superpowers/specs/2026-07-23-phase-b-practice-surface-design.md` |
+| Phase B implementation plan | `docs/superpowers/plans/2026-07-23-phase-b-practice-surface.md` (Tasks 1–10) |
 | Domain glossary | `CONTEXT.md` |
 | Agent process guide | `AGENTS.md` |
 | Living tracker | `PROGRESS.md` |
-| Architectural decisions | `docs/adr/0001-workspace-and-atomic-publish.md`, `docs/adr/0002-shared-credentials-and-android-secure-storage.md` |
+| Architectural decisions | `docs/adr/0001-workspace-and-atomic-publish.md` (Q1–Q5), `docs/adr/0002-shared-credentials-and-android-secure-storage.md` (Q6–Q10) |
+| Source-archive cross-check evidence | `tmp/source-archive-a-crosscheck.md`, `tmp/source-archive-b-crosscheck.md` |
 | Cross-link | `docs/superpowers/README.md` |
 | Research (TTS providers) | `docs/reports/european-portuguese-tts-options-july-2026.md` |
 | Source planning archive (reference only) | `/tmp/opencode/planning/` |
