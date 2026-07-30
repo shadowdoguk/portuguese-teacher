@@ -1,18 +1,16 @@
 # Session Handoff
 
-**Snapshot date:** 2026-07-30 (Session 9 — Task 5 committed on
-`feat/api-schema`: `@pt/api` workspace scaffolded with Drizzle 0.45.2
-schema for every Phase A table (auth_users, auth_sessions,
-curriculum_versions, units, islands, sentences, conversation_
-scenarios, cv_sentence_versions, audio_assets, practice_ratings);
-`0000_init.sql` mirrors the schema verbatim. Bundles amendment
-Task A2: `cv_sentence_versions` projection table with composite
-PK `(cv_id, sentence_id)` and `content_status` enum used on every
-status column; `practice_ratings` has CHECK constraints on rating
-(1..5) and mode (shadow/recall) plus unique indices on (user,
-sentence, mode) and (user, client_mutation_id) for idempotency.
-Phase A Tasks 6–9 and amendment Tasks A3–A7 unblocked on top of
-`feat/tooling-adapters` HEAD `2725d02`.)
+**Snapshot date:** 2026-07-30 (Session 10 — Task 6 committed on
+`feat/content-compile`: `@pt/content` workspace published with
+manifest parser, deterministic canonicalizer (amendment A3),
+compiler, and atomic apply-publish helper. Bundles amendment
+Task A3 end-to-end: deterministic UTF-8 byte serializer (sorted
+keys, throws on cycles, drops undefined, no BigInt); compile turns
+manifests into row payloads + the cv_sentence_versions projection
+(ADR-0001 §4); apply-publish runs SELECT … FOR UPDATE + atomic
+rotation + ON CONFLICT (id) DO NOTHING inserts in a single Drizzle
+transaction. Phase A Tasks 7–9 and amendment Tasks A4–A7 unblocked
+on top of `feat/api-schema` HEAD `bba1642`.)
 
 > **This file is a point-in-time snapshot.** For the living,
 > agent-picked-up tracker, see [`PROGRESS.md`](./PROGRESS.md) — it
@@ -111,42 +109,40 @@ and applied to the rebuild's release-scope gate:
 
 ## First action for next session
 
-Tasks 0, 1, 2, 3, 4, and 5 are **done** as of Session 9 on 2026-07-30.
-The legacy tree is archived at `chore/archive-legacy` HEAD `8d5088b`;
-root tooling on `feat/monorepo-root-tooling` HEAD `c31c6cc`;
-`@pt/contracts` on `feat/contracts-zod-schemas` HEAD `d6aed71`;
-`@pt/domain` on `feat/domain-rules` HEAD `d3ccbc6`;
-`@pt/tooling` on `feat/tooling-adapters` HEAD `2725d02`;
-`@pt/api` is published on `feat/api-schema` with the Drizzle 0.45.2
-schema for every Phase A table (auth_users, auth_sessions,
-curriculum_versions, units, islands, sentences, conversation_
-scenarios, cv_sentence_versions, audio_assets, practice_ratings);
-`0000_init.sql` mirrors the schema verbatim; bundled amendment
-Task A2 (`cv_sentence_versions` projection + `content_status` enum).
-Phase A Tasks 6–9 and amendment Tasks A3–A7 are now unblocked.
+Tasks 0, 1, 2, 3, 4, 5, and 6 are **done** as of Session 10 on
+2026-07-30. The legacy tree is archived at `chore/archive-legacy`
+HEAD `8d5088b`; root tooling on `feat/monorepo-root-tooling` HEAD
+`c31c6cc`; `@pt/contracts` on `feat/contracts-zod-schemas` HEAD
+`d6aed71`; `@pt/domain` on `feat/domain-rules` HEAD `d3ccbc6`;
+`@pt/tooling` on `feat/tooling-adapters` HEAD `2725d02`; `@pt/api`
+on `feat/api-schema` HEAD `bba1642`; `@pt/content` is published on
+`feat/content-compile` with manifest parser, deterministic
+canonicalizer (amendment A3), compiler, and atomic apply-publish
+helper. Phase A Tasks 7–9 and amendment Tasks A4–A7 are now
+unblocked.
 
 ```bash
 cd /home/david/shadowdog-dev/projects/portuguese-teacher
-git checkout feat/api-schema
+git checkout feat/content-compile
 git pull --ff-only
 git status
 # Read PROGRESS.md, this file, CONTEXT.md, the spec, the Phase A
 # plan, and the Phase A ADR incorporation plan.
 
-# Task 6 (content compile + atomic publish) is the natural next
-# step: packages/content — manifest parser, canonicalizer (amendment
-# A3: deterministic UTF-8 bytes), compiler, apply-publish helper
-# using SELECT … FOR UPDATE + ON CONFLICT (id) DO NOTHING for
-# idempotency. apps/api/src/db/__tests__/compile-integration.test.ts
-# exercises the DB-backed path. Cut a feature branch off
-# feat/api-schema.
-git checkout -b feat/content-compile
+# Task 7 (auth + app shell) is the natural next step:
+# apps/api/src/{index.ts,auth,middleware} — Express 5.2.1 bootstrap,
+# Argon2id-hashed password signup, opaque-token login + cookies,
+# requireAuth() abstraction, current-session-only logout (ADR-0002),
+# origin/CSRF middleware (amendment A4), cacheControl middleware
+# (amendment A6), refresh-reuse compromise guard (amendment A5).
+# Cut a feature branch off feat/content-compile.
+git checkout -b feat/api-auth-shell
 
 # Per the Phase A plan's Global Constraints, every commit step is
 # review-only — no commit fires without explicit user authorisation.
 ```
 
-Sessions continuing the rebuild should pick up at **Task 6** of the
+Sessions continuing the rebuild should pick up at **Task 7** of the
 Phase A plan unless `PROGRESS.md` records further state.
 
 ## Key references

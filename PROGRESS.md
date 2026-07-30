@@ -5,20 +5,19 @@ where the last one left off. Update it whenever an issue transitions
 state, a branch lands, a decision is made, or a blocker appears or
 clears.
 
-**Last updated:** 2026-07-30 (Session 9 — Task 5 committed
-(`feat/api-schema`): `@pt/api` workspace scaffolded with Drizzle
-0.45.2 schema for every Phase A table (auth_users, auth_sessions,
-curriculum_versions, units, islands, sentences, conversation_
-scenarios, cv_sentence_versions, audio_assets, practice_ratings);
-`0000_init.sql` mirrors the schema verbatim. Bundles amendment
-Task A2: `cv_sentence_versions` projection table with composite
-PK `(cv_id, sentence_id)` and `content_status` enum used on every
-status column; `practice_ratings` has CHECK constraints on rating
-(1..5) and mode (shadow/recall) plus unique indices on (user,
-sentence, mode) and (user, client_mutation_id) for idempotency.
-Two schema tests pin schema.ts ↔ migration agreement verbatim.
-Phase A Tasks 6–9 and amendment Tasks A3–A7 unblocked on top of
-`feat/tooling-adapters` HEAD `2725d02`.)
+**Last updated:** 2026-07-30 (Session 10 — Task 6 committed
+(`feat/content-compile`): `@pt/content` workspace published with
+manifest parser, deterministic canonicalizer (amendment A3),
+compiler, and atomic apply-publish helper. Bundles amendment
+Task A3 end-to-end: deterministic UTF-8 byte serializer (sorted
+keys, throws on cycles, drops undefined, no BigInt); compile
+turns manifests into row payloads + the cv_sentence_versions
+projection (ADR-0001 §4); apply-publish runs SELECT … FOR UPDATE
++ atomic rotation + ON CONFLICT (id) DO NOTHING inserts in a
+single Drizzle transaction. Two tests pin determinism, idempotency,
+and the (cv, sentence) projection shape. Phase A Tasks 7–9 and
+amendment Tasks A4–A7 unblocked on top of `feat/api-schema` HEAD
+`bba1642`.)
 
 ## Current focus
 
