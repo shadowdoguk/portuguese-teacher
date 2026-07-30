@@ -5,16 +5,13 @@ where the last one left off. Update it whenever an issue transitions
 state, a branch lands, a decision is made, or a blocker appears or
 clears.
 
-**Last updated:** 2026-07-30 (Session 7 — Task 3 committed
-(`feat/domain-rules`): `@pt/domain` workspace published with pure
-helpers for id validation/normalisation, rating semantics
-(1..5 + idempotent validator), Smart Review queue ordering
-(rating ASC → lastPractisedAt ASC NULLS FIRST → curriculumOrder
-ASC, limit-clamped), progress aggregation (NaN-safe), and
-conversation turn-bucketing. Layering rule enforced mechanically
-by `assertPureLayering()` (zero forbidden-import matches across
-all six source files). Phase A Tasks 4–9 and amendment Tasks A2–A7
-unblocked on top of `feat/contracts-zod-schemas` HEAD `d6aed71`.)
+**Last updated:** 2026-07-30 (Session 8 — Task 4 committed
+(`feat/tooling-adapters`): `@pt/tooling` workspace published with
+adapter interfaces (audio synthesis, conversation, recorder) plus
+in-memory stubs only; `selectAdapters()` factory for the boot-time
+env-driven selection Phase C/D will swap in. Phase A Tasks 5–9 and
+amendment Tasks A2–A7 unblocked on top of `feat/domain-rules` HEAD
+`d3ccbc6`.)
 
 ## Current focus
 

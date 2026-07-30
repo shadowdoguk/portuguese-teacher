@@ -1,15 +1,12 @@
 # Session Handoff
 
-**Snapshot date:** 2026-07-30 (Session 7 — Task 3 committed on
-`feat/domain-rules`: `@pt/domain` workspace published with pure
-helpers for id validation/normalisation, rating semantics (1..5
-+ idempotent validator), Smart Review queue ordering (rating ASC
-→ lastPractisedAt ASC NULLS FIRST → curriculumOrder ASC,
-limit-clamped), progress aggregation (NaN-safe), and
-conversation turn-bucketing. Layering rule enforced mechanically
-by `assertPureLayering()`. Phase A Tasks 4–9 and amendment Tasks
-A2–A7 unblocked on top of `feat/contracts-zod-schemas` HEAD
-`d6aed71`.)
+**Snapshot date:** 2026-07-30 (Session 8 — Task 4 committed on
+`feat/tooling-adapters`: `@pt/tooling` workspace published with
+adapter interfaces (audio synthesis, conversation, recorder) plus
+in-memory stubs only; `selectAdapters()` factory for boot-time
+env-driven selection Phase C/D will swap in. Phase A Tasks 5–9 and
+amendment Tasks A2–A7 unblocked on top of `feat/domain-rules` HEAD
+`d3ccbc6`.)
 
 > **This file is a point-in-time snapshot.** For the living,
 > agent-picked-up tracker, see [`PROGRESS.md`](./PROGRESS.md) — it
@@ -108,39 +105,39 @@ and applied to the rebuild's release-scope gate:
 
 ## First action for next session
 
-Tasks 0, 1, 2, and 3 are **done** as of Session 7 on 2026-07-30. The
-legacy tree is archived at `chore/archive-legacy` HEAD `8d5088b`;
+Tasks 0, 1, 2, 3, and 4 are **done** as of Session 8 on 2026-07-30.
+The legacy tree is archived at `chore/archive-legacy` HEAD `8d5088b`;
 root tooling on `feat/monorepo-root-tooling` HEAD `c31c6cc`;
 `@pt/contracts` on `feat/contracts-zod-schemas` HEAD `d6aed71`;
-`@pt/domain` is published on `feat/domain-rules` with pure helpers
-for id validation/normalisation, rating semantics (1..5 +
-idempotent validator), Smart Review queue ordering (rating ASC →
-lastPractisedAt ASC NULLS FIRST → curriculumOrder ASC,
-limit-clamped), progress aggregation (NaN-safe), and conversation
-turn-bucketing. Layering rule enforced mechanically by
-`assertPureLayering()`. Phase A Tasks 4–9 and amendment Tasks A2–A7
-are now unblocked.
+`@pt/domain` on `feat/domain-rules` HEAD `d3ccbc6`;
+`@pt/tooling` is published on `feat/tooling-adapters` with adapter
+interfaces (audio synthesis, conversation, recorder) plus in-memory
+stubs only; `selectAdapters()` factory for boot-time env-driven
+selection Phase C/D will swap in. Phase A Tasks 5–9 and amendment
+Tasks A2–A7 are now unblocked.
 
 ```bash
 cd /home/david/shadowdog-dev/projects/portuguese-teacher
-git checkout feat/domain-rules
+git checkout feat/tooling-adapters
 git pull --ff-only
 git status
 # Read PROGRESS.md, this file, CONTEXT.md, the spec, the Phase A
 # plan, and the Phase A ADR incorporation plan.
 
-# Task 4 (tooling interfaces) is the natural next step:
-# packages/tooling — audio + conversation adapter interfaces with
-# in-memory stubs only. Phase C/D swap in Azure / Polly / MiniMax /
-# OpenAI implementations. Cut a feature branch off
-# feat/domain-rules.
-git checkout -b feat/tooling-adapters
+# Task 5 (Drizzle schema) is the natural next step:
+# apps/api/src/db — Drizzle 0.45.2 schema with all Phase A tables
+# (curriculum_versions, units, sentences, islands, scenarios,
+# practice_ratings, auth_users, auth_sessions, audio_assets,
+# cv_sentence_versions, content_status enum). Bundles amendment
+# Task A2: cv_sentence_versions projection + content_status enum.
+# Cut a feature branch off feat/tooling-adapters.
+git checkout -b feat/api-schema
 
 # Per the Phase A plan's Global Constraints, every commit step is
 # review-only — no commit fires without explicit user authorisation.
 ```
 
-Sessions continuing the rebuild should pick up at **Task 4** of the
+Sessions continuing the rebuild should pick up at **Task 5** of the
 Phase A plan unless `PROGRESS.md` records further state.
 
 ## Key references

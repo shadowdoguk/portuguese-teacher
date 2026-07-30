@@ -1,0 +1,35 @@
+{
+  "name": "@pt/tooling",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Adapter interfaces + in-memory stubs for audio synthesis, conversation, and recording. Phase C/D swap in real provider implementations.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./audio": "./src/audio.ts",
+    "./conversation": "./src/conversation.ts",
+    "./recorder": "./src/recorder.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint --max-warnings=0 'src/**/*.ts'",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@pt/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "eslint": "9.39.0",
+    "typescript": "5.6.3",
+    "vitest": "4.1.10"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
