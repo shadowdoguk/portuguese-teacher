@@ -1,19 +1,15 @@
 # Session Handoff
 
-**Snapshot date:** 2026-07-30 (Session 12 — Task 8 committed on
-`feat/api-content-routes`: `@pt/api` extended with the curriculum
-router (`/api/curriculum/{levels,levels/:levelId,units/:unitId}`)
-and the practice router
-(`/api/practice/{ratings,events,queue,review,sessions}`) mounted
-behind `requireAuth` + a `userIdFromAuthShim` that copies
-`res.locals.auth.userId` onto the request. Bundles amendment
-Task A7: `resolveCredential()` selects cookie-vs-bearer by
-`X-Client-Platform`. The practice router ties `@pt/domain`'s
-pure helpers (`validateIdempotentRating`,
-`buildSmartReviewQueue`, `aggregateProgress`) to the
-`practice_ratings` table with the locked CHECK constraints and
-the idempotent `(user, client_mutation_id)` upsert. Phase A
-Task 9 unblocked on top of `feat/api-auth-shell` HEAD `9ceb72e`.)
+**Snapshot date:** 2026-07-30 (Session 13 — Task 9 committed on
+`feat/web-app`: `@pt/web` workspace published — Vite 8.1.5 +
+React 19.2.8 SPA with HashRouter (`/`, `/login`,
+`/practice/shadow`), a cookie-credential fetch wrapper
+(`credentials: 'include'` + `X-Client-Platform: web` per
+ADR-0002 §2), and the one Shadow-mode practice page the Phase A
+plan summary requires (queue fetch + idempotent rating POST with
+`crypto.randomUUID()` `client_mutation_id`). Final step pending:
+decide whether to squash the seven feature branches into `main`
+or keep the topic-branch lineage for reviewable history.)
 
 > **This file is a point-in-time snapshot.** For the living,
 > agent-picked-up tracker, see [`PROGRESS.md`](./PROGRESS.md) — it
@@ -112,43 +108,49 @@ and applied to the rebuild's release-scope gate:
 
 ## First action for next session
 
-Tasks 0, 1, 2, 3, 4, 5, 6, 7, and 8 are **done** as of Session 12
-on 2026-07-30. The legacy tree is archived at `chore/archive-legacy`
-HEAD `8d5088b`; root tooling on `feat/monorepo-root-tooling` HEAD
-`c31c6cc`; `@pt/contracts` on `feat/contracts-zod-schemas` HEAD
-`d6aed71`; `@pt/domain` on `feat/domain-rules` HEAD `d3ccbc6`;
-`@pt/tooling` on `feat/tooling-adapters` HEAD `2725d02`; `@pt/api`
-on `feat/api-schema` HEAD `bba1642`; `@pt/content` on
-`feat/content-compile` HEAD `c6d6799`; `@pt/api` extended on
-`feat/api-auth-shell` HEAD `9ceb72e`; the curriculum + practice
-routers are mounted on `feat/api-content-routes` behind
-`requireAuth`, with the A7 `resolveCredential()` client-platform
-dispatch in place. Phase A Task 9 is now unblocked.
+Tasks 0 through 9 are **done** as of Session 13 on 2026-07-30.
+Phase A is complete. The branch lineage (oldest → newest):
+
+  * `chore/archive-legacy`              HEAD `8d5088b`  (legacy archive + Session-1–3 docs)
+  * `feat/monorepo-root-tooling`        HEAD `c31c6cc`  (Task 1: root tooling + A1 ESLint guard)
+  * `feat/contracts-zod-schemas`        HEAD `d6aed71`  (Task 2: @pt/contracts)
+  * `feat/domain-rules`                 HEAD `d3ccbc6`  (Task 3: @pt/domain pure rules)
+  * `feat/tooling-adapters`             HEAD `2725d02`  (Task 4: @pt/tooling adapter stubs)
+  * `feat/api-schema`                   HEAD `bba1642`  (Task 5: @pt/api schema + A2 cv_sentence_versions)
+  * `feat/content-compile`              HEAD `c6d6799`  (Task 6: @pt/content + A3 atomic publish)
+  * `feat/api-auth-shell`               HEAD `9ceb72e`  (Task 7: auth + app shell + A4/A5/A6)
+  * `feat/api-content-routes`           HEAD `a28c2aa`  (Task 8: curriculum + practice routers + A7)
+  * `feat/web-app`                      HEAD `<this>`    (Task 9: @pt/web Vite + React SPA)
+
+Final step pending: decide whether to squash the seven Phase-A
+feature branches into `main` (one atomic chore commit per task
+already gives a clean audit trail; squashing collapses them into
+a single greenfield-bootstrap commit) or keep the topic-branch
+lineage for reviewable history (every chore commit is already
+self-contained, so reviewers can step through Tasks 1–9 in order).
+The first action below is whichever path is chosen.
 
 ```bash
 cd /home/david/shadowdog-dev/projects/portuguese-teacher
-git checkout feat/api-content-routes
-git pull --ff-only
-git status
-# Read PROGRESS.md, this file, CONTEXT.md, the spec, the Phase A
-# plan, and the Phase A ADR incorporation plan.
-
-# Task 9 (React + Vite web app) is the natural next step:
-# apps/web — Vite 8.1.5 + React 19.2.8 SPA. One Shadow-mode
-# practice page that hits POST /api/practice/ratings (idempotent
-# on client_mutation_id) and reads GET /api/practice/queue. The
-# auth router (Task 7) is the login surface; the SPA stores
-# nothing in localStorage (cookies only, per ADR-0002 §2). The
-# @pt/contracts types wire every fetch response into the SPA.
-# Cut a feature branch off feat/api-content-routes.
-git checkout -b feat/web-app
+git checkout feat/web-app
+git log --oneline chore/archive-legacy..feat/web-app
+# Path A — squash the seven Phase-A feature branches into a
+# single greenfield-bootstrap commit on main:
+git checkout main
+git merge --squash feat/web-app
+git commit -m "feat(greenfield): bootstrap monorepo (@pt/contracts, domain, tooling, api, content, web) + Phase A tasks 0-9"
+# Path B — fast-forward main to feat/web-app (keeps every chore
+# commit visible):
+git checkout main
+git merge --ff-only feat/web-app
 
 # Per the Phase A plan's Global Constraints, every commit step is
 # review-only — no commit fires without explicit user authorisation.
 ```
 
-Sessions continuing the rebuild should pick up at **Task 9** of the
-Phase A plan unless `PROGRESS.md` records further state.
+Sessions continuing the rebuild should pick up at **Phase B —
+Practice Surface + Six-Stage Skeleton** unless `PROGRESS.md`
+records further state.
 
 ## Key references
 

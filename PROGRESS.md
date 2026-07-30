@@ -5,25 +5,20 @@ where the last one left off. Update it whenever an issue transitions
 state, a branch lands, a decision is made, or a blocker appears or
 clears.
 
-**Last updated:** 2026-07-30 (Session 12 — Task 8 committed
-(`feat/api-content-routes`): `@pt/api` extended with the
-curriculum router (`/api/curriculum/{levels,levels/:levelId,units/:unitId}`)
-and the practice router
-(`/api/practice/{ratings,events,queue,review,sessions}`) mounted
-behind `requireAuth` + a `userIdFromAuthShim` that copies
-`res.locals.auth.userId` onto the request. Bundles amendment
-Task A7: `resolveCredential()` selects cookie-vs-bearer by
-`X-Client-Platform` (web reads `ptp_access`; android reads
-`Authorization: Bearer`; default accepts either with the header
-winning). The practice router ties `@pt/domain`'s pure helpers
-(`validateIdempotentRating`, `buildSmartReviewQueue`,
-`aggregateProgress`) to the `practice_ratings` table with the
-locked CHECK constraints and the idempotent
-`(user, client_mutation_id)` upsert. Three router tests pin the
-pre-DB surface: validation 400s, the requireAuth 401 gate, and
-the A6 `no-store` Cache-Control discipline on `/api/practice/*`.
-Phase A Task 9 unblocked on top of `feat/api-auth-shell` HEAD
-`9ceb72e`.)
+**Last updated:** 2026-07-30 (Session 13 — Task 9 committed
+(`feat/web-app`): `@pt/web` workspace published — Vite 8.1.5 +
+React 19.2.8 SPA with HashRouter (`/`, `/login`,
+`/practice/shadow`), a cookie-credential fetch wrapper
+(`credentials: 'include'` + `X-Client-Platform: web` per
+ADR-0002 §2), and the one Shadow-mode practice page the Phase A
+plan summary requires (queue fetch + idempotent rating POST with
+`crypto.randomUUID()` `client_mutation_id`). Test coverage: an
+ApiClient test pins the canonical-envelope error parsing path
+(unauthorized, csrf_origin_denied, refresh_reused, malformed
+non-2xx), and an App smoke test verifies the three routes
+mount under HashRouter. Phase A Task 9 done. Final step pending:
+decide whether to squash the seven feature branches into `main`
+or keep the topic-branch lineage for reviewable history.)
 
 ## Current focus
 
