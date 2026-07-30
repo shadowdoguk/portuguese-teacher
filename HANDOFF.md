@@ -1,11 +1,13 @@
 # Session Handoff
 
-**Snapshot date:** 2026-07-30 (Session 5 — Task 1 committed on
-`feat/monorepo-root-tooling`: root tooling + amendment Task A1
-`legacy/` ESLint guard + Phase C Android prereq helper +
-`docs/superpowers/README.md` cross-link. Phase A Tasks 2–9 and
-amendment Tasks A2–A7 unblocked on top of `chore/archive-legacy`
-HEAD `8d5088b`.)
+**Snapshot date:** 2026-07-30 (Session 6 — Task 2 committed on
+`feat/contracts-zod-schemas`: `@pt/contracts` workspace published
+with Zod 4.4.3 schemas for errors, curriculum (incl. ADR-0001
+`cv_sentence_versions` projection), practice, audio, conversation,
+and auth (incl. ADR-0002 Argon2id triple lock + web/Android
+discriminated-union login/refresh). Phase A Tasks 3–9 and
+amendment Tasks A2–A7 unblocked on top of `feat/monorepo-root-
+tooling` HEAD `c31c6cc`.)
 
 > **This file is a point-in-time snapshot.** For the living,
 > agent-picked-up tracker, see [`PROGRESS.md`](./PROGRESS.md) — it
@@ -104,34 +106,35 @@ and applied to the rebuild's release-scope gate:
 
 ## First action for next session
 
-Tasks 0 (legacy archive) and 1 (root tooling) are both **done** as of
-Session 5 on 2026-07-30. The legacy tree is archived at
-`chore/archive-legacy` HEAD `8d5088b`; the greenfield root tooling
-lives on `feat/monorepo-root-tooling` (root tooling, amendment
-Task A1 `legacy/` ESLint guard, Phase C Android prereq helper,
-`docs/superpowers/README.md` cross-link). Phase A Tasks 2–9 and
-amendment Tasks A2–A7 are now unblocked.
+Tasks 0, 1, and 2 are **done** as of Session 6 on 2026-07-30. The
+legacy tree is archived at `chore/archive-legacy` HEAD `8d5088b`;
+root tooling lives on `feat/monorepo-root-tooling` HEAD `c31c6cc`;
+`@pt/contracts` is published on `feat/contracts-zod-schemas` with
+Zod 4.4.3 schemas for errors, curriculum (ADR-0001 projection),
+practice, audio, conversation, and auth (ADR-0002 Argon2id lock +
+web/Android discriminated-union login/refresh). Phase A Tasks 3–9
+and amendment Tasks A2–A7 are now unblocked.
 
 ```bash
 cd /home/david/shadowdog-dev/projects/portuguese-teacher
-git checkout feat/monorepo-root-tooling
+git checkout feat/contracts-zod-schemas
 git pull --ff-only
 git status
 # Read PROGRESS.md, this file, CONTEXT.md, the spec, the Phase A
 # plan, and the Phase A ADR incorporation plan.
 
-# Task 2 (shared Zod contracts) is the natural next step:
-# packages/contracts — Zod schemas for curriculum, practice, audio,
-# conversation, auth. Consumed by API, web, and domain; typecheck
-# enforced by the workspace tsconfig references added in Task 1.
-# Cut a feature branch off feat/monorepo-root-tooling.
-git checkout -b feat/contracts-zod-schemas
+# Task 3 (pure domain rules) is the natural next step:
+# packages/domain — pure functions for ratings, review scheduling,
+# progress, filters, recorder, conversation. No HTTP, no DB; types
+# inferred from @pt/contracts (Task 2). Cut a feature branch off
+# feat/contracts-zod-schemas.
+git checkout -b feat/domain-rules
 
 # Per the Phase A plan's Global Constraints, every commit step is
 # review-only — no commit fires without explicit user authorisation.
 ```
 
-Sessions continuing the rebuild should pick up at **Task 2** of the
+Sessions continuing the rebuild should pick up at **Task 3** of the
 Phase A plan unless `PROGRESS.md` records further state.
 
 ## Key references
