@@ -5,16 +5,16 @@ where the last one left off. Update it whenever an issue transitions
 state, a branch lands, a decision is made, or a blocker appears or
 clears.
 
-**Last updated:** 2026-07-30 (Session 6 — Task 2 committed
-(`feat/contracts-zod-schemas`): `@pt/contracts` workspace published
-with Zod 4.4.3 schemas for errors, curriculum (incl. ADR-0001
-`cv_sentence_versions` projection), practice, audio, conversation,
-and auth (incl. ADR-0002 Argon2id triple lock and web/Android
-discriminated-union login/refresh). 665-line test file pins every
-top-level schema with positive + negative fixtures. Layering rule
-enforced by `exports` map + workspace TS references. Phase A
-Tasks 3–9 and amendment Tasks A2–A7 unblocked on top of
-`feat/monorepo-root-tooling` HEAD `c31c6cc`.)
+**Last updated:** 2026-07-30 (Session 7 — Task 3 committed
+(`feat/domain-rules`): `@pt/domain` workspace published with pure
+helpers for id validation/normalisation, rating semantics
+(1..5 + idempotent validator), Smart Review queue ordering
+(rating ASC → lastPractisedAt ASC NULLS FIRST → curriculumOrder
+ASC, limit-clamped), progress aggregation (NaN-safe), and
+conversation turn-bucketing. Layering rule enforced mechanically
+by `assertPureLayering()` (zero forbidden-import matches across
+all six source files). Phase A Tasks 4–9 and amendment Tasks A2–A7
+unblocked on top of `feat/contracts-zod-schemas` HEAD `d6aed71`.)
 
 ## Current focus
 
