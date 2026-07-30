@@ -1,9 +1,11 @@
 # Session Handoff
 
-**Snapshot date:** 2026-07-29 (Session 4 — Task 0 committed on
-`chore/archive-legacy`: legacy Next.js application archived into
-`legacy/`, repo root replaced with greenfield governance; Tasks 1–9
-of Phase A unblocked)
+**Snapshot date:** 2026-07-30 (Session 5 — Task 1 committed on
+`feat/monorepo-root-tooling`: root tooling + amendment Task A1
+`legacy/` ESLint guard + Phase C Android prereq helper +
+`docs/superpowers/README.md` cross-link. Phase A Tasks 2–9 and
+amendment Tasks A2–A7 unblocked on top of `chore/archive-legacy`
+HEAD `8d5088b`.)
 
 > **This file is a point-in-time snapshot.** For the living,
 > agent-picked-up tracker, see [`PROGRESS.md`](./PROGRESS.md) — it
@@ -102,32 +104,34 @@ and applied to the rebuild's release-scope gate:
 
 ## First action for next session
 
-Task 0 (legacy archive) is **done** as of Session 4 on 2026-07-29 —
-the legacy tree is committed to `chore/archive-legacy` and the root
-holds the greenfield governance plus ADR 0001 + ADR 0002. Tasks 1–9
-of Phase A and Tasks A1–A7 of the amendment plan are now unblocked.
+Tasks 0 (legacy archive) and 1 (root tooling) are both **done** as of
+Session 5 on 2026-07-30. The legacy tree is archived at
+`chore/archive-legacy` HEAD `8d5088b`; the greenfield root tooling
+lives on `feat/monorepo-root-tooling` (root tooling, amendment
+Task A1 `legacy/` ESLint guard, Phase C Android prereq helper,
+`docs/superpowers/README.md` cross-link). Phase A Tasks 2–9 and
+amendment Tasks A2–A7 are now unblocked.
 
 ```bash
 cd /home/david/shadowdog-dev/projects/portuguese-teacher
-git checkout chore/archive-legacy
+git checkout feat/monorepo-root-tooling
 git pull --ff-only
 git status
 # Read PROGRESS.md, this file, CONTEXT.md, the spec, the Phase A
 # plan, and the Phase A ADR incorporation plan.
 
-# Task 1 (root tooling) is the natural next step:
-# pnpm-workspace.yaml, package.json, tsconfig.base.json,
-# eslint.config.mjs, dotfiles, docs/superpowers/README.md,
-# docs/adr/{0001,0002}, tools/check-android-prereqs.ts.
-# Cut a feature branch off chore/archive-legacy, run pnpm install,
-# and walk the steps in the Phase A plan.
-git checkout -b feat/monorepo-root-tooling
+# Task 2 (shared Zod contracts) is the natural next step:
+# packages/contracts — Zod schemas for curriculum, practice, audio,
+# conversation, auth. Consumed by API, web, and domain; typecheck
+# enforced by the workspace tsconfig references added in Task 1.
+# Cut a feature branch off feat/monorepo-root-tooling.
+git checkout -b feat/contracts-zod-schemas
 
 # Per the Phase A plan's Global Constraints, every commit step is
 # review-only — no commit fires without explicit user authorisation.
 ```
 
-Sessions continuing the rebuild should pick up at **Task 1** of the
+Sessions continuing the rebuild should pick up at **Task 2** of the
 Phase A plan unless `PROGRESS.md` records further state.
 
 ## Key references

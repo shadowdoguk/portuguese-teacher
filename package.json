@@ -1,0 +1,33 @@
+{
+  "name": "portuguese-teacher",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Curated A1+A2 European Portuguese learning platform — greenfield rebuild.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r --parallel typecheck",
+    "lint": "pnpm -r --parallel lint",
+    "test": "pnpm -r --parallel test",
+    "build": "pnpm -r --parallel build",
+    "format": "pnpm -r --parallel format",
+    "content:compile": "pnpm --filter @pt/content run compile",
+    "content:compile:fixture": "pnpm --filter @pt/content run compile:fixture",
+    "dev:up": "bash scripts/dev-up.sh",
+    "dev:down": "bash scripts/dev-down.sh",
+    "progress:check": "bash scripts/progress-check.sh",
+    "tools:android-prereqs": "tsx tools/check-android-prereqs.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "eslint": "9.39.0",
+    "tsx": "4.23.1",
+    "typescript": "5.6.3",
+    "vitest": "4.1.10"
+  }
+}

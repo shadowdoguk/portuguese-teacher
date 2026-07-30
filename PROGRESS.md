@@ -5,10 +5,13 @@ where the last one left off. Update it whenever an issue transitions
 state, a branch lands, a decision is made, or a blocker appears or
 clears.
 
-**Last updated:** 2026-07-29 (Session 4 — Task 0 committed
-(`chore/archive-legacy`): legacy Next.js application archived into
-`legacy/`, repo root replaced with greenfield governance plus ADR
-0001 + ADR 0002)
+**Last updated:** 2026-07-30 (Session 5 — Task 1 committed
+(`feat/monorepo-root-tooling`): root tooling laid down on top of
+`chore/archive-legacy` HEAD `8d5088b`; amendment Task A1
+(`legacy/` ESLint guard) bundled into the same chore; Phase C
+Android prereq helper shipped; `docs/superpowers/README.md`
+cross-link live. Phase A Tasks 2–9 and amendment Tasks A2–A7
+unblocked.)
 
 ## Current focus
 
