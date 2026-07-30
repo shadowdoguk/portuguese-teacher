@@ -15,13 +15,35 @@
 // Phase B's curriculum/practice/queue/review endpoints land in Task 8
 // on top of this commit.
 
-import express, { type Express } from 'express';
+import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import cookieParser from 'cookie-parser';
 import { NODE_ENV, isProduction } from './env.js';
 import { originAllowList } from './middleware/origin.js';
 import { cacheControl } from './middleware/cache.js';
+import { requireAuth, type AuthedLocals } from './middleware/requireAuth.js';
 import authRouter from './modules/auth/router.js';
+import curriculumRouter from './modules/curriculum/router.js';
+import practiceRouter from './modules/practice/router.js';
 import { healthHandler } from './health.js';
+
+/**
+ * Express middleware shim: copies res.locals.auth.userId onto the
+ * request object so route handlers can call req.userIdFromAuth()
+ * without re-reading res.locals. Sits immediately after requireAuth
+ * in the curriculum + practice route chains.
+ */
+function userIdFromAuthShim(req: Request, res: Response, next: NextFunction): void {
+  const locals = res.locals as { auth?: AuthedLocals };
+  const userId = locals.auth?.userId;
+  req.userIdFromAuth = () => userId;
+  next();
+}
+
+declare module 'express-serve-static-core' {
+  interface Request {
+    userIdFromAuth(): string | undefined;
+  }
+}
 
 export function createApp(): Express {
   const app = express();
@@ -41,6 +63,13 @@ export function createApp(): Express {
 
   app.get('/api/health', healthHandler);
   app.use('/api/auth', authRouter);
+
+  // Authenticated routes mount behind requireAuth (Task 7). The
+  // userIdFromAuth shim copies res.locals.auth.userId onto the
+  // request object so the curriculum + practice routers can read it
+  // without re-implementing the cookie-vs-bearer resolution.
+  app.use('/api/curriculum', requireAuth, userIdFromAuthShim, curriculumRouter);
+  app.use('/api/practice', requireAuth, userIdFromAuthShim, practiceRouter);
 
   // 404 for unknown /api routes — return the canonical envelope.
   app.use((_req, res) => {

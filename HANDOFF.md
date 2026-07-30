@@ -1,18 +1,19 @@
 # Session Handoff
 
-**Snapshot date:** 2026-07-30 (Session 11 — Task 7 committed on
-`feat/api-auth-shell`: `@pt/api` extended with Express 5.2.1
-bootstrap (`src/index.ts`), `/api/health` probe, and the auth
-router covering POST `/api/auth/{signup,login,refresh,logout}` and
-GET `/api/auth/session`. Bundles amendment Tasks A4 (Origin
-allow-list middleware → 403 `csrf_origin_denied`; extended
-`errorCodeSchema` with `csrf_origin_denied` and `refresh_reused`),
-A5 (refresh-reuse compromise guard: revoked/rotated refresh-token
-detected → revoke all sessions for the user → 401 `refresh_reused`),
-and A6 (Cache-Control discipline: `private, max-age=60` on
-`/api/curriculum/*`, `no-store` on auth/rating/session/event
-routes). Phase A Tasks 8–9 and amendment Task A7 unblocked on
-top of `feat/content-compile` HEAD `c6d6799`.)
+**Snapshot date:** 2026-07-30 (Session 12 — Task 8 committed on
+`feat/api-content-routes`: `@pt/api` extended with the curriculum
+router (`/api/curriculum/{levels,levels/:levelId,units/:unitId}`)
+and the practice router
+(`/api/practice/{ratings,events,queue,review,sessions}`) mounted
+behind `requireAuth` + a `userIdFromAuthShim` that copies
+`res.locals.auth.userId` onto the request. Bundles amendment
+Task A7: `resolveCredential()` selects cookie-vs-bearer by
+`X-Client-Platform`. The practice router ties `@pt/domain`'s
+pure helpers (`validateIdempotentRating`,
+`buildSmartReviewQueue`, `aggregateProgress`) to the
+`practice_ratings` table with the locked CHECK constraints and
+the idempotent `(user, client_mutation_id)` upsert. Phase A
+Task 9 unblocked on top of `feat/api-auth-shell` HEAD `9ceb72e`.)
 
 > **This file is a point-in-time snapshot.** For the living,
 > agent-picked-up tracker, see [`PROGRESS.md`](./PROGRESS.md) — it
@@ -111,49 +112,42 @@ and applied to the rebuild's release-scope gate:
 
 ## First action for next session
 
-Tasks 0, 1, 2, 3, 4, 5, 6, and 7 are **done** as of Session 11 on
-2026-07-30. The legacy tree is archived at `chore/archive-legacy`
+Tasks 0, 1, 2, 3, 4, 5, 6, 7, and 8 are **done** as of Session 12
+on 2026-07-30. The legacy tree is archived at `chore/archive-legacy`
 HEAD `8d5088b`; root tooling on `feat/monorepo-root-tooling` HEAD
 `c31c6cc`; `@pt/contracts` on `feat/contracts-zod-schemas` HEAD
 `d6aed71`; `@pt/domain` on `feat/domain-rules` HEAD `d3ccbc6`;
 `@pt/tooling` on `feat/tooling-adapters` HEAD `2725d02`; `@pt/api`
 on `feat/api-schema` HEAD `bba1642`; `@pt/content` on
 `feat/content-compile` HEAD `c6d6799`; `@pt/api` extended on
-`feat/api-auth-shell` with Express 5.2.1 bootstrap, `/api/health`
-probe, and the auth router (signup/login/refresh/logout/session),
-bundling amendment Tasks A4 (Origin allow-list + 403
-`csrf_origin_denied`), A5 (refresh-reuse compromise guard), and
-A6 (Cache-Control discipline). Phase A Tasks 8–9 and amendment
-Task A7 are now unblocked.
+`feat/api-auth-shell` HEAD `9ceb72e`; the curriculum + practice
+routers are mounted on `feat/api-content-routes` behind
+`requireAuth`, with the A7 `resolveCredential()` client-platform
+dispatch in place. Phase A Task 9 is now unblocked.
 
 ```bash
 cd /home/david/shadowdog-dev/projects/portuguese-teacher
-git checkout feat/api-auth-shell
+git checkout feat/api-content-routes
 git pull --ff-only
 git status
 # Read PROGRESS.md, this file, CONTEXT.md, the spec, the Phase A
 # plan, and the Phase A ADR incorporation plan.
 
-# Task 8 (content mount) is the natural next step:
-# apps/api/src/modules/curriculum/{router,repo}.ts — Express
-# router for /api/curriculum/{levels,units,queue,review}; repo
-# uses @pt/contracts' curriculum/practice schemas and @pt/domain's
-# pure helpers (buildSmartReviewQueue, aggregateProgress). The
-# cacheControl middleware (Task 7, A6) already emits
-# `private, max-age=60` on /api/curriculum/*; the router attaches
-# `res.locals.cvId` so a real ETag replaces the Phase A placeholder.
-# Bundles amendment Task A7 (Android bearer transport + client-
-# platform dispatch: an authenticated /api/practice/* request from
-# an Android bearer adds the X-Client-Platform header and reads the
-# Authorization header instead of the cookie). Cut a feature
-# branch off feat/api-auth-shell.
-git checkout -b feat/api-content-routes
+# Task 9 (React + Vite web app) is the natural next step:
+# apps/web — Vite 8.1.5 + React 19.2.8 SPA. One Shadow-mode
+# practice page that hits POST /api/practice/ratings (idempotent
+# on client_mutation_id) and reads GET /api/practice/queue. The
+# auth router (Task 7) is the login surface; the SPA stores
+# nothing in localStorage (cookies only, per ADR-0002 §2). The
+# @pt/contracts types wire every fetch response into the SPA.
+# Cut a feature branch off feat/api-content-routes.
+git checkout -b feat/web-app
 
 # Per the Phase A plan's Global Constraints, every commit step is
 # review-only — no commit fires without explicit user authorisation.
 ```
 
-Sessions continuing the rebuild should pick up at **Task 8** of the
+Sessions continuing the rebuild should pick up at **Task 9** of the
 Phase A plan unless `PROGRESS.md` records further state.
 
 ## Key references

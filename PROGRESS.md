@@ -5,29 +5,25 @@ where the last one left off. Update it whenever an issue transitions
 state, a branch lands, a decision is made, or a blocker appears or
 clears.
 
-**Last updated:** 2026-07-30 (Session 11 — Task 7 committed
-(`feat/api-auth-shell`): `@pt/api` extended with Express 5.2.1
-bootstrap (`src/index.ts`), `/api/health` probe, and the auth
-router covering POST `/api/auth/{signup,login,refresh,logout}` and
-GET `/api/auth/session`. Bundles amendment Tasks A4 (Origin
-allow-list middleware → 403 `csrf_origin_denied`; extended
-`errorCodeSchema` with `csrf_origin_denied` and `refresh_reused`),
-A5 (refresh-reuse compromise guard: revoked/rotated refresh-token
-detected → revoke all sessions for the user → 401 `refresh_reused`),
-and A6 (Cache-Control discipline: `private, max-age=60` on
-`/api/curriculum/*`, `no-store` on auth/rating/session/event
-routes). Auth primitives are pure: argon.ts wraps `@node-rs/argon2`
-with the locked triple (memoryCost 19456, timeCost 2, parallelism
-1) from `@pt/contracts.argon2Params`; tokens.ts generates 32-byte
-hex and SHA-256-hashes them before storage; cookies.ts wires
-`ptp_access` (15 min) + `ptp_refresh` (30 d) with `secure` derived
-from NODE_ENV per ADR-0002 §2. requireAuth.ts selects credential
-transport by `X-Client-Platform`: web reads the cookie, android
-reads the Bearer header (default accepts either; the header wins).
-Four middleware/router tests pin the A4 Origin gate, the A6
-Cache-Control gate, the 401 surface of requireAuth, and the
-pre-DB auth-routes shape. Phase A Tasks 8–9 and amendment Task A7
-unblocked on top of `feat/content-compile` HEAD `c6d6799`.)
+**Last updated:** 2026-07-30 (Session 12 — Task 8 committed
+(`feat/api-content-routes`): `@pt/api` extended with the
+curriculum router (`/api/curriculum/{levels,levels/:levelId,units/:unitId}`)
+and the practice router
+(`/api/practice/{ratings,events,queue,review,sessions}`) mounted
+behind `requireAuth` + a `userIdFromAuthShim` that copies
+`res.locals.auth.userId` onto the request. Bundles amendment
+Task A7: `resolveCredential()` selects cookie-vs-bearer by
+`X-Client-Platform` (web reads `ptp_access`; android reads
+`Authorization: Bearer`; default accepts either with the header
+winning). The practice router ties `@pt/domain`'s pure helpers
+(`validateIdempotentRating`, `buildSmartReviewQueue`,
+`aggregateProgress`) to the `practice_ratings` table with the
+locked CHECK constraints and the idempotent
+`(user, client_mutation_id)` upsert. Three router tests pin the
+pre-DB surface: validation 400s, the requireAuth 401 gate, and
+the A6 `no-store` Cache-Control discipline on `/api/practice/*`.
+Phase A Task 9 unblocked on top of `feat/api-auth-shell` HEAD
+`9ceb72e`.)
 
 ## Current focus
 
