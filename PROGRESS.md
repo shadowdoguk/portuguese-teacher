@@ -5,19 +5,29 @@ where the last one left off. Update it whenever an issue transitions
 state, a branch lands, a decision is made, or a blocker appears or
 clears.
 
-**Last updated:** 2026-07-30 (Session 10 — Task 6 committed
-(`feat/content-compile`): `@pt/content` workspace published with
-manifest parser, deterministic canonicalizer (amendment A3),
-compiler, and atomic apply-publish helper. Bundles amendment
-Task A3 end-to-end: deterministic UTF-8 byte serializer (sorted
-keys, throws on cycles, drops undefined, no BigInt); compile
-turns manifests into row payloads + the cv_sentence_versions
-projection (ADR-0001 §4); apply-publish runs SELECT … FOR UPDATE
-+ atomic rotation + ON CONFLICT (id) DO NOTHING inserts in a
-single Drizzle transaction. Two tests pin determinism, idempotency,
-and the (cv, sentence) projection shape. Phase A Tasks 7–9 and
-amendment Tasks A4–A7 unblocked on top of `feat/api-schema` HEAD
-`bba1642`.)
+**Last updated:** 2026-07-30 (Session 11 — Task 7 committed
+(`feat/api-auth-shell`): `@pt/api` extended with Express 5.2.1
+bootstrap (`src/index.ts`), `/api/health` probe, and the auth
+router covering POST `/api/auth/{signup,login,refresh,logout}` and
+GET `/api/auth/session`. Bundles amendment Tasks A4 (Origin
+allow-list middleware → 403 `csrf_origin_denied`; extended
+`errorCodeSchema` with `csrf_origin_denied` and `refresh_reused`),
+A5 (refresh-reuse compromise guard: revoked/rotated refresh-token
+detected → revoke all sessions for the user → 401 `refresh_reused`),
+and A6 (Cache-Control discipline: `private, max-age=60` on
+`/api/curriculum/*`, `no-store` on auth/rating/session/event
+routes). Auth primitives are pure: argon.ts wraps `@node-rs/argon2`
+with the locked triple (memoryCost 19456, timeCost 2, parallelism
+1) from `@pt/contracts.argon2Params`; tokens.ts generates 32-byte
+hex and SHA-256-hashes them before storage; cookies.ts wires
+`ptp_access` (15 min) + `ptp_refresh` (30 d) with `secure` derived
+from NODE_ENV per ADR-0002 §2. requireAuth.ts selects credential
+transport by `X-Client-Platform`: web reads the cookie, android
+reads the Bearer header (default accepts either; the header wins).
+Four middleware/router tests pin the A4 Origin gate, the A6
+Cache-Control gate, the 401 surface of requireAuth, and the
+pre-DB auth-routes shape. Phase A Tasks 8–9 and amendment Task A7
+unblocked on top of `feat/content-compile` HEAD `c6d6799`.)
 
 ## Current focus
 

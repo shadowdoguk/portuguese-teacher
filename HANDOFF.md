@@ -1,16 +1,18 @@
 # Session Handoff
 
-**Snapshot date:** 2026-07-30 (Session 10 — Task 6 committed on
-`feat/content-compile`: `@pt/content` workspace published with
-manifest parser, deterministic canonicalizer (amendment A3),
-compiler, and atomic apply-publish helper. Bundles amendment
-Task A3 end-to-end: deterministic UTF-8 byte serializer (sorted
-keys, throws on cycles, drops undefined, no BigInt); compile turns
-manifests into row payloads + the cv_sentence_versions projection
-(ADR-0001 §4); apply-publish runs SELECT … FOR UPDATE + atomic
-rotation + ON CONFLICT (id) DO NOTHING inserts in a single Drizzle
-transaction. Phase A Tasks 7–9 and amendment Tasks A4–A7 unblocked
-on top of `feat/api-schema` HEAD `bba1642`.)
+**Snapshot date:** 2026-07-30 (Session 11 — Task 7 committed on
+`feat/api-auth-shell`: `@pt/api` extended with Express 5.2.1
+bootstrap (`src/index.ts`), `/api/health` probe, and the auth
+router covering POST `/api/auth/{signup,login,refresh,logout}` and
+GET `/api/auth/session`. Bundles amendment Tasks A4 (Origin
+allow-list middleware → 403 `csrf_origin_denied`; extended
+`errorCodeSchema` with `csrf_origin_denied` and `refresh_reused`),
+A5 (refresh-reuse compromise guard: revoked/rotated refresh-token
+detected → revoke all sessions for the user → 401 `refresh_reused`),
+and A6 (Cache-Control discipline: `private, max-age=60` on
+`/api/curriculum/*`, `no-store` on auth/rating/session/event
+routes). Phase A Tasks 8–9 and amendment Task A7 unblocked on
+top of `feat/content-compile` HEAD `c6d6799`.)
 
 > **This file is a point-in-time snapshot.** For the living,
 > agent-picked-up tracker, see [`PROGRESS.md`](./PROGRESS.md) — it
@@ -109,40 +111,49 @@ and applied to the rebuild's release-scope gate:
 
 ## First action for next session
 
-Tasks 0, 1, 2, 3, 4, 5, and 6 are **done** as of Session 10 on
+Tasks 0, 1, 2, 3, 4, 5, 6, and 7 are **done** as of Session 11 on
 2026-07-30. The legacy tree is archived at `chore/archive-legacy`
 HEAD `8d5088b`; root tooling on `feat/monorepo-root-tooling` HEAD
 `c31c6cc`; `@pt/contracts` on `feat/contracts-zod-schemas` HEAD
 `d6aed71`; `@pt/domain` on `feat/domain-rules` HEAD `d3ccbc6`;
 `@pt/tooling` on `feat/tooling-adapters` HEAD `2725d02`; `@pt/api`
-on `feat/api-schema` HEAD `bba1642`; `@pt/content` is published on
-`feat/content-compile` with manifest parser, deterministic
-canonicalizer (amendment A3), compiler, and atomic apply-publish
-helper. Phase A Tasks 7–9 and amendment Tasks A4–A7 are now
-unblocked.
+on `feat/api-schema` HEAD `bba1642`; `@pt/content` on
+`feat/content-compile` HEAD `c6d6799`; `@pt/api` extended on
+`feat/api-auth-shell` with Express 5.2.1 bootstrap, `/api/health`
+probe, and the auth router (signup/login/refresh/logout/session),
+bundling amendment Tasks A4 (Origin allow-list + 403
+`csrf_origin_denied`), A5 (refresh-reuse compromise guard), and
+A6 (Cache-Control discipline). Phase A Tasks 8–9 and amendment
+Task A7 are now unblocked.
 
 ```bash
 cd /home/david/shadowdog-dev/projects/portuguese-teacher
-git checkout feat/content-compile
+git checkout feat/api-auth-shell
 git pull --ff-only
 git status
 # Read PROGRESS.md, this file, CONTEXT.md, the spec, the Phase A
 # plan, and the Phase A ADR incorporation plan.
 
-# Task 7 (auth + app shell) is the natural next step:
-# apps/api/src/{index.ts,auth,middleware} — Express 5.2.1 bootstrap,
-# Argon2id-hashed password signup, opaque-token login + cookies,
-# requireAuth() abstraction, current-session-only logout (ADR-0002),
-# origin/CSRF middleware (amendment A4), cacheControl middleware
-# (amendment A6), refresh-reuse compromise guard (amendment A5).
-# Cut a feature branch off feat/content-compile.
-git checkout -b feat/api-auth-shell
+# Task 8 (content mount) is the natural next step:
+# apps/api/src/modules/curriculum/{router,repo}.ts — Express
+# router for /api/curriculum/{levels,units,queue,review}; repo
+# uses @pt/contracts' curriculum/practice schemas and @pt/domain's
+# pure helpers (buildSmartReviewQueue, aggregateProgress). The
+# cacheControl middleware (Task 7, A6) already emits
+# `private, max-age=60` on /api/curriculum/*; the router attaches
+# `res.locals.cvId` so a real ETag replaces the Phase A placeholder.
+# Bundles amendment Task A7 (Android bearer transport + client-
+# platform dispatch: an authenticated /api/practice/* request from
+# an Android bearer adds the X-Client-Platform header and reads the
+# Authorization header instead of the cookie). Cut a feature
+# branch off feat/api-auth-shell.
+git checkout -b feat/api-content-routes
 
 # Per the Phase A plan's Global Constraints, every commit step is
 # review-only — no commit fires without explicit user authorisation.
 ```
 
-Sessions continuing the rebuild should pick up at **Task 7** of the
+Sessions continuing the rebuild should pick up at **Task 8** of the
 Phase A plan unless `PROGRESS.md` records further state.
 
 ## Key references
