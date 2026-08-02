@@ -5,19 +5,31 @@ where the last one left off. Update it whenever an issue transitions
 state, a branch lands, a decision is made, or a blocker appears or
 clears.
 
-**Last updated:** 2026-08-02 (Session 14 — Phase A close-out. User
-delegated all decisions to the agent. Phase A close-out state:
-the seven Phase A branches were already fast-forwarded into `main`
-on 2026-07-30 (Path B per HANDOFF's "first action for next
-session"; reflog records `merge feat/web-app: Fast-forward` at
-10:51:16). `main` now contains the seven per-task `feat`/`chore`
-commits as a linear chain on top of `chore: greenfield kickoff`
-(5ccf311). Session 14 added a governance commit (1b3071d) for
-the PROGRESS/HANDOFF refresh. User-delegated decisions in this
-session: confirm Path B as the chosen close-out,
-no origin push, defer branch teardown for one more session, start
-Phase B today. Phase B Task 1 (`@pt/contracts` B-side schemas)
-cut on `feat/phase-b-contracts`.)
+**Last updated:** 2026-08-02 (Session 14 — Phase A close-out and
+Phase B Task 1. User delegated all decisions to the agent.
+Phase A close-out: reflog shows the seven Phase A branches were
+already fast-forwarded into `main` on 2026-07-30 (Path B via
+`merge feat/web-app: Fast-forward` at 10:51:16). `main` now
+contains the seven per-task `feat`/`chore` commits as a linear
+chain on top of `chore: greenfield kickoff` (5ccf311). Session 14
+added the governance commit `469d9cb` for the PROGRESS/HANDOFF
+refresh. Phase B Task 1 landed on `feat/phase-b-contracts` in
+three commits: `2e2bd87` (Phase B contracts: practice, settings,
+collections, unitProgress, filter schemas + six new error codes
++ `practice.ts` rewrite + duplicate-`scenarioIdSchema` export
+hygiene + Phase A test updates for the new shape), `525b87c`
+(first committed `pnpm-lock.yaml` — the repo had no lockfile
+before this session), `2d6fddb` (`@pt/domain::ids.ts` Zod 4
+reflection fix — replaces the `_def.checks` drift detector with
+a docstring, since Zod 4 strips check fields at runtime;
+duplicate-export block also removed). Hygiene debt deferred to a
+follow-up chore branch: `@pt/tooling` has 5 pre-existing Zod 4
+typecheck errors (`readonly` array vs mutable interface, `sampleRate`
+on `Promise<AudioRecorderHandle>`), and `@pt/domain::domain.test.ts`
+has 3 pre-existing test failures unrelated to Phase B. Decisions:
+Path B for Phase A close-out, no `origin/main` push, `chore/archive-legacy`
+deleted locally, seven `feat/*` Phase A branches kept locally for
+one more session, Phase B Task 1 in scope today.)
 
 ## Current focus
 

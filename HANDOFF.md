@@ -154,9 +154,42 @@ The branch lineage on `main` (oldest to newest, after Path B):
   * `feat/web-app`                      HEAD `7790277`  (Task 9: @pt/web Vite + React SPA)
 
 
-Sessions continuing the rebuild should pick up at **Phase B —
-Practice Surface + Six-Stage Skeleton** unless `PROGRESS.md`
-records further state.
+## Phase B Task 1 close-out (Session 14, 2026-08-02)
+
+Three commits landed on `feat/phase-b-contracts`:
+
+  * `2e2bd87` — `feat(contracts): practice, settings, collections, unitProgress, filter schemas + error codes`
+    - Five new files: `settings.ts`, `collections.ts`, `unitProgress.ts`, `filter.ts`, `phase-b-schemas.test.ts`.
+    - `practice.ts` rewritten per the Phase B plan: `practiceItemSchema` now exposes `unitId` + `orderIndex` (was `curriculumOrder`); `ratingWriteSchema` uses `cm_<slug>` (was UUID); `practiceQueueQuerySchema` makes `unitId` mandatory and adds `match: 'or' | 'all'`. Backward-compat aliases exported (`practiceModeSchema`, `practiceRatingInputSchema`, `smartReviewQueueResponseSchema`) so the Phase A call sites in `apps/api` keep working until Task 3.
+    - `errors.ts` extended with six new codes: `practice_queue_empty`, `collection_name_required`, `collection_not_found`, `unit_not_found`, `stage_unknown`, `unit_progress_invalid_status`.
+    - `curriculum.ts` + `conversation.ts` hygiene: the duplicate `scenarioIdSchema` export is now sourced from `curriculum.ts` only (the conversation module re-imports and re-exports).
+    - `contracts.test.ts` updated to the new shape (4 tests rewritten, 1 test relaxed from "reject `<script>...</script>`" to "reject >200 chars" per the Phase B `filterExpressionSchema`).
+    - Result: 84/84 tests pass (26 new + 58 updated).
+  * `525b87c` — `chore(deps): pnpm-lock.yaml`. The repo had no lockfile before this session; the install needed for the test runner to resolve `zod@4.4.3` created one. 4313 lines, Pinned dependency closure for the 7-workspace monorepo.
+  * `2d6fddb` — `fix(domain): drop Zod 4 reflection in ids.ts`. Pre-existing Zod 4 drift: the `_def.checks` reflection block in `packages/domain/src/ids.ts` was broken (Zod 4 strips check fields from `_def` at runtime) and shadowed the top-of-file `export { cvIdSchema, ... }` with a duplicate-redundant re-export. Both removed; drift detection moved to the `@pt/contracts::curriculum.test.ts` equality pinned by the existing tests.
+
+## Hygiene debt (deferred to a follow-up chore branch)
+
+Pre-existing on `main` before this session; surfaced by the install:
+
+- `@pt/tooling` typecheck fails on 5 sites: `readonly` array types not matching the `AudioSynthesisAdapter.voices` and `ConversationAdapterInterface.models` signatures, plus a `sampleRate` access on a `Promise<AudioRecorderHandle>` union in `NoOpAudioRecorder.start()`. Fix: widen the interface signatures to accept `readonly` arrays and capture `this` in the recorder closure.
+- `@pt/domain` test failures: 3 pre-existing failures in `domain.test.ts` (`validateIdempotentRating`, `buildSmartReviewQueue` ordering and clamp). With the `ids.ts` reflection fix, the tests now load; before the fix, the whole suite was unloadable. The underlying failures are in the smart-review / rating helpers and are out of scope for Phase B Task 1.
+- `@pt/api` Phase A practice router still imports the Phase A `practiceRatingInputSchema` / `practiceQueueQuerySchema` / `smartReviewQuerySchema` names. The Phase B aliases in `practice.ts` keep them compiling; Phase B Task 3 (Practice API) is the natural home for the migration.
+
+## Open question for Session 15
+
+The Phase B plan §Task 1 step 11 commits only `packages/contracts/src`. The `ids.ts` hygiene fix and the lockfile commit are deliberate scope expansions. Phase B Task 2 (Domain helpers) should:
+
+1. Land the four pure helpers (`buildPracticeQueue`, `buildReviewQueue`, `applyFilter`, `nextStageRecommendation`) the plan spells out.
+2. Decide whether to keep the Phase A `practiceRatingInputSchema` / `practiceQueueQuerySchema` / `smartReviewQuerySchema` aliases — if Task 3 is the next step, keeping them is the cheap path; if Task 3 is delayed, the alias names are confusing and should be removed.
+3. Open `chore/phase-a-zod-4-drift` to clear the `@pt/tooling` typecheck errors and the `@pt/domain` test failures (both pre-existing).
+
+Sessions continuing the rebuild should pick up at **Phase B Task 2 — Domain helpers (pure logic)** on `feat/phase-b-domain`, branched from `feat/phase-b-contracts` (to bring the new contracts in).
+
+Sessions continuing the rebuild should pick up at **Phase B
+Task 2 — Domain helpers** on `feat/phase-b-domain` (branched
+from `feat/phase-b-contracts`) unless `PROGRESS.md` records
+further state.
 
 ## Key references
 
