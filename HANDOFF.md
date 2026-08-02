@@ -176,6 +176,33 @@ Pre-existing on `main` before this session; surfaced by the install:
 - `@pt/domain` test failures: 3 pre-existing failures in `domain.test.ts` (`validateIdempotentRating`, `buildSmartReviewQueue` ordering and clamp). With the `ids.ts` reflection fix, the tests now load; before the fix, the whole suite was unloadable. The underlying failures are in the smart-review / rating helpers and are out of scope for Phase B Task 1.
 - `@pt/api` Phase A practice router still imports the Phase A `practiceRatingInputSchema` / `practiceQueueQuerySchema` / `smartReviewQuerySchema` names. The Phase B aliases in `practice.ts` keep them compiling; Phase B Task 3 (Practice API) is the natural home for the migration.
 
+## Phase B Task 2 close-out (Session 15, 2026-08-02)
+
+One commit on `feat/phase-b-domain`:
+
+  * `aec59b4` — `feat(domain): practice queue/review/stages + filter helpers`
+    - `packages/domain/src/practice/queue.ts` — `buildPracticeQueue(sentences, { mode, sortOrder, filter?, matchAll? })`. Sorts by `orderIndex` ASC for `curriculum` / `easyToHard`, DESC for `hardToEasy`. Applies the filter expression before sorting.
+    - `packages/domain/src/practice/review.ts` — `buildReviewQueue(ratings, sentences, mode, limit)`. Excludes rating === 5 (mastered), unrated rows, and wrong-mode rows. Orders `rating ASC → lastPractisedAt ASC NULLS FIRST → orderIndex ASC`. Clamps to `limit`. Plus the `ReviewRating` type.
+    - `packages/domain/src/practice/stages.ts` — `STAGE_ORDER` (the six stages) + `Stage` type + `nextStageRecommendation({ completedStages })` returning the lowest incomplete stage or `null`.
+    - `packages/domain/src/practice/types.ts` — `PracticeItem`, `PracticeMode`, `PracticeQueueOptions`. Mirrors `@pt/contracts::practiceItemSchema` as a plain TS type so the helpers stay Zod-free.
+    - `packages/domain/src/filter/apply.ts` — `applyFilter(sentences, terms, matchAll)`. Empty terms is a no-op; haystack is `textPt + textEn` lowercased.
+    - `packages/domain/src/settings/types.ts` — `SortOrder` enum.
+    - `packages/domain/src/__tests__/phase-b-domain.test.ts` — 15 tests pinning the four helpers.
+    - `packages/domain/src/index.ts` — re-exports the new modules.
+
+**Test results:** 15/15 Phase B tests pass. `@pt/domain` typecheck clean. The 3 pre-existing Phase A `domain.test.ts` failures (`validateIdempotentRating`, `buildSmartReviewQueue` ordering and clamp) are unchanged — they are in the Phase A files and out of scope for Task 2.
+
+**Coexistence with Phase A `review.ts`:** the Phase A `buildSmartReviewQueue` (Drizzle-shape — `SmartReviewRating[]`, `SmartReviewSentence[]`) and the Phase B `buildReviewQueue` (Map-shape — `ReadonlyMap<sentenceId, ReviewRating>`) are separate helpers with separate contracts. They are not duplicates; the Phase B Practice API is the natural consumer of the Map shape once Task 3 lands.
+
+## Open question for Session 16
+
+Phase B Task 3 (Practice API) is the next concrete step. It rewrites `apps/api/src/modules/practice/{routes,controller,repository}.ts` against the new `buildPracticeQueue` + `buildReviewQueue` + `idempotent ratings` contract. Before Task 3 lands, two decisions are open:
+
+1. **Drop the Phase A `practiceRatingInputSchema` / `practiceQueueQuerySchema` / `smartReviewQuerySchema` aliases?** The aliases live in `packages/contracts/src/practice.ts` and let `apps/api` keep compiling. If Task 3 is the next step, keeping them is the cheap path; if Task 3 is delayed, the duplicate names are confusing and should be removed.
+2. **Open `chore/phase-a-zod-4-drift`** to clear the `@pt/tooling` typecheck errors (5 sites — `readonly` array vs mutable interface, `sampleRate` on `Promise<AudioRecorderHandle>`) and the `@pt/domain` test failures (`validateIdempotentRating`, `buildSmartReviewQueue` ordering and clamp). Both pre-existing; both block the Phase A plan's `pnpm -r typecheck` / `pnpm -r test` global constraints.
+
+Sessions continuing the rebuild should pick up at **Phase B Task 3 — Practice API** on `feat/phase-b-practice-api`, branched from `feat/phase-b-domain` (to bring the new contracts + new helpers in).
+
 ## Open question for Session 15
 
 The Phase B plan §Task 1 step 11 commits only `packages/contracts/src`. The `ids.ts` hygiene fix and the lockfile commit are deliberate scope expansions. Phase B Task 2 (Domain helpers) should:
@@ -185,11 +212,6 @@ The Phase B plan §Task 1 step 11 commits only `packages/contracts/src`. The `id
 3. Open `chore/phase-a-zod-4-drift` to clear the `@pt/tooling` typecheck errors and the `@pt/domain` test failures (both pre-existing).
 
 Sessions continuing the rebuild should pick up at **Phase B Task 2 — Domain helpers (pure logic)** on `feat/phase-b-domain`, branched from `feat/phase-b-contracts` (to bring the new contracts in).
-
-Sessions continuing the rebuild should pick up at **Phase B
-Task 2 — Domain helpers** on `feat/phase-b-domain` (branched
-from `feat/phase-b-contracts`) unless `PROGRESS.md` records
-further state.
 
 ## Key references
 

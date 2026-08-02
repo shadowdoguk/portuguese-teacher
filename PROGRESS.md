@@ -5,31 +5,27 @@ where the last one left off. Update it whenever an issue transitions
 state, a branch lands, a decision is made, or a blocker appears or
 clears.
 
-**Last updated:** 2026-08-02 (Session 14 — Phase A close-out and
-Phase B Task 1. User delegated all decisions to the agent.
-Phase A close-out: reflog shows the seven Phase A branches were
-already fast-forwarded into `main` on 2026-07-30 (Path B via
-`merge feat/web-app: Fast-forward` at 10:51:16). `main` now
-contains the seven per-task `feat`/`chore` commits as a linear
-chain on top of `chore: greenfield kickoff` (5ccf311). Session 14
-added the governance commit `469d9cb` for the PROGRESS/HANDOFF
-refresh. Phase B Task 1 landed on `feat/phase-b-contracts` in
-three commits: `2e2bd87` (Phase B contracts: practice, settings,
-collections, unitProgress, filter schemas + six new error codes
-+ `practice.ts` rewrite + duplicate-`scenarioIdSchema` export
-hygiene + Phase A test updates for the new shape), `525b87c`
-(first committed `pnpm-lock.yaml` — the repo had no lockfile
-before this session), `2d6fddb` (`@pt/domain::ids.ts` Zod 4
-reflection fix — replaces the `_def.checks` drift detector with
-a docstring, since Zod 4 strips check fields at runtime;
-duplicate-export block also removed). Hygiene debt deferred to a
-follow-up chore branch: `@pt/tooling` has 5 pre-existing Zod 4
-typecheck errors (`readonly` array vs mutable interface, `sampleRate`
-on `Promise<AudioRecorderHandle>`), and `@pt/domain::domain.test.ts`
-has 3 pre-existing test failures unrelated to Phase B. Decisions:
-Path B for Phase A close-out, no `origin/main` push, `chore/archive-legacy`
-deleted locally, seven `feat/*` Phase A branches kept locally for
-one more session, Phase B Task 1 in scope today.)
+**Last updated:** 2026-08-02 (Session 15 — Phase B Task 2 land.
+Phase A close-out (Session 14) on `feat/phase-b-contracts`, Phase B
+Task 1 already landed in `2e2bd87` + `525b87c` + `2d6fddb` +
+`0b6cf64`. Phase B Task 2 landed on `feat/phase-b-domain` in
+`aec59b4`: five new files (`practice/queue.ts`, `practice/review.ts`,
+`practice/stages.ts`, `practice/types.ts`, `filter/apply.ts`) plus
+`settings/types.ts` plus `__tests__/phase-b-domain.test.ts` plus
+`index.ts` re-export update. The four new helpers — `buildPracticeQueue`,
+`buildReviewQueue`, `applyFilter`, `nextStageRecommendation` —
+plus the `STAGE_ORDER` constant and `ReviewRating` type are all
+live. `@pt/domain` typecheck clean; 15/15 Phase B tests pass;
+3 pre-existing Phase A test failures in `domain.test.ts`
+(`validateIdempotentRating`, `buildSmartReviewQueue` ordering and
+clamp) unchanged from Session 14 and still out of scope. The
+Phase A `review.ts` exposes `buildSmartReviewQueue` (Drizzle-shape);
+the Phase B `practice/review.ts` exposes `buildReviewQueue`
+(Map-shape). Both coexist by design — the Phase B Practice API is
+the natural consumer of the Map shape. Hygiene debt deferred:
+`@pt/tooling` Zod 4 drift (5 typecheck errors) and the 3 Phase A
+domain test failures stay on the chore branch handoff for the
+next session.)
 
 ## Current focus
 
