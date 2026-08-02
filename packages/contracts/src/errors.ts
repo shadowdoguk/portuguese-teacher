@@ -26,6 +26,13 @@ export const errorCodeSchema = z.enum([
   'refresh_reused',
   // Amendment Task A3 — atomic publish
   'not_publishable',
+  // Phase B — practice surface (Task 1)
+  'practice_queue_empty',
+  'collection_name_required',
+  'collection_not_found',
+  'unit_not_found',
+  'stage_unknown',
+  'unit_progress_invalid_status',
 ]);
 
 export type ErrorCode = z.infer<typeof errorCodeSchema>;

@@ -11,8 +11,12 @@ import { z } from 'zod';
 
 // ---------- IDs ----------------------------------------------------------
 
-/** `scn_<slug>` Conversation Scenario ID — also re-declared inline in curriculum.ts. */
-export const scenarioIdSchema = z.string().regex(/^scn_[a-z0-9][a-z0-9_]*$/);
+// `scenarioIdSchema` is exported by `./curriculum.ts` as the single
+// source of truth. We import it here so existing call sites that
+// reference `scenarioIdSchema` from this module keep working without
+// a duplicate export (which would collide under `export *`).
+import { scenarioIdSchema } from './curriculum.js';
+export { scenarioIdSchema };
 
 /** `csess_<uuid>` Conversation Session ID. */
 export const conversationSessionIdSchema = z.string().regex(/^csess_[0-9a-f-]{36}$/);

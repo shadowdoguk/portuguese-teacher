@@ -150,10 +150,7 @@ export const levelResponseSchema = z.object({
 export type LevelResponse = z.infer<typeof levelResponseSchema>;
 
 // Forward ref so unitDetailSchema can reference the scenario id type.
-// `scenarioIdSchema` lives in `./conversation.js`. We declare a local
-// re-declaration here so `curriculum.ts` does not have to import from
-// `conversation.ts` (which would create a sibling cycle once that
-// module also references the unit schema).
-const scenarioIdSchema = z
-  .string()
-  .regex(/^scn_[a-z0-9][a-z0-9_]*$/);
+// The exported `scenarioIdSchema` above (line ~29) is the single source
+// of truth — `curriculum.ts` does not import from `conversation.ts`
+// to avoid a sibling cycle once that module also references the unit
+// schema.

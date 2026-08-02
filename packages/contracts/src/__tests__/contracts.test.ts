@@ -229,7 +229,7 @@ describe('practiceRatingInputSchema (idempotency key)', () => {
   it('accepts a valid rating input', () => {
     expect(() =>
       practiceRatingInputSchema.parse({
-        clientMutationId: uuid(),
+        clientMutationId: 'cm_1',
         sentenceId: 'sen_ola',
         mode: 'shadow',
         rating: 4,
@@ -237,7 +237,7 @@ describe('practiceRatingInputSchema (idempotency key)', () => {
     ).not.toThrow();
   });
 
-  it('rejects a non-UUID client_mutation_id', () => {
+  it('rejects a non-cm_ client_mutation_id', () => {
     expect(() =>
       practiceRatingInputSchema.parse({
         clientMutationId: 'not-a-uuid',
@@ -250,15 +250,26 @@ describe('practiceRatingInputSchema (idempotency key)', () => {
 });
 
 describe('practiceQueueQuerySchema / smartReviewQuerySchema', () => {
-  it('queue defaults match to "any"', () => {
-    const parsed = practiceQueueQuerySchema.parse({ mode: 'shadow' });
-    expect(parsed.match).toBe('any');
+  it('queue defaults match to "or"', () => {
+    const parsed = practiceQueueQuerySchema.parse({
+      unitId: 'unit_a1_introductions',
+      mode: 'shadow',
+    });
+    expect(parsed.match).toBe('or');
   });
 
-  it('queue rejects a malformed filter expression', () => {
+  it('queue rejects a filter expression over 200 chars', () => {
     expect(() =>
-      practiceQueueQuerySchema.parse({ mode: 'shadow', filter: '<script>alert(1)</script>' }),
+      practiceQueueQuerySchema.parse({
+        unitId: 'unit_a1_introductions',
+        mode: 'shadow',
+        filter: 'a'.repeat(201),
+      }),
     ).toThrow();
+  });
+
+  it('queue requires unitId', () => {
+    expect(() => practiceQueueQuerySchema.parse({ mode: 'shadow' })).toThrow();
   });
 
   it('review limit clamps at 200', () => {
@@ -274,7 +285,8 @@ describe('practiceItemSchema', () => {
         textPt: 'Olá',
         textEn: 'Hello',
         audioId: 'aud_0123456789abcdef',
-        curriculumOrder: 0,
+        unitId: 'unit_a1_introductions',
+        orderIndex: 0,
       }),
     ).not.toThrow();
   });
@@ -286,7 +298,8 @@ describe('practiceItemSchema', () => {
         textPt: 'Olá',
         textEn: 'Hello',
         audioId: null,
-        curriculumOrder: 0,
+        unitId: 'unit_a1_introductions',
+        orderIndex: 0,
       }),
     ).not.toThrow();
   });

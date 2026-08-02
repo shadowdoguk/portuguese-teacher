@@ -16,3 +16,7 @@ export * from './practice.js';
 export * from './audio.js';
 export * from './conversation.js';
 export * from './auth.js';
+export * from './settings.js';
+export * from './collections.js';
+export * from './unitProgress.js';
+export * from './filter.js';
