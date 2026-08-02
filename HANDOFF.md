@@ -1,15 +1,13 @@
 # Session Handoff
 
-**Snapshot date:** 2026-07-30 (Session 13 — Task 9 committed on
-`feat/web-app`: `@pt/web` workspace published — Vite 8.1.5 +
-React 19.2.8 SPA with HashRouter (`/`, `/login`,
-`/practice/shadow`), a cookie-credential fetch wrapper
-(`credentials: 'include'` + `X-Client-Platform: web` per
-ADR-0002 §2), and the one Shadow-mode practice page the Phase A
-plan summary requires (queue fetch + idempotent rating POST with
-`crypto.randomUUID()` `client_mutation_id`). Final step pending:
-decide whether to squash the seven feature branches into `main`
-or keep the topic-branch lineage for reviewable history.)
+**Snapshot date:** 2026-08-02 (Session 14 — Phase A close-out. User
+delegated all decisions to the agent. Path B (fast-forward)
+confirmed as the chosen close-out; reflog records
+`merge feat/web-app: Fast-forward` at 2026-07-30 10:51:16.
+`main` now contains the seven per-task commits as a linear chain
+on top of `chore: greenfield kickoff` (5ccf311). Origin push and
+branch teardown deferred. Phase B Task 1 in progress on
+`feat/phase-b-contracts`.)
 
 > **This file is a point-in-time snapshot.** For the living,
 > agent-picked-up tracker, see [`PROGRESS.md`](./PROGRESS.md) — it
@@ -72,9 +70,10 @@ Authoritative artefacts:
 
 | Branch | Status |
 | --- | --- |
-| `main` | Working tree still carries every Session 0–3 doc/Session 1–2 ADR/Session 2 plan/Session 3 plan as uncommitted working-tree changes. No `git add` / `git commit` was authorised. |
-| `chore/archive-legacy` | Not yet cut. Task 0 starts by branching from `main`. |
-| Feature branches for Tasks 2–9 / A1–A7 / Phase B Tasks 1–9 | Not yet cut. |
+| `main` | Contains the Session 14 governance commit (1b3071d) on top of the Path B fast-forward chain (`feat/web-app` HEAD 7790277 = `main` HEAD 7790277 + Session 14 governance). The seven per-task `feat`/`chore` commits are visible as a linear chain. 14 commits ahead of pre-Phase A tip. |
+| `chore/archive-legacy` | Pending local delete after Phase B Task 1 lands. Its payload is in the chain at 8d5088b. |
+| `feat/monorepo-root-tooling`, `feat/contracts-zod-schemas`, `feat/domain-rules`, `feat/tooling-adapters`, `feat/api-schema`, `feat/content-compile`, `feat/api-auth-shell`, `feat/api-content-routes`, `feat/web-app` | Kept locally for one more session so the per-task audit trail is easy to inspect. Deleted after Phase B Task 1 lands. |
+| `feat/phase-b-contracts` | Cut in Session 14. Phase B Task 1 in progress. |
 
 ## Open issues
 
@@ -106,12 +105,44 @@ and applied to the rebuild's release-scope gate:
 - **Android dev keystore + Play Console** for the Android release
   build (Phase C + post-Phase D).
 
+## Phase A close-out (Session 14, 2026-08-02)
+
+User delegated all decisions to the agent. The decisions taken:
+
+- **Path B (fast-forward)** confirmed as the chosen close-out. The
+  reflog at `merge feat/web-app: Fast-forward` (2026-07-30 10:51:16)
+  shows the merge ran before Session 14 opened. The seven per-task
+  commits are visible on `main` as a linear chain. Rationale: each
+  per-task commit is self-contained on top of the previous task's
+  tree, so the fast-forward gives a clean Tasks 0–9 audit trail.
+  A squash would have hidden the per-task progression.
+- **No push to `origin/main`**. Push deferred to a separate PR
+  workflow.
+- **Local branch teardown**: `chore/archive-legacy` pending local
+  delete after Phase B Task 1 lands; the seven `feat/*` Phase A
+  branches kept locally for one more session, then deleted after
+  Phase B Task 1 lands.
+- **Phase B starts today**: Task 1 (`@pt/contracts` B-side schemas)
+  cut on `feat/phase-b-contracts`.
+
 ## First action for next session
 
-Tasks 0 through 9 are **done** as of Session 13 on 2026-07-30.
-Phase A is complete. The branch lineage (oldest → newest):
+Path B already on `main`. If the governance commit (1b3071d) is
+missing, recover by re-applying the Session 14 PROGRESS/HANDOFF
+edits and committing them. Working tree should be clean at
+handoff.
 
-  * `chore/archive-legacy`              HEAD `8d5088b`  (legacy archive + Session-1–3 docs)
+```bash
+cd /home/david/shadowdog-dev/projects/portuguese-teacher
+git checkout main
+git log --oneline -1
+# Should show "docs(governance): Session 14 ..." (1b3071d).
+git checkout -b feat/phase-b-contracts main
+```
+
+The branch lineage on `main` (oldest to newest, after Path B):
+
+  * `chore/archive-legacy`              HEAD `8d5088b`  (legacy archive + Session-1 to 3 docs)
   * `feat/monorepo-root-tooling`        HEAD `c31c6cc`  (Task 1: root tooling + A1 ESLint guard)
   * `feat/contracts-zod-schemas`        HEAD `d6aed71`  (Task 2: @pt/contracts)
   * `feat/domain-rules`                 HEAD `d3ccbc6`  (Task 3: @pt/domain pure rules)
@@ -120,33 +151,8 @@ Phase A is complete. The branch lineage (oldest → newest):
   * `feat/content-compile`              HEAD `c6d6799`  (Task 6: @pt/content + A3 atomic publish)
   * `feat/api-auth-shell`               HEAD `9ceb72e`  (Task 7: auth + app shell + A4/A5/A6)
   * `feat/api-content-routes`           HEAD `a28c2aa`  (Task 8: curriculum + practice routers + A7)
-  * `feat/web-app`                      HEAD `<this>`    (Task 9: @pt/web Vite + React SPA)
+  * `feat/web-app`                      HEAD `7790277`  (Task 9: @pt/web Vite + React SPA)
 
-Final step pending: decide whether to squash the seven Phase-A
-feature branches into `main` (one atomic chore commit per task
-already gives a clean audit trail; squashing collapses them into
-a single greenfield-bootstrap commit) or keep the topic-branch
-lineage for reviewable history (every chore commit is already
-self-contained, so reviewers can step through Tasks 1–9 in order).
-The first action below is whichever path is chosen.
-
-```bash
-cd /home/david/shadowdog-dev/projects/portuguese-teacher
-git checkout feat/web-app
-git log --oneline chore/archive-legacy..feat/web-app
-# Path A — squash the seven Phase-A feature branches into a
-# single greenfield-bootstrap commit on main:
-git checkout main
-git merge --squash feat/web-app
-git commit -m "feat(greenfield): bootstrap monorepo (@pt/contracts, domain, tooling, api, content, web) + Phase A tasks 0-9"
-# Path B — fast-forward main to feat/web-app (keeps every chore
-# commit visible):
-git checkout main
-git merge --ff-only feat/web-app
-
-# Per the Phase A plan's Global Constraints, every commit step is
-# review-only — no commit fires without explicit user authorisation.
-```
 
 Sessions continuing the rebuild should pick up at **Phase B —
 Practice Surface + Six-Stage Skeleton** unless `PROGRESS.md`

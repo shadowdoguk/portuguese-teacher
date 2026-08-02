@@ -5,20 +5,19 @@ where the last one left off. Update it whenever an issue transitions
 state, a branch lands, a decision is made, or a blocker appears or
 clears.
 
-**Last updated:** 2026-07-30 (Session 13 — Task 9 committed
-(`feat/web-app`): `@pt/web` workspace published — Vite 8.1.5 +
-React 19.2.8 SPA with HashRouter (`/`, `/login`,
-`/practice/shadow`), a cookie-credential fetch wrapper
-(`credentials: 'include'` + `X-Client-Platform: web` per
-ADR-0002 §2), and the one Shadow-mode practice page the Phase A
-plan summary requires (queue fetch + idempotent rating POST with
-`crypto.randomUUID()` `client_mutation_id`). Test coverage: an
-ApiClient test pins the canonical-envelope error parsing path
-(unauthorized, csrf_origin_denied, refresh_reused, malformed
-non-2xx), and an App smoke test verifies the three routes
-mount under HashRouter. Phase A Task 9 done. Final step pending:
-decide whether to squash the seven feature branches into `main`
-or keep the topic-branch lineage for reviewable history.)
+**Last updated:** 2026-08-02 (Session 14 — Phase A close-out. User
+delegated all decisions to the agent. Phase A close-out state:
+the seven Phase A branches were already fast-forwarded into `main`
+on 2026-07-30 (Path B per HANDOFF's "first action for next
+session"; reflog records `merge feat/web-app: Fast-forward` at
+10:51:16). `main` now contains the seven per-task `feat`/`chore`
+commits as a linear chain on top of `chore: greenfield kickoff`
+(5ccf311). Session 14 added a governance commit (1b3071d) for
+the PROGRESS/HANDOFF refresh. User-delegated decisions in this
+session: confirm Path B as the chosen close-out,
+no origin push, defer branch teardown for one more session, start
+Phase B today. Phase B Task 1 (`@pt/contracts` B-side schemas)
+cut on `feat/phase-b-contracts`.)
 
 ## Current focus
 
