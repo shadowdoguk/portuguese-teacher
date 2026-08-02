@@ -26,6 +26,12 @@ export * from './ratings.js';
 export * from './review.js';
 export * from './progress.js';
 export * from './conversation.js';
+export * from './practice/queue.js';
+export * from './practice/review.js';
+export * from './practice/stages.js';
+export * from './practice/types.js';
+export * from './filter/apply.js';
+export * from './settings/types.js';
 
 // ---------- Layering-rule guard -----------------------------------------
 //
