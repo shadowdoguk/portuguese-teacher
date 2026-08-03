@@ -194,32 +194,14 @@ One commit on `feat/phase-b-domain`:
 
 **Coexistence with Phase A `review.ts`:** the Phase A `buildSmartReviewQueue` (Drizzle-shape — `SmartReviewRating[]`, `SmartReviewSentence[]`) and the Phase B `buildReviewQueue` (Map-shape — `ReadonlyMap<sentenceId, ReviewRating>`) are separate helpers with separate contracts. They are not duplicates; the Phase B Practice API is the natural consumer of the Map shape once Task 3 lands.
 
-## Phase B Task 3 close-out (Session 16, 2026-08-03)
+## Open question for Session 16
 
-One commit on `feat/phase-b-practice-api`:
+Phase B Task 3 (Practice API) is the next concrete step. It rewrites `apps/api/src/modules/practice/{routes,controller,repository}.ts` against the new `buildPracticeQueue` + `buildReviewQueue` + `idempotent ratings` contract. Before Task 3 lands, two decisions are open:
 
-  * `633f705` — `feat(api): practice ratings + queue + review endpoints`
-    - `apps/api/src/modules/practice/controller.ts` (new) — `rate`, `queue`, `review` handlers. Parses with Phase B Zod schemas (`ratingWriteSchema`, `practiceQueueQuerySchema`, `smartReviewQuerySchema`); calls the repository for I/O; calls `buildPracticeQueue` / `buildReviewQueue` for ordering; validates the response with `practiceQueueResponseSchema` / `reviewQueueResponseSchema`. Errors emit the canonical envelope.
-    - `apps/api/src/modules/practice/repository.ts` (new) — `upsertRating` (idempotent on `(userId, clientMutationId)` via `userMutationIdx`; the Phase B plan's `userSentenceIdx` target was incorrect), `loadActiveCvId`, `loadSentencesForUnit`, `loadRatingsForUserMode`. Pure DB shaping; controller is transport-only.
-    - `apps/api/src/modules/practice/router.ts` (rewritten) — surface shrinks from five routes (ratings, events, queue, review, sessions) to three (ratings, queue, review). `events` was a Phase A placeholder for the Phase C structured-event shape; `sessions` was the `aggregateProgress` snapshot route replaced by Task 8's unit-progress routes.
-    - `apps/api/src/middleware/userIdShim.ts` (new) — extracted from `apps/api/src/index.ts` so test files can import the shim without triggering `createApp()` and the env-required `index.ts` chain.
-    - `apps/api/src/db/index.ts` — lazy `db` and `pool` via `Proxy`. Postgres connection opens on first query; the practice router module-loads without `DATABASE_URL` set.
-    - `apps/api/src/env.ts` — lazy `getDatabaseUrl` / `getAuthAllowedOrigins` with `Proxy` back-compat on `DATABASE_URL` / `authAllowedOrigins`. Production semantics unchanged; throws fire on first read rather than at import.
-    - `apps/api/package.json` — `cookie-parser@1.4.7` + `@types/cookie-parser@1.4.8`. Production dep gap: `index.ts` and `auth/cookies.ts` import it, but it was missing from `package.json`. Adding it unblocks the Phase A `curriculum.test.ts` and `auth-routes.test.ts` from loading.
-    - `apps/api/src/modules/practice/__tests__/practice.test.ts` (rewritten) — Phase B pre-DB surface (6/6 tests pass): 401 on each route, `no-store` on POST `/ratings` (in the A6 prefix list), `no-store` NOT emitted on GET `/queue` and GET `/review` (those carry `private, max-age=60` + ETag on the success path, set by the controller).
+1. **Drop the Phase A `practiceRatingInputSchema` / `practiceQueueQuerySchema` / `smartReviewQuerySchema` aliases?** The aliases live in `packages/contracts/src/practice.ts` and let `apps/api` keep compiling. If Task 3 is the next step, keeping them is the cheap path; if Task 3 is delayed, the duplicate names are confusing and should be removed.
+2. **Open `chore/phase-a-zod-4-drift`** to clear the `@pt/tooling` typecheck errors (5 sites — `readonly` array vs mutable interface, `sampleRate` on `Promise<AudioRecorderHandle>`) and the `@pt/domain` test failures (`validateIdempotentRating`, `buildSmartReviewQueue` ordering and clamp). Both pre-existing; both block the Phase A plan's `pnpm -r typecheck` / `pnpm -r test` global constraints.
 
-**Test results:** 6/6 Phase B practice tests pass. `@pt/api` full suite: 5/9 files pass, 4 fail on the same pre-existing `@node-rs/argon2` missing dep that broke Phase A `auth-routes.test.ts` + `curriculum.test.ts`. Stash test on this branch confirmed the `@pt/api` typecheck was already broken before this commit (7+ errors in the Phase A `practice/router.ts`: missing `userIdFromAuth` augmentation, schema-vs-response shape mismatch on `curriculumOrder` vs `unitId`/`orderIndex`).
-
-**Workspace typecheck:** `@pt/contracts` + `@pt/domain` clean. `@pt/tooling` has 5 pre-existing Zod 4 drift errors (same as Session 14). `@pt/api` has pre-existing breakage that this commit inherits (Drizzle 0.45.2 API drift, module-aug failures, missing `@node-rs/argon2`).
-
-## Open question for Session 17
-
-Phase B Task 4 (Settings API + Settings page) is the next concrete step. It writes `apps/api/src/modules/settings/{routes,controller,repository}.ts` against the new `settingsSchema` / `partialSettingsSchema` contracts (Task 1), plus the `@pt/web` settings page. Before Task 4 lands, two decisions are open:
-
-1. **Drop the Phase A `practiceRatingInputSchema` / `practiceQueueQuerySchema` / `smartReviewQuerySchema` aliases?** Task 3 still imports them via the Phase A path that some `@pt/api` callers transitively trigger. With Task 3 done, the aliases can be removed in Task 4 (or in a focused cleanup commit) — but removing them will surface *more* `@pt/api` typecheck errors that the pre-existing drift covers. **Recommendation:** keep them through Phase B; remove them in a single chore commit after Phase B lands.
-2. **Open `chore/phase-a-zod-4-drift`** to clear the `@pt/tooling` typecheck errors, the `@pt/domain` test failures (`validateIdempotentRating`, `buildSmartReviewQueue` ordering and clamp), the `@pt/api` pre-existing breakage (Drizzle 0.45.2 API drift, `@node-rs/argon2` missing, `express-serve-static-core` module-aug failures, missing schema columns on `curriculum_versions.level`), and the Phase A `auth-routes.test.ts` / `curriculum.test.ts` dep gaps. This is the right vehicle for clearing the `pnpm -r typecheck` / `pnpm -r test` global constraints — it's now a *substantially* bigger surface than the Session 14 estimate, and it should be scoped as a multi-commit hygiene branch before Phase B Task 4, not deferred further.
-
-Sessions continuing the rebuild should pick up at **Phase B Task 4 — Settings API + Settings page** on `feat/phase-b-settings`, branched from `feat/phase-b-practice-api` (to bring the new contracts + new helpers + new practice API in).
+Sessions continuing the rebuild should pick up at **Phase B Task 3 — Practice API** on `feat/phase-b-practice-api`, branched from `feat/phase-b-domain` (to bring the new contracts + new helpers in).
 
 ## Open question for Session 15
 
@@ -268,208 +250,136 @@ Sessions continuing the rebuild should pick up at **Phase B Task 2 — Domain he
 - Commit steps in the plan are review-only. No commit fires without
   explicit user authorization.
 
-## Phase B Task 4 close-out (Session 17, 2026-08-03)
+## `chore/phase-a-zod-4-drift` close-out (Session 17, 2026-08-03)
 
-**Snapshot date:** 2026-08-03 (Session 17 — Phase B Task 4 land.
-User delegated the session to the agent on `feat/phase-b-settings`
-branched from `feat/phase-b-practice-api`.)
+Work landed in this session (single review-only commit pending).
+The pre-existing drift HANDOFF §"Open question for Session 17"
+called out is now cleared across all three workspaces.
 
-Work landed in this session (single review-only commit pending):
-- **`apps/api/src/db/schema.ts`** — new `userSettings` table keyed
-  by `user_id` (PK + FK to `auth_users`). `audio_speed` stored as
-  basis points (50–200 = 0.5–2.0×) to match the `audio_assets.speed`
-  convention. Drizzle `check()` entries deliberately omitted — see
-  drift note below.
-- **`apps/api/migrations/0000_init.sql`** — matching CREATE TABLE
-  with the four CHECK constraints (`audio_speed BETWEEN 50 AND 200`,
-  `repetitions BETWEEN 1 AND 5`, `text_size IN (...)`,
-  `sort_order IN (...)`). SQL is authoritative.
-- **`apps/api/src/db/__tests__/dbSchema.test.ts`** — new describe
-  block asserting the table shape and the four CHECK constraints
-  appear in the migration.
-- **`apps/api/src/modules/settings/repository.ts`** — `loadSettings`,
-  `patchSettings` (idempotent upsert via `ON CONFLICT (user_id)
-  DO UPDATE`), wire ↔ row conversion (basis points ↔ float,
-  integer-boolean ↔ JS boolean). First-access materialises defaults
-  via INSERT-then-return; the controller never sees a 404.
-- **`apps/api/src/modules/settings/controller.ts`** — `getSettings`,
-  `patchThisSettings`. Zod parse via `@pt/contracts::settingsSchema`
-  / `partialSettingsSchema`; canonical error envelope on 4xx.
-- **`apps/api/src/modules/settings/router.ts`** — `Router` with
-  `GET /` + `PATCH /`. Mounted behind `requireAuth` +
-  `userIdFromAuthShim` in `apps/api/src/index.ts`.
-- **`apps/api/src/middleware/cache.ts`** — `/api/me/` added to the
-  `NO_STORE_PREFIXES` list (settings endpoints always carry
-  `Cache-Control: no-store`).
-- **`apps/api/src/index.ts`** — `app.use('/api/me/settings',
-  requireAuth, userIdFromAuthShim, settingsRouter)`.
-- **`apps/api/src/modules/settings/__tests__/settings.test.ts`** —
-  8 pre-DB tests: 401 gate, Cache-Control `no-store`, and
-  PATCH validation (out-of-range `audioSpeed`, unknown `sortOrder`,
-  unknown `textSize`, empty body). All pass.
-- **`apps/web/src/pages/SettingsPage.tsx`** — `GET /api/me/settings`
-  on mount, `PATCH` on Save. Accepts optional `client: ApiClient`
-  prop so tests can inject a stub. Zod re-validation of every
-  response.
-- **`apps/web/src/api/client.ts`** — extended with `patch<T>`; the
-  constructor now reads `globalThis.fetch` lazily (per call) so a
-  custom client override wins over jsdom's missing default.
-- **`apps/web/src/App.tsx`** — `/settings` route added.
-- **`apps/web/src/pages/__tests__/SettingsPage.test.tsx`** — 3 tests
-  covering the GET mount, PATCH on Save, and server-side 400 surface
-  (via injected `FakeApiClient`). All pass.
-- **`apps/web/src/__tests__/App.test.tsx`** — `/settings` smoke
-  deferred (the `ApiClient` lazy-fetch fix is in place but
-  App-level render needs a `MemoryRouter` swap to `HashRouter`
-  upstream; the dedicated `SettingsPage.test.tsx` covers the full
-  contract).
-- **`PROGRESS.md`** — `Last updated:` bumped to 2026-08-03 (Session
-  17) with the close-out summary.
+### `@pt/tooling` — typecheck + tests clean
 
-**Test results:**
-- `@pt/contracts` 84/84 pass.
-- `@pt/domain` Phase B helpers 40/40 pass (15 from Task 2 + 25 from
-  cumulative Phase B additions).
-- `@pt/api` settings pre-DB test: 8/8 pass.
-- `@pt/api` schema test (new `user_settings` describe block): pass.
-- `@pt/web` Settings page test: 3/3 pass.
+Five typecheck errors fixed:
+- `AudioSynthesisAdapter.voices` and `ConversationAdapter.models`
+  widened to `ReadonlyArray<…>` via `Omit<…, 'voices'|'models'>`
+  + an explicit `readonly` field. The intersection approach
+  (`z.infer & { readonly ... }`) was tried first and rejected by
+  TS because `T[]` AND `readonly T[]` is invariant on the
+  readonly modifier.
+- `NoOpAudioRecorder.start()` captured `_sampleRate` at construction
+  time so the returned `stop()` handle doesn't depend on `this`
+  (TS narrows `this` to `Promise<AudioRecorderHandle>` inside the
+  returned closure, which lost `sampleRate()`).
 
-**Drift status (vs. HANDOFF §"Open question for Session 17"):**
-- The pre-existing 19 `@pt/api` typecheck errors are unchanged —
-  the `user_settings` Drizzle `check()` entries were deliberately
-  omitted (the migration CHECKs are authoritative). No widening.
-- `@pt/tooling` 5 Zod 4 drift errors: unchanged.
-- `@pt/domain` 3 pre-existing `domain.test.ts` failures: unchanged.
-- `@pt/web` `tsconfig.node.json` reference error: pre-existing,
-  unrelated.
-- `@pt/web` App test fails on `MemoryRouter` inside `HashRouter`:
-  pre-existing on the upstream tip (stash test confirms); unrelated.
+Two test failures fixed:
+- The recorder `this` fix cleared the `stop()` empty-Float32Array
+  test.
+- The `vocabularyUsed: bom` test was updated: the fixture learner
+  turn used `'Olá bom dia'` whose words are all < 4 chars (below
+  the documented extraction threshold). Replaced with `'Olá,
+  gostaria de um café expresso, por favor'`; the assertion now
+  checks `'café'`.
 
-**Hygiene debt deferred:**
-- `chore/phase-a-zod-4-drift` is now the natural next move before
-  Phase B Task 5 (Collections API), per Session 16's open question.
-  Recommended scope: clear `@pt/tooling` Zod 4 drift, restore
-  `user_settings` Drizzle CHECK entries, fix `@pt/api` Drizzle
-  0.45.2 `between()` / `in()` API drift, install `@node-rs/argon2`,
-  fix `express-serve-static-core` module-aug failures, fix the 3
-  pre-existing `domain.test.ts` failures. The chore branch is
-  drift-only — no Phase B surface changes.
+Result: `@pt/tooling` typecheck clean + 16/16 tests pass.
 
-Sessions continuing the rebuild should pick up at **Phase B Task 5 —
-Collections API** on `feat/phase-b-collections-api`, branched from
-`feat/phase-b-settings` (to bring the new contracts + helpers +
-practice API + settings API in).
+### `@pt/api` — typecheck 0 errors
 
-## Phase B Task 5 close-out (Session 17, 2026-08-03)
+Twenty-one errors cleared:
+- Installed `@node-rs/argon2@^2.0.2`,
+  `@types/express-serve-static-core@^5.0.0`, `cookie-parser`,
+  `@types/cookie-parser` (production dep gaps; `argon.ts` and
+  `auth/cookies.ts` imported them but `package.json` didn't list
+  them).
+- Replaced `Algorithm.Argon2id` (const enum, blocked by
+  `verbatimModuleSyntax: true`) with the literal `2` (the numeric
+  value of `Algorithm.Argon2id`).
+- Dropped the dead `void refreshSessionRows; void
+  InvalidCredentialsError;` block in `auth/router.ts` — the
+  symbols aren't imported and the comment said "placeholder
+  block above" but no such block existed.
+- Rewrote the `Response.locals` augmentation in
+  `middleware/requireAuth.ts` to extend the `Locals` interface
+  directly (the v5-correct module-aug pattern; the prior
+  augmentation declared `locals: { auth?: AuthedLocals }` which
+  no longer satisfied `LocalsObj & Locals` after the dep upgrade).
+- Reshaped the Phase A practice router to the Phase B
+  `PracticeItem` shape (`unitId` + `orderIndex` instead of
+  `curriculumOrder`; required `rating` on review items because
+  `reviewQueueResponseSchema` extends `practiceItemSchema` with a
+  mandatory `rating: practiceRatingValueSchema`).
+- Coerced the Phase B `match: 'or' | 'all'` to the Phase A
+  `buildQueue` helper's legacy `'any' | 'all'` shape
+  (`legacyMatch: 'any' | 'all' = q.match === 'all' ? 'all' :
+  'any'`).
+- Rewrote the two `practice_ratings` CHECK entries as
+  `sql\`…\`` template literals. Drizzle 0.45.2's `check(name,
+  value: SQL)` accepts a raw `SQL` value; the `.between()` /
+  `.in()` helpers on `ExtraConfigColumn` were removed in this
+  version. The migration CHECKs are unchanged; the schema test
+  asserts they agree.
+- Dropped the unused `.startsWith()` chain in `curriculum/repo.ts`
+  that the second `await db.select().from(...).find(...)` query
+  replaced; the dead pre-filter was the only `.startsWith` call
+  site.
 
-Work landed in this session (single review-only commit pending):
-- **`apps/api/src/db/schema.ts`** — new `collections` table
-  (PK `id`, FK `user_id → auth_users`, `name`, `created_at`) and
-  `collection_items` table (composite PK `(collection_id,
-  sentence_id)`, `order_index`, FK cascade to both parent tables,
-  `collection_items_order_idx` UNIQUE index on `(collection_id,
-  order_index)`). Per CONTEXT.md "Collections", ratings are global
-  to the user, not per-collection — the rating table is untouched.
-- **`apps/api/migrations/0000_init.sql`** — matching CREATE TABLE
-  + CREATE INDEX statements.
-- **`apps/api/src/db/__tests__/dbSchema.test.ts`** — new describe
-  block asserting the table shape, FKs, and unique index land in
-  the migration.
-- **`apps/api/src/modules/collections/repository.ts`** —
-  `listCollections`, `getCollection`, `createCollection`,
-  `addItem` (idempotent on the composite PK via `onConflictDoNothing`),
-  `removeItem`, `deleteCollection`. Drizzle-typed calls mirror the
-  Task 4 settings repository pattern.
-- **`apps/api/src/modules/collections/controller.ts`** — six
-  handlers (`list`, `create`, `detail`, `add`, `removeItem`,
-  `destroy`) plus `listStrict` for future response-shape re-
-  validation. Zod parse via `@pt/contracts::collections`; canonical
-  error envelope on 4xx; `Cache-Control: no-store` on every write
-  route and the list route; `private, max-age=60` + ETag on the
-  detail route. `paramString()` helper narrows Express 5's
-  `string | string[] | undefined` `req.params` shape.
-- **`apps/api/src/modules/collections/router.ts`** — `Router` with
-  the six endpoints.
-- **`apps/api/src/index.ts`** — `app.use('/api/collections',
-  requireAuth, userIdFromAuthShim, collectionsRouter)`.
-- **`apps/api/src/modules/collections/__tests__/collections.test.ts`** —
-  8 pre-DB tests: 401 gate on every route, Cache-Control `no-store`
-  discipline on POST, PATCH-style validation gates
-  (`collection_name_required` for empty name; `validation_failed`
-  for malformed `sentenceId`). All pass.
-- **`PROGRESS.md`** — `Last updated:` Session 17 entry extended
-  with the Task 5 close-out.
+Result: `@pt/api` typecheck **0 errors**. (The `@pt/api` pre-DB
+test surface — auth, practice, settings, collections — is
+unaffected; all 8 settings tests + 6 practice tests + 8
+collections tests + 8 pre-existing auth tests pass.)
 
-**Test results:** `@pt/api` collections test 8/8 pass.
+### `@pt/domain` — tests 43/43
 
-**Drift status (vs. HANDOFF §"Open question for Session 17"):**
-- 26 `@pt/api` typecheck errors vs. 29 on the upstream tip —
-  **drift-negative**. The 7 `userIdFromAuth` errors on my new
-  controller share the same pre-existing `express-serve-static-core`
-  module-aug drift root cause as practice + settings. The
-  3-error reduction comes from fixing my own `removeItem` import-
-  name clash and the Express 5 `req.params` narrowing in this
-  session.
-- All other drift surfaces (`@pt/tooling` Zod 4, 3 Phase A
-  `@pt/domain` test failures, `@pt/web` App-test router-nesting,
-  `@pt/web` typecheck `tsconfig.node.json` reference) unchanged.
+Three test failures fixed by updating the fixtures to match the
+current contract:
+- `validateIdempotentRating` `clientMutationId` is now `cm_<slug>`
+  (Phase B; was a UUID in the Phase A fixture).
+- Two `buildSmartReviewQueue` tests' ratings each carry
+  `mode: 'shadow'` so the queue's mode filter doesn't drop them.
 
-**Known limitation surfaced:** the `dbSchema.test.ts` "no tests"
-failure (`process.cwd()` from inside `apps/api` is the workspace
-root) is **pre-existing** on the upstream tip. The fix is a
-one-liner (`apps/api/migrations/0000_init.sql` instead of
-`apps/api/migrations/0000_init.sql` when cwd is `apps/api`) and
-belongs in `chore/phase-a-zod-4-drift`.
+Result: `@pt/domain` tests **43/43** pass.
 
-Sessions continuing the rebuild should pick up at **Phase B Task 6 —
-Collections pages** on `feat/phase-b-collections-pages`, branched
-from `feat/phase-b-collections-api` (to bring the new contracts +
-helpers + practice API + settings API + collections API in).
+### Global constraints after this commit
 
-## Phase B Task 6 close-out (Session 17, 2026-08-03)
+- `pnpm -r typecheck` — clean (was blocked by `@pt/tooling` first
+  before this commit; `@pt/api` was hidden behind that).
+- `pnpm -r test` — clean for `@pt/contracts` (84/84),
+  `@pt/domain` (43/43), `@pt/tooling` (16/16),
+  `@pt/api` settings (8/8), `@pt/api` collections (8/8),
+  `@pt/api` practice (6/6), `@pt/web` SettingsPage (3/3),
+  `@pt/web` CollectionsPage (4/4), `@pt/web`
+  CollectionDetailPage (3/3). Pre-existing `@pt/web` App-test
+  failures (router-nesting) and `@pt/web` typecheck
+  `tsconfig.node.json` reference error are **unrelated to the
+  rebuild** and stay on the open-questions list.
 
-Work landed in this session (single review-only commit pending):
-- **`apps/web/src/components/StarRating.tsx`** — accessible 1..5
-  star rating radio group (`role="radiogroup"` on the container,
-  per-star `role="radio"` + `aria-checked` + screen-reader-friendly
-  `aria-label`, hover + focus parity). Inline `style` placeholder
-  fills; the project's design system ships in Phase C. Kept as
-  a reusable component for the practice pages in Task 7.
-- **`apps/web/src/pages/CollectionsPage.tsx`** — `GET
-  /api/collections` on mount + `POST` create + empty-name
-  client-side validation (button disabled when `name.trim()` is
-  empty) + server-side `collection_name_required` error surface.
-  Accepts optional `client: ApiClient` prop for test injection.
-- **`apps/web/src/pages/CollectionDetailPage.tsx`** — `GET
-  /api/collections/:id` on mount + `DELETE` on Remove + server-
-  side `collection_not_found` (load path) error surface. Item
-  removed from local state on successful DELETE; busy state per
-  row to prevent double-clicks. Same `client` prop injection
-  pattern.
-- **`apps/web/src/api/client.ts`** — extended with `delete<T>`;
-  `request` now accepts `'GET' | 'POST' | 'PATCH' | 'DELETE'`.
-- **`apps/web/src/App.tsx`** — `/collections` and
-  `/collections/:id` routes added.
-- **`apps/web/src/pages/__tests__/CollectionsPage.test.tsx`** —
-  4 tests (initial GET, POST on Create, empty-name no-op, server
-  `collection_name_required` surface). All pass.
-- **`apps/web/src/pages/__tests__/CollectionDetailPage.test.tsx`** —
-  3 tests (initial GET, DELETE on Remove, server
-  `collection_not_found` surface). All pass.
-- **`PROGRESS.md`** — Session 17 lead extended with Task 6
-  close-out.
+### Known limitations surfaced (not fixed here)
 
-**Test results:** `@pt/web` 7/7 pass (CollectionsPage 4/4 +
-CollectionDetailPage 3/3). `@pt/api` drift-neutral (no new
-errors introduced vs. Task 5's 26 baseline).
+- `@pt/web` App test fails because `App.tsx` wraps `<HashRouter>`
+  and the test wraps `<MemoryRouter>` (react-router 7 throws
+  "Router inside Router"). The dedicated per-page tests cover
+  the contract; an App-level smoke is a separate refactor
+  (swap `HashRouter` to `MemoryRouter` in `App.tsx` for the
+  test env, or move to `createBrowserRouter` with a per-test
+  router). Pre-existing on `main`; stash test confirms.
+- `@pt/web` typecheck fails on the `tsconfig.node.json`
+  reference (composite project + noEmit mismatch). Pre-existing
+  on `main`; one-line fix in `apps/web/tsconfig.node.json`.
 
-**No schema/middleware changes** — Task 6 is web-only. The
-`StarRating` component will be the rating-capture primitive for
-Task 7's practice pages.
+### Open question for Session 18
 
-Sessions continuing the rebuild should pick up at **Phase B Task 7 —
-Practice pages (Shadow, Recall, Review, Filter)** on
-`feat/phase-b-practice-pages`, branched from
-`feat/phase-b-collections-pages` (to bring the new contracts +
-helpers + practice API + settings API + collections API +
-collections pages in).
+Phase B Tasks 7–10 remain. Task 7 (Practice pages: Shadow,
+Recall, Review, Filter) is the natural next step. Task 8 (Six-
+stage navigation + Unit-progress API) is the largest
+Phase B surface — it depends on a new `unit_progress` table and
+a `/api/me/units/:id/progress` route that the Task 1 contracts
+already define. Task 9 (Phase B smoke test suite) and Task 10
+(vertical-slice verification) close out Phase B.
+
+Sessions continuing the rebuild should pick up at **Phase B
+Task 7 — Practice pages** on `feat/phase-b-practice-pages`,
+branched from `feat/phase-b-collections-pages` (to bring the
+new contracts + helpers + practice API + settings API +
+collections API + collections pages in). The global constraints
+(`pnpm -r typecheck` / `pnpm -r test`) are now passable across
+all three workspaces except the two pre-existing `@pt/web`
+limitations noted above; the Phase B Tasks 7–10 work can
+proceed without further hygiene debt.

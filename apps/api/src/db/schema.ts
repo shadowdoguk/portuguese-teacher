@@ -18,6 +18,7 @@ import {
   check,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 // ---------- Auth tables (ADR-0002) -------------------------------------
 
@@ -212,8 +213,14 @@ export const practiceRatings = pgTable(
       table.userId,
       table.clientMutationId,
     ),
-    ratingCheck: check('practice_ratings_rating_check', table.rating.between(1, 5)),
-    modeCheck: check('practice_ratings_mode_check', table.mode.in(['shadow', 'recall'])),
+    // Drizzle 0.45.2's `check()` accepts a raw `SQL` value; the
+    // `.between()` / `.in()` helpers on `ExtraConfigColumn` were
+    // removed in this version, so we build the CHECK expressions
+    // as raw `sql` template literals. The migration declares the
+    // matching CHECK constraints verbatim; the schema test
+    // (`dbSchema.test.ts`) asserts they agree.
+    ratingCheck: check('practice_ratings_rating_check', sql`${table.rating} BETWEEN 1 AND 5`),
+    modeCheck: check('practice_ratings_mode_check', sql`${table.mode} IN ('shadow', 'recall')`),
   }),
 );
 

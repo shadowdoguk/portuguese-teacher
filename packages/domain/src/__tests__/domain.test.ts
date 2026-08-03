@@ -94,7 +94,11 @@ describe('validateIdempotentRating', () => {
     sentenceId: 'sen_ola',
     mode: 'shadow' as const,
     rating: 4,
-    clientMutationId: '00000000-0000-4000-8000-000000000000',
+    // Phase B `clientMutationIdSchema` requires the `cm_<slug>`
+    // shape (was a UUID in Phase A). The fixture was updated to
+    // match the contract — the underlying validator behaviour
+    // is unchanged.
+    clientMutationId: 'cm_ratings_abc123',
   };
 
   it('returns ok for a well-formed rating input', () => {
@@ -147,7 +151,11 @@ describe('buildSmartReviewQueue (rebuild spec §6.2)', () => {
       mode: 'shadow',
       limit: 50,
       ratings: [
-        { sentenceId: 'sen_a', rating: 5, lastPractisedAt: '2026-07-30T00:00:00.000Z' },
+        // Phase A `SmartReviewRating` requires a `mode` field so
+        // the queue filters by mode (shadow ratings surface only
+        // in shadow queue). The fixture was updated to include
+        // it — the underlying helper behaviour is unchanged.
+        { sentenceId: 'sen_a', mode: 'shadow', rating: 5, lastPractisedAt: '2026-07-30T00:00:00.000Z' },
       ],
       sentences,
     });
@@ -168,15 +176,17 @@ describe('buildSmartReviewQueue (rebuild spec §6.2)', () => {
     const queue = buildSmartReviewQueue({
       mode: 'shadow',
       limit: 50,
+      // Each rating carries `mode: 'shadow'` so the queue's mode
+      // filter doesn't drop them.
       ratings: [
         // sen_a: rating 4, practised 2026-07-30 (newer)
-        { sentenceId: 'sen_a', rating: 4, lastPractisedAt: '2026-07-30T08:00:00.000Z' },
+        { sentenceId: 'sen_a', mode: 'shadow', rating: 4, lastPractisedAt: '2026-07-30T08:00:00.000Z' },
         // sen_b: rating 4, practised 2026-07-29 (older — should come first)
-        { sentenceId: 'sen_b', rating: 4, lastPractisedAt: '2026-07-29T08:00:00.000Z' },
+        { sentenceId: 'sen_b', mode: 'shadow', rating: 4, lastPractisedAt: '2026-07-29T08:00:00.000Z' },
         // sen_c: rating 4, NEVER practised — should come first (NULLS FIRST)
-        { sentenceId: 'sen_c', rating: 4, lastPractisedAt: null },
+        { sentenceId: 'sen_c', mode: 'shadow', rating: 4, lastPractisedAt: null },
         // sen_d: rating 1 — should come first regardless of date
-        { sentenceId: 'sen_d', rating: 1, lastPractisedAt: '2026-07-30T08:00:00.000Z' },
+        { sentenceId: 'sen_d', mode: 'shadow', rating: 1, lastPractisedAt: '2026-07-30T08:00:00.000Z' },
       ],
       sentences,
     });
@@ -191,6 +201,9 @@ describe('buildSmartReviewQueue (rebuild spec §6.2)', () => {
     }));
     const ratings = many.map((s) => ({
       sentenceId: s.sentenceId,
+      // `mode: 'shadow'` matches the queue's mode filter; the
+      // fixture was missing it before, so every row got dropped.
+      mode: 'shadow' as const,
       rating: 3 as const,
       lastPractisedAt: '2026-07-30T08:00:00.000Z',
     }));

@@ -106,8 +106,13 @@ describe('ScriptedConversationAdapter (Phase A stub)', () => {
       { teacherLine: 'Bom dia!', rubricPoints: ['fluency', 'politeness'] },
     ]);
     const session = await a.start(scenario, 'csess_00000000-0000-4000-8000-000000000000');
+    // Note: `extractVocabulary` only keeps words with length >= 4
+    // (per the function's documented heuristic for ASR noise).
+    // The fixture learner turn uses longer Portuguese words so
+    // the test exercises the extraction path; "bom" / "dia"
+    // would be filtered out by the threshold.
     const turns = [
-      { messageId: 'cmsg_1', sessionId: session.sessionId, role: 'learner' as const, content: 'Olá bom dia', createdAt: '2026-07-30T08:00:00.000Z' },
+      { messageId: 'cmsg_1', sessionId: session.sessionId, role: 'learner' as const, content: 'Olá, gostaria de um café expresso, por favor', createdAt: '2026-07-30T08:00:00.000Z' },
       { messageId: 'cmsg_2', sessionId: session.sessionId, role: 'teacher' as const, content: 'Bom dia!', createdAt: '2026-07-30T08:00:01.000Z' },
     ];
     const summary = await a.summary(session, turns);
@@ -117,7 +122,7 @@ describe('ScriptedConversationAdapter (Phase A stub)', () => {
     for (const r of summary.rubricScores) {
       expect(r.score).toBe(2);
     }
-    expect(summary.vocabularyUsed).toContain('bom');
+    expect(summary.vocabularyUsed).toContain('café');
   });
 
   it('summary: zero-length turns yield zero counts', async () => {

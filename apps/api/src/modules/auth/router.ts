@@ -265,10 +265,4 @@ function sendError(
   res.status(httpStatus).json(envelope);
 }
 
-// Suppress unused-import warnings for the symbols only used in the
-// placeholder block above; they remain reachable through the runtime
-// imports inside the route handlers.
-void refreshSessionRows;
-void InvalidCredentialsError;
-
 export default router;

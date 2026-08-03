@@ -5,83 +5,59 @@ where the last one left off. Update it whenever an issue transitions
 state, a branch lands, a decision is made, or a blocker appears or
 clears.
 
-**Last updated:** 2026-08-03 (Session 17 — Phase B Task 4 land
-on `feat/phase-b-settings`. New
+**Last updated:** 2026-08-03 (Session 17 — Phase B Tasks 4–6 land
+plus `chore/phase-a-zod-4-drift` land. Phase B Task 4 on
+`feat/phase-b-settings` in `2fde96c`: new
 `apps/api/src/modules/settings/{repository,controller,router}.ts`
 serving `GET /api/me/settings` + `PATCH /api/me/settings`; first-
-access defaults materialise server-side via the new `user_settings`
-table (`apps/api/src/db/schema.ts` + matching CREATE TABLE in
-`apps/api/migrations/0000_init.sql`). `audio_speed` stored as basis
-points (50–200 = 0.5–2.0×) to match the `audio_assets.speed`
-convention; controller translates to/from float on the wire.
-`/api/me/` added to the `cacheControl` `NO_STORE_PREFIXES` list;
-`/api/me/settings` mounted behind `requireAuth` + `userIdFromAuthShim`
-in `apps/api/src/index.ts`. Schema test asserts the four CHECK
-constraints land in the migration. `apps/web/src/pages/SettingsPage.tsx`
-+ route in `App.tsx` (GET on mount, PATCH on Save). Web `ApiClient`
-extended with a `patch<T>` method; lazy `globalThis.fetch` lookup so
-tests can inject a custom client via the page's optional `client`
-prop. Settings API test (pre-DB, mirroring Task 3 practice pattern):
-8/8 pass (401, validation_failed, `no-store`). Settings page test:
-3/3 pass. Schema test for the new table passes. `@pt/contracts` +
-`@pt/domain` clean. `@pt/api` drift-neutral (no new typecheck errors
-introduced vs. the pre-existing 19 errors documented in HANDOFF §
-"Open question for Session 17"; the new `user_settings` Drizzle
-CHECK entries are deliberately omitted — the matching CHECK
-constraints in the migration are authoritative, and the
-0.45.2 `between()` / `in()` API drift would surface as TS errors
-until the chore branch clears it). Pre-existing `@pt/web` App test
-fails (router-nesting — `App.tsx` wraps `<HashRouter>` and the test
-also wraps `<MemoryRouter>`; stash test on the upstream tip shows
-identical pre-existing baseline, unrelated to Task 4). Pre-existing
-`@pt/web` typecheck error on `tsconfig.node.json` reference is
-unrelated. Phase A close-out (Session 14) on `feat/phase-b-contracts`.
-Task 2 in `aec59b4`. Phase B Task 3 landed on `feat/phase-b-practice-api`
-in `633f705`: new `controller.ts` + `repository.ts`; `router.ts`
-rewritten (Phase A's inlined logic split into controller/repository/
-router; surface shrinks from five routes to three — `events` and
-`sessions` removed, replaced by Phase C / Task 8). New
-`middleware/userIdShim.ts` extracted from `index.ts` so tests can
-import the shim without pulling in `createApp()` bootstrap. Lazy
-`env.ts` (Proxy on `DATABASE_URL` / `authAllowedOrigins`) + lazy
-`db/index.ts` (postgres pool opens on first query) so the practice
-router module-loads without env vars. Added `cookie-parser@1.4.7`
-to `apps/api/package.json` (production dep gap: imported by
-`index.ts` + `auth/cookies.ts` but missing from deps). Phase B
-practice test: 6/6 pass. Workspace typecheck: `@pt/contracts` +
-`@pt/domain` clean. Pre-existing (confirmed via stash test on
-this branch): `@pt/tooling` 5 Zod 4 drift errors, `@pt/api`
-typecheck broken on `@node-rs/argon2` missing + Drizzle 0.45.2
-API drift + `express-serve-static-core` module-aug failing —
-all pre-`main`, none introduced by Task 3. Hygiene debt deferred
-to `chore/phase-a-zod-4-drift`. Phase B Practice surface
-(`POST /ratings`, `GET /queue`, `GET /review`) ready for Task 7
-web integration.)
+access defaults materialise via the new `user_settings` table
+(`audio_speed` stored as basis points 50–200 = 0.5–2.0×); Settings
+page on `@pt/web` accepting an injectable `ApiClient` prop for
+tests. Phase B Task 5 on `feat/phase-b-collections-api` in
+`d20908b`: new `apps/api/src/modules/collections/{repository,
+controller,router}.ts` with six endpoints (GET/POST/GET:id/
+POST:id/items/DELETE:id/items/:sentenceId/DELETE:id); new
+`collections` + `collection_items` tables with composite PK
+`(collection_id, sentence_id)` for idempotent add. Phase B Task 6
+on `feat/phase-b-collections-pages` in `23b61d6`: CollectionsPage +
+CollectionDetailPage + accessible `StarRating` component on
+`@pt/web` (7/7 tests pass). `chore/phase-a-zod-4-drift` cleared
+the pre-existing drift HANDOFF §"Open question for Session 17"
+called out: `@pt/tooling` typecheck + tests clean (5/5 + 2/2 fixed
+via interface widening + recorder `this` capture + vocab fixture
+update); `@pt/api` typecheck **0 errors** (21 errors cleared via
+installing missing `@node-rs/argon2` + `@types/express-serve-static-core`
++ `cookie-parser` + `@types/cookie-parser`, replacing the `Algorithm`
+const enum with its numeric value to satisfy `verbatimModuleSyntax`,
+extending `Response.locals` via the `Locals` interface directly,
+dropping dead `void` refs in `auth/router.ts`, reshaping the
+Phase A practice router to the Phase B `PracticeItem` shape
+(`unitId` + `orderIndex` + required `rating`), and rewriting the
+`practice_ratings` CHECK entries as `sql\`…\`` template literals
+for Drizzle 0.45.2); `@pt/domain` tests **43/43** (3 fixtures
+updated to match the current contract — `cm_<slug>` mutation IDs
+and explicit `mode: 'shadow'` on `SmartReviewRating`). Phase B
+Tasks 7–10 still pending. Session 15 summary follows.)
+Phase A close-out (Session 14) on `feat/phase-b-contracts`, Phase B
+Task 1 already landed in `2e2bd87` + `525b87c` + `2d6fddb` +
+`0b6cf64`. Phase B Task 2 landed on `feat/phase-b-domain` in
+`aec59b4`: five new files (`practice/queue.ts`, `practice/review.ts`,
+`practice/stages.ts`, `practice/types.ts`, `filter/apply.ts`) plus
+`settings/types.ts` plus `__tests__/phase-b-domain.test.ts` plus
+`index.ts` re-export update. The four new helpers — `buildPracticeQueue`,
+`buildReviewQueue`, `applyFilter`, `nextStageRecommendation` —
+plus the `STAGE_ORDER` constant and `ReviewRating` type are all
+live. `@pt/domain` typecheck clean; 15/15 Phase B tests pass;
+3 pre-existing Phase A test failures in `domain.test.ts`
+(`validateIdempotentRating`, `buildSmartReviewQueue` ordering and
+clamp) unchanged from Session 14 and still out of scope. The
+Phase A `review.ts` exposes `buildSmartReviewQueue` (Drizzle-shape);
+the Phase B `practice/review.ts` exposes `buildReviewQueue`
+(Map-shape). Both coexist by design — the Phase B Practice API is
+the natural consumer of the Map shape. Hygiene debt deferred:
 `@pt/tooling` Zod 4 drift (5 typecheck errors) and the 3 Phase A
 domain test failures stay on the chore branch handoff for the
-next session. **Session 17 also landed Phase B Task 5** —
-Collections API on `feat/phase-b-collections-api`. New
-`apps/api/src/modules/collections/{repository,controller,router}.ts`
-serving `GET/POST /api/collections` + `GET /api/collections/:id` +
-`POST /api/collections/:id/items` + `DELETE /api/collections/:id/items/:sentenceId`
-+ `DELETE /api/collections/:id`. New `collections` + `collection_items`
-tables (composite PK `(collection_id, sentence_id)` makes add
-idempotent; `collection_items_order_idx` UNIQUE enforces per-
-collection order-index uniqueness; FK cascade removes items when
-the parent collection is deleted). Schema test asserts the new
-table shape + FKs + index land in the migration. Cache-Control
-discipline: `no-store` on every write route + the list route
-(controlled by the cache middleware's "any non-GET → no-store"
-rule plus the controller's explicit `no-store`); the detail
-route emits `private, max-age=60` + an ETag derived from the
-collection id. 8/8 pre-DB tests pass (401, validation_failed,
-collection_name_required, no-store discipline). Drift is
-**negative**: 26 `@pt/api` typecheck errors vs. 29 on the upstream
-tip — the 7 `userIdFromAuth` errors on my new controller share
-the same pre-existing `express-serve-static-core` module-aug
-drift root cause as practice + settings; the 3-error reduction
-comes from fixing my own `removeItem` import-name clash and the
-Express 5 `req.params` narrowing in this session.)
+next session.)
 
 ## Current focus
 
@@ -340,19 +316,3 @@ git log --oneline -10
 
 Sessions continuing the rebuild should pick up at **Task 0** of the
 Phase A plan unless `PROGRESS.md` records further progress.
-
-> **Session 17 — Phase B Task 6** landed on
-> `feat/phase-b-collections-pages` (commit pending). New
-> `apps/web/src/pages/CollectionsPage.tsx`
-> (GET `/api/collections` on mount + POST create + empty-name
-> client-side validation + `collection_name_required` server-side
-> error surface) and
-> `apps/web/src/pages/CollectionDetailPage.tsx`
-> (GET `/api/collections/:id` on mount + DELETE on Remove + 404
-> `collection_not_found` surface). New accessible
-> `apps/web/src/components/StarRating.tsx` (`role="radiogroup"`,
-> per-star `role="radio"` + `aria-checked`, hover + focus parity) —
-> wired into the practice pages in Task 7. `apps/web/src/api/client.ts`
-> extended with `delete<T>`. Routes `/collections` + `/collections/:id`
-> added to `App.tsx`. 7/7 web tests pass (CollectionsPage 4/4 +
-> CollectionDetailPage 3/3).

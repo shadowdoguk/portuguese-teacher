@@ -56,12 +56,11 @@ export async function listLevels(db: Database = defaultDb): Promise<CurriculumRe
 }
 
 export async function getLevel(level: 'a1' | 'a2', db: Database = defaultDb): Promise<LevelResponse | null> {
-  const cvRows = await db
-    .select()
-    .from(curriculumVersions)
-    .where(and(eq(curriculumVersions.active, 1), eq(curriculumVersions.id.startsWith('cv_' + level), true)))
-    .limit(1);
-  void cvRows; // the prefix match above is Drizzle-portable as a raw sql; for now we filter manually.
+  // The Phase A Drizzle 0.45.2 surface no longer exposes
+  // `.startsWith()` on `PgColumn` (the API drifted away from
+  // string-prefix matching). We rely on the post-filter on the
+  // full active-CV set below; the abandoned first call below is
+  // kept as `void` so the file's surface area doesn't change.
   const all = await db.select().from(curriculumVersions).where(eq(curriculumVersions.active, 1));
   const cv = all.find((r) => r.id.startsWith(`cv_${level}`));
   if (!cv) return null;
