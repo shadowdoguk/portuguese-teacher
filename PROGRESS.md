@@ -5,24 +5,30 @@ where the last one left off. Update it whenever an issue transitions
 state, a branch lands, a decision is made, or a blocker appears or
 clears.
 
-**Last updated:** 2026-08-02 (Session 15 — Phase B Task 2 land.
-Phase A close-out (Session 14) on `feat/phase-b-contracts`, Phase B
-Task 1 already landed in `2e2bd87` + `525b87c` + `2d6fddb` +
-`0b6cf64`. Phase B Task 2 landed on `feat/phase-b-domain` in
-`aec59b4`: five new files (`practice/queue.ts`, `practice/review.ts`,
-`practice/stages.ts`, `practice/types.ts`, `filter/apply.ts`) plus
-`settings/types.ts` plus `__tests__/phase-b-domain.test.ts` plus
-`index.ts` re-export update. The four new helpers — `buildPracticeQueue`,
-`buildReviewQueue`, `applyFilter`, `nextStageRecommendation` —
-plus the `STAGE_ORDER` constant and `ReviewRating` type are all
-live. `@pt/domain` typecheck clean; 15/15 Phase B tests pass;
-3 pre-existing Phase A test failures in `domain.test.ts`
-(`validateIdempotentRating`, `buildSmartReviewQueue` ordering and
-clamp) unchanged from Session 14 and still out of scope. The
-Phase A `review.ts` exposes `buildSmartReviewQueue` (Drizzle-shape);
-the Phase B `practice/review.ts` exposes `buildReviewQueue`
-(Map-shape). Both coexist by design — the Phase B Practice API is
-the natural consumer of the Map shape. Hygiene debt deferred:
+**Last updated:** 2026-08-03 (Session 16 — Phase B Task 3 land.
+Phase A close-out (Session 14) on `feat/phase-b-contracts`. Phase B
+Task 1 in `2e2bd87` + `525b87c` + `2d6fddb` + `0b6cf64`. Phase B
+Task 2 in `aec59b4`. Phase B Task 3 landed on `feat/phase-b-practice-api`
+in `633f705`: new `controller.ts` + `repository.ts`; `router.ts`
+rewritten (Phase A's inlined logic split into controller/repository/
+router; surface shrinks from five routes to three — `events` and
+`sessions` removed, replaced by Phase C / Task 8). New
+`middleware/userIdShim.ts` extracted from `index.ts` so tests can
+import the shim without pulling in `createApp()` bootstrap. Lazy
+`env.ts` (Proxy on `DATABASE_URL` / `authAllowedOrigins`) + lazy
+`db/index.ts` (postgres pool opens on first query) so the practice
+router module-loads without env vars. Added `cookie-parser@1.4.7`
+to `apps/api/package.json` (production dep gap: imported by
+`index.ts` + `auth/cookies.ts` but missing from deps). Phase B
+practice test: 6/6 pass. Workspace typecheck: `@pt/contracts` +
+`@pt/domain` clean. Pre-existing (confirmed via stash test on
+this branch): `@pt/tooling` 5 Zod 4 drift errors, `@pt/api`
+typecheck broken on `@node-rs/argon2` missing + Drizzle 0.45.2
+API drift + `express-serve-static-core` module-aug failing —
+all pre-`main`, none introduced by Task 3. Hygiene debt deferred
+to `chore/phase-a-zod-4-drift`. Phase B Practice surface
+(`POST /ratings`, `GET /queue`, `GET /review`) ready for Task 7
+web integration.)
 `@pt/tooling` Zod 4 drift (5 typecheck errors) and the 3 Phase A
 domain test failures stay on the chore branch handoff for the
 next session.)

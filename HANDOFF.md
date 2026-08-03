@@ -194,14 +194,32 @@ One commit on `feat/phase-b-domain`:
 
 **Coexistence with Phase A `review.ts`:** the Phase A `buildSmartReviewQueue` (Drizzle-shape — `SmartReviewRating[]`, `SmartReviewSentence[]`) and the Phase B `buildReviewQueue` (Map-shape — `ReadonlyMap<sentenceId, ReviewRating>`) are separate helpers with separate contracts. They are not duplicates; the Phase B Practice API is the natural consumer of the Map shape once Task 3 lands.
 
-## Open question for Session 16
+## Phase B Task 3 close-out (Session 16, 2026-08-03)
 
-Phase B Task 3 (Practice API) is the next concrete step. It rewrites `apps/api/src/modules/practice/{routes,controller,repository}.ts` against the new `buildPracticeQueue` + `buildReviewQueue` + `idempotent ratings` contract. Before Task 3 lands, two decisions are open:
+One commit on `feat/phase-b-practice-api`:
 
-1. **Drop the Phase A `practiceRatingInputSchema` / `practiceQueueQuerySchema` / `smartReviewQuerySchema` aliases?** The aliases live in `packages/contracts/src/practice.ts` and let `apps/api` keep compiling. If Task 3 is the next step, keeping them is the cheap path; if Task 3 is delayed, the duplicate names are confusing and should be removed.
-2. **Open `chore/phase-a-zod-4-drift`** to clear the `@pt/tooling` typecheck errors (5 sites — `readonly` array vs mutable interface, `sampleRate` on `Promise<AudioRecorderHandle>`) and the `@pt/domain` test failures (`validateIdempotentRating`, `buildSmartReviewQueue` ordering and clamp). Both pre-existing; both block the Phase A plan's `pnpm -r typecheck` / `pnpm -r test` global constraints.
+  * `633f705` — `feat(api): practice ratings + queue + review endpoints`
+    - `apps/api/src/modules/practice/controller.ts` (new) — `rate`, `queue`, `review` handlers. Parses with Phase B Zod schemas (`ratingWriteSchema`, `practiceQueueQuerySchema`, `smartReviewQuerySchema`); calls the repository for I/O; calls `buildPracticeQueue` / `buildReviewQueue` for ordering; validates the response with `practiceQueueResponseSchema` / `reviewQueueResponseSchema`. Errors emit the canonical envelope.
+    - `apps/api/src/modules/practice/repository.ts` (new) — `upsertRating` (idempotent on `(userId, clientMutationId)` via `userMutationIdx`; the Phase B plan's `userSentenceIdx` target was incorrect), `loadActiveCvId`, `loadSentencesForUnit`, `loadRatingsForUserMode`. Pure DB shaping; controller is transport-only.
+    - `apps/api/src/modules/practice/router.ts` (rewritten) — surface shrinks from five routes (ratings, events, queue, review, sessions) to three (ratings, queue, review). `events` was a Phase A placeholder for the Phase C structured-event shape; `sessions` was the `aggregateProgress` snapshot route replaced by Task 8's unit-progress routes.
+    - `apps/api/src/middleware/userIdShim.ts` (new) — extracted from `apps/api/src/index.ts` so test files can import the shim without triggering `createApp()` and the env-required `index.ts` chain.
+    - `apps/api/src/db/index.ts` — lazy `db` and `pool` via `Proxy`. Postgres connection opens on first query; the practice router module-loads without `DATABASE_URL` set.
+    - `apps/api/src/env.ts` — lazy `getDatabaseUrl` / `getAuthAllowedOrigins` with `Proxy` back-compat on `DATABASE_URL` / `authAllowedOrigins`. Production semantics unchanged; throws fire on first read rather than at import.
+    - `apps/api/package.json` — `cookie-parser@1.4.7` + `@types/cookie-parser@1.4.8`. Production dep gap: `index.ts` and `auth/cookies.ts` import it, but it was missing from `package.json`. Adding it unblocks the Phase A `curriculum.test.ts` and `auth-routes.test.ts` from loading.
+    - `apps/api/src/modules/practice/__tests__/practice.test.ts` (rewritten) — Phase B pre-DB surface (6/6 tests pass): 401 on each route, `no-store` on POST `/ratings` (in the A6 prefix list), `no-store` NOT emitted on GET `/queue` and GET `/review` (those carry `private, max-age=60` + ETag on the success path, set by the controller).
 
-Sessions continuing the rebuild should pick up at **Phase B Task 3 — Practice API** on `feat/phase-b-practice-api`, branched from `feat/phase-b-domain` (to bring the new contracts + new helpers in).
+**Test results:** 6/6 Phase B practice tests pass. `@pt/api` full suite: 5/9 files pass, 4 fail on the same pre-existing `@node-rs/argon2` missing dep that broke Phase A `auth-routes.test.ts` + `curriculum.test.ts`. Stash test on this branch confirmed the `@pt/api` typecheck was already broken before this commit (7+ errors in the Phase A `practice/router.ts`: missing `userIdFromAuth` augmentation, schema-vs-response shape mismatch on `curriculumOrder` vs `unitId`/`orderIndex`).
+
+**Workspace typecheck:** `@pt/contracts` + `@pt/domain` clean. `@pt/tooling` has 5 pre-existing Zod 4 drift errors (same as Session 14). `@pt/api` has pre-existing breakage that this commit inherits (Drizzle 0.45.2 API drift, module-aug failures, missing `@node-rs/argon2`).
+
+## Open question for Session 17
+
+Phase B Task 4 (Settings API + Settings page) is the next concrete step. It writes `apps/api/src/modules/settings/{routes,controller,repository}.ts` against the new `settingsSchema` / `partialSettingsSchema` contracts (Task 1), plus the `@pt/web` settings page. Before Task 4 lands, two decisions are open:
+
+1. **Drop the Phase A `practiceRatingInputSchema` / `practiceQueueQuerySchema` / `smartReviewQuerySchema` aliases?** Task 3 still imports them via the Phase A path that some `@pt/api` callers transitively trigger. With Task 3 done, the aliases can be removed in Task 4 (or in a focused cleanup commit) — but removing them will surface *more* `@pt/api` typecheck errors that the pre-existing drift covers. **Recommendation:** keep them through Phase B; remove them in a single chore commit after Phase B lands.
+2. **Open `chore/phase-a-zod-4-drift`** to clear the `@pt/tooling` typecheck errors, the `@pt/domain` test failures (`validateIdempotentRating`, `buildSmartReviewQueue` ordering and clamp), the `@pt/api` pre-existing breakage (Drizzle 0.45.2 API drift, `@node-rs/argon2` missing, `express-serve-static-core` module-aug failures, missing schema columns on `curriculum_versions.level`), and the Phase A `auth-routes.test.ts` / `curriculum.test.ts` dep gaps. This is the right vehicle for clearing the `pnpm -r typecheck` / `pnpm -r test` global constraints — it's now a *substantially* bigger surface than the Session 14 estimate, and it should be scoped as a multi-commit hygiene branch before Phase B Task 4, not deferred further.
+
+Sessions continuing the rebuild should pick up at **Phase B Task 4 — Settings API + Settings page** on `feat/phase-b-settings`, branched from `feat/phase-b-practice-api` (to bring the new contracts + new helpers + new practice API in).
 
 ## Open question for Session 15
 
