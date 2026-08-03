@@ -25,11 +25,17 @@ export interface AuthedLocals {
   clientPlatform: ClientPlatform;
 }
 
+// `@types/express-serve-static-core` v5 exports `Locals` as an
+// empty interface (`export interface Locals extends Express.Locals {}`)
+// and `Response.locals` is typed as `LocalsObj & Locals`. The
+// module-augmentation contract requires the augmented field to be
+// a strict subtype of the declared shape; we extend `Locals`
+// directly so the augmentation merges with the upstream interface.
+// Our `auth?: AuthedLocals` field is declared as optional so it
+// doesn't conflict with the `LocalsObj` indexable side.
 declare module 'express-serve-static-core' {
-  interface Response {
-    locals: {
-      auth?: AuthedLocals;
-    };
+  interface Locals {
+    auth?: AuthedLocals;
   }
 }
 

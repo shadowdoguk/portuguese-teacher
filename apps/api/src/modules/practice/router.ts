@@ -129,7 +129,13 @@ router.get('/queue', async (req: Request, res: Response) => {
   // CV's per-sentence text. Phase B extends this with stage-aware
   // ordering.
   const q = parsed.data;
-  const items = await buildQueue(userId, q.unitId, q.mode, q.filter, q.match);
+  // Phase B schema: `match` is `'or' | 'all'` (not the Phase A
+  // `'any' | 'all'`). The Phase A `buildQueue` helper still
+  // accepts the legacy `'any' | 'all'` shape — coerce the Phase B
+  // value: `'or'` → `'any'` (the legacy equivalent), `'all'`
+  // passes through unchanged. Undefined defaults to `'any'`.
+  const legacyMatch: 'any' | 'all' = q.match === 'all' ? 'all' : 'any';
+  const items = await buildQueue(userId, q.unitId, q.mode, q.filter, legacyMatch);
   const out: PracticeQueueResponse = { items };
   res.status(200).json(out);
 });
@@ -175,16 +181,35 @@ router.get('/review', async (req: Request, res: Response) => {
     sentences: sentencesForQueue,
   });
 
-  const items: PracticeItem[] = ranked.map((r) => {
-    const row = sentenceRows.find((s) => s.sentenceId === r.sentenceId);
-    return {
-      sentenceId: r.sentenceId,
-      textPt: row?.textPt ?? '',
-      textEn: row?.textEn ?? '',
-      audioId: row?.sentenceId ? null : null, // Phase A: no audioId column on sentences row; Phase C wires the join.
-      curriculumOrder: r.curriculumOrder,
-    };
-  });
+  // Phase B review route: every item carries the learner's
+    // self-rating (the queue is built FROM the user's ratings,
+    // so by construction every ranked item has one). The
+    // `reviewQueueResponseSchema` extends `practiceItemSchema`
+    // with a REQUIRED `rating` field, so the spread must always
+    // include it. Unrated sentences never enter this branch
+    // (buildSmartReviewQueue excludes rating === 5 + unrated).
+    const ratingBySentenceId = new Map<string, number>();
+    for (const r of ratingRows) {
+      ratingBySentenceId.set(r.sentenceId, r.rating);
+    }
+    const items = ranked.map((r) => {
+      const row = sentenceRows.find((s) => s.sentenceId === r.sentenceId);
+      const rating = ratingBySentenceId.get(r.sentenceId);
+      // Defensive: if a ranked item somehow lacks a rating, fall
+      // back to 3 (the schema's mid-point). This branch should
+      // never fire given the buildSmartReviewQueue exclusion, but
+      // the type system requires `rating` to be present.
+      const finalRating = rating ?? 3;
+      return {
+        sentenceId: r.sentenceId,
+        textPt: row?.textPt ?? '',
+        textEn: row?.textEn ?? '',
+        audioId: row?.sentenceId ? null : null, // Phase A: no audioId column on sentences row; Phase C wires the join.
+        unitId: row?.unitId ?? '',
+        orderIndex: r.curriculumOrder,
+        rating: finalRating,
+      };
+    });
   const out: SmartReviewQueueResponse = { items };
   res.status(200).json(out);
 });
@@ -269,12 +294,15 @@ async function buildQueue(
   // surface the practice state; for Phase A we only need the
   // existence of a sentence — we don't filter on rating yet.
   void userId;
+  // Phase B `PracticeItem` shape: `unitId` + `orderIndex` (was
+  // Phase A `curriculumOrder`).
   return rows.map((s) => ({
     sentenceId: s.sentenceId,
     textPt: s.textPt,
     textEn: s.textEn,
     audioId: null,
-    curriculumOrder: s.curriculumOrder,
+    unitId: s.unitId,
+    orderIndex: s.curriculumOrder,
   }));
 }
 

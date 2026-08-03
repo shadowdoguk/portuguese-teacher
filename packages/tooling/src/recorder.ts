@@ -33,20 +33,27 @@ export interface AudioRecorderResult {
 
 export class NoOpAudioRecorder implements AudioRecorder {
   readonly providerId = 'stub:no-op' as const;
+  // Capture the sample rate at start time so the returned stop()
+  // handle doesn't depend on `this` (which TS narrows to the
+  // returned Promise<AudioRecorderHandle> union in the stop body).
+  // The original `this.sampleRate()` access inside the returned
+  // closure triggered TS2339 against the union.
+  private readonly _sampleRate: number = 16000;
 
   sampleRate(): number {
-    return 16000;
+    return this._sampleRate;
   }
 
-  async start(): Promise<AudioRecorderHandle> {
-    return {
+  start(): Promise<AudioRecorderHandle> {
+    const sampleRate = this._sampleRate;
+    return Promise.resolve({
       async stop(): Promise<AudioRecorderResult> {
-        return { pcm: new Float32Array(0), sampleRate: this.sampleRate(), durationSeconds: 0 };
+        return { pcm: new Float32Array(0), sampleRate, durationSeconds: 0 };
       },
       async cancel(): Promise<void> {
         /* no-op */
       },
-    };
+    });
   }
 }
 

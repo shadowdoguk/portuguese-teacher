@@ -249,3 +249,137 @@ Sessions continuing the rebuild should pick up at **Phase B Task 2 — Domain he
   today's date on every `PROGRESS.md` change.
 - Commit steps in the plan are review-only. No commit fires without
   explicit user authorization.
+
+## `chore/phase-a-zod-4-drift` close-out (Session 17, 2026-08-03)
+
+Work landed in this session (single review-only commit pending).
+The pre-existing drift HANDOFF §"Open question for Session 17"
+called out is now cleared across all three workspaces.
+
+### `@pt/tooling` — typecheck + tests clean
+
+Five typecheck errors fixed:
+- `AudioSynthesisAdapter.voices` and `ConversationAdapter.models`
+  widened to `ReadonlyArray<…>` via `Omit<…, 'voices'|'models'>`
+  + an explicit `readonly` field. The intersection approach
+  (`z.infer & { readonly ... }`) was tried first and rejected by
+  TS because `T[]` AND `readonly T[]` is invariant on the
+  readonly modifier.
+- `NoOpAudioRecorder.start()` captured `_sampleRate` at construction
+  time so the returned `stop()` handle doesn't depend on `this`
+  (TS narrows `this` to `Promise<AudioRecorderHandle>` inside the
+  returned closure, which lost `sampleRate()`).
+
+Two test failures fixed:
+- The recorder `this` fix cleared the `stop()` empty-Float32Array
+  test.
+- The `vocabularyUsed: bom` test was updated: the fixture learner
+  turn used `'Olá bom dia'` whose words are all < 4 chars (below
+  the documented extraction threshold). Replaced with `'Olá,
+  gostaria de um café expresso, por favor'`; the assertion now
+  checks `'café'`.
+
+Result: `@pt/tooling` typecheck clean + 16/16 tests pass.
+
+### `@pt/api` — typecheck 0 errors
+
+Twenty-one errors cleared:
+- Installed `@node-rs/argon2@^2.0.2`,
+  `@types/express-serve-static-core@^5.0.0`, `cookie-parser`,
+  `@types/cookie-parser` (production dep gaps; `argon.ts` and
+  `auth/cookies.ts` imported them but `package.json` didn't list
+  them).
+- Replaced `Algorithm.Argon2id` (const enum, blocked by
+  `verbatimModuleSyntax: true`) with the literal `2` (the numeric
+  value of `Algorithm.Argon2id`).
+- Dropped the dead `void refreshSessionRows; void
+  InvalidCredentialsError;` block in `auth/router.ts` — the
+  symbols aren't imported and the comment said "placeholder
+  block above" but no such block existed.
+- Rewrote the `Response.locals` augmentation in
+  `middleware/requireAuth.ts` to extend the `Locals` interface
+  directly (the v5-correct module-aug pattern; the prior
+  augmentation declared `locals: { auth?: AuthedLocals }` which
+  no longer satisfied `LocalsObj & Locals` after the dep upgrade).
+- Reshaped the Phase A practice router to the Phase B
+  `PracticeItem` shape (`unitId` + `orderIndex` instead of
+  `curriculumOrder`; required `rating` on review items because
+  `reviewQueueResponseSchema` extends `practiceItemSchema` with a
+  mandatory `rating: practiceRatingValueSchema`).
+- Coerced the Phase B `match: 'or' | 'all'` to the Phase A
+  `buildQueue` helper's legacy `'any' | 'all'` shape
+  (`legacyMatch: 'any' | 'all' = q.match === 'all' ? 'all' :
+  'any'`).
+- Rewrote the two `practice_ratings` CHECK entries as
+  `sql\`…\`` template literals. Drizzle 0.45.2's `check(name,
+  value: SQL)` accepts a raw `SQL` value; the `.between()` /
+  `.in()` helpers on `ExtraConfigColumn` were removed in this
+  version. The migration CHECKs are unchanged; the schema test
+  asserts they agree.
+- Dropped the unused `.startsWith()` chain in `curriculum/repo.ts`
+  that the second `await db.select().from(...).find(...)` query
+  replaced; the dead pre-filter was the only `.startsWith` call
+  site.
+
+Result: `@pt/api` typecheck **0 errors**. (The `@pt/api` pre-DB
+test surface — auth, practice, settings, collections — is
+unaffected; all 8 settings tests + 6 practice tests + 8
+collections tests + 8 pre-existing auth tests pass.)
+
+### `@pt/domain` — tests 43/43
+
+Three test failures fixed by updating the fixtures to match the
+current contract:
+- `validateIdempotentRating` `clientMutationId` is now `cm_<slug>`
+  (Phase B; was a UUID in the Phase A fixture).
+- Two `buildSmartReviewQueue` tests' ratings each carry
+  `mode: 'shadow'` so the queue's mode filter doesn't drop them.
+
+Result: `@pt/domain` tests **43/43** pass.
+
+### Global constraints after this commit
+
+- `pnpm -r typecheck` — clean (was blocked by `@pt/tooling` first
+  before this commit; `@pt/api` was hidden behind that).
+- `pnpm -r test` — clean for `@pt/contracts` (84/84),
+  `@pt/domain` (43/43), `@pt/tooling` (16/16),
+  `@pt/api` settings (8/8), `@pt/api` collections (8/8),
+  `@pt/api` practice (6/6), `@pt/web` SettingsPage (3/3),
+  `@pt/web` CollectionsPage (4/4), `@pt/web`
+  CollectionDetailPage (3/3). Pre-existing `@pt/web` App-test
+  failures (router-nesting) and `@pt/web` typecheck
+  `tsconfig.node.json` reference error are **unrelated to the
+  rebuild** and stay on the open-questions list.
+
+### Known limitations surfaced (not fixed here)
+
+- `@pt/web` App test fails because `App.tsx` wraps `<HashRouter>`
+  and the test wraps `<MemoryRouter>` (react-router 7 throws
+  "Router inside Router"). The dedicated per-page tests cover
+  the contract; an App-level smoke is a separate refactor
+  (swap `HashRouter` to `MemoryRouter` in `App.tsx` for the
+  test env, or move to `createBrowserRouter` with a per-test
+  router). Pre-existing on `main`; stash test confirms.
+- `@pt/web` typecheck fails on the `tsconfig.node.json`
+  reference (composite project + noEmit mismatch). Pre-existing
+  on `main`; one-line fix in `apps/web/tsconfig.node.json`.
+
+### Open question for Session 18
+
+Phase B Tasks 7–10 remain. Task 7 (Practice pages: Shadow,
+Recall, Review, Filter) is the natural next step. Task 8 (Six-
+stage navigation + Unit-progress API) is the largest
+Phase B surface — it depends on a new `unit_progress` table and
+a `/api/me/units/:id/progress` route that the Task 1 contracts
+already define. Task 9 (Phase B smoke test suite) and Task 10
+(vertical-slice verification) close out Phase B.
+
+Sessions continuing the rebuild should pick up at **Phase B
+Task 7 — Practice pages** on `feat/phase-b-practice-pages`,
+branched from `feat/phase-b-collections-pages` (to bring the
+new contracts + helpers + practice API + settings API +
+collections API + collections pages in). The global constraints
+(`pnpm -r typecheck` / `pnpm -r test`) are now passable across
+all three workspaces except the two pre-existing `@pt/web`
+limitations noted above; the Phase B Tasks 7–10 work can
+proceed without further hygiene debt.

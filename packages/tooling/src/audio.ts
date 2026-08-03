@@ -13,9 +13,16 @@
 import { createHash } from 'node:crypto';
 import { audioIdSchema, audioVoiceSchema, synthesisRequestSchema, type AudioAdapterInterface, type AudioVoice, type SynthesisRequest, type SynthesisResponse } from '@pt/contracts';
 
-export interface AudioSynthesisAdapter extends AudioAdapterInterface {
+export interface AudioSynthesisAdapter extends Omit<AudioAdapterInterface, 'voices'> {
   /** Returns the stub's `audioId` for the given input; provider-bound for real adapters. */
   providerId: 'stub:pt-PT:memory';
+  /** Voice catalogue the adapter can serve. Widened to `readonly`
+   *  so concrete adapters can expose immutable arrays without
+   *  losing assignability to the Zod-inferred `AudioAdapterInterface`
+   *  shape (the schema's inferred `voices` is `AudioVoice[]`, but
+   *  the local interface accepts `ReadonlyArray<AudioVoice>`, which
+   *  is a subtype). */
+  readonly voices: ReadonlyArray<AudioVoice>;
   /** Synthesis entry-point. */
   synthesize(input: SynthesisRequest): Promise<SynthesisResponse>;
 }

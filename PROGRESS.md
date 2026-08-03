@@ -5,7 +5,39 @@ where the last one left off. Update it whenever an issue transitions
 state, a branch lands, a decision is made, or a blocker appears or
 clears.
 
-**Last updated:** 2026-08-02 (Session 15 — Phase B Task 2 land.
+**Last updated:** 2026-08-03 (Session 17 — Phase B Tasks 4–6 land
+plus `chore/phase-a-zod-4-drift` land. Phase B Task 4 on
+`feat/phase-b-settings` in `2fde96c`: new
+`apps/api/src/modules/settings/{repository,controller,router}.ts`
+serving `GET /api/me/settings` + `PATCH /api/me/settings`; first-
+access defaults materialise via the new `user_settings` table
+(`audio_speed` stored as basis points 50–200 = 0.5–2.0×); Settings
+page on `@pt/web` accepting an injectable `ApiClient` prop for
+tests. Phase B Task 5 on `feat/phase-b-collections-api` in
+`d20908b`: new `apps/api/src/modules/collections/{repository,
+controller,router}.ts` with six endpoints (GET/POST/GET:id/
+POST:id/items/DELETE:id/items/:sentenceId/DELETE:id); new
+`collections` + `collection_items` tables with composite PK
+`(collection_id, sentence_id)` for idempotent add. Phase B Task 6
+on `feat/phase-b-collections-pages` in `23b61d6`: CollectionsPage +
+CollectionDetailPage + accessible `StarRating` component on
+`@pt/web` (7/7 tests pass). `chore/phase-a-zod-4-drift` cleared
+the pre-existing drift HANDOFF §"Open question for Session 17"
+called out: `@pt/tooling` typecheck + tests clean (5/5 + 2/2 fixed
+via interface widening + recorder `this` capture + vocab fixture
+update); `@pt/api` typecheck **0 errors** (21 errors cleared via
+installing missing `@node-rs/argon2` + `@types/express-serve-static-core`
++ `cookie-parser` + `@types/cookie-parser`, replacing the `Algorithm`
+const enum with its numeric value to satisfy `verbatimModuleSyntax`,
+extending `Response.locals` via the `Locals` interface directly,
+dropping dead `void` refs in `auth/router.ts`, reshaping the
+Phase A practice router to the Phase B `PracticeItem` shape
+(`unitId` + `orderIndex` + required `rating`), and rewriting the
+`practice_ratings` CHECK entries as `sql\`…\`` template literals
+for Drizzle 0.45.2); `@pt/domain` tests **43/43** (3 fixtures
+updated to match the current contract — `cm_<slug>` mutation IDs
+and explicit `mode: 'shadow'` on `SmartReviewRating`). Phase B
+Tasks 7–10 still pending. Session 15 summary follows.)
 Phase A close-out (Session 14) on `feat/phase-b-contracts`, Phase B
 Task 1 already landed in `2e2bd87` + `525b87c` + `2d6fddb` +
 `0b6cf64`. Phase B Task 2 landed on `feat/phase-b-domain` in

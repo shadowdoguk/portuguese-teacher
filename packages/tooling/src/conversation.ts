@@ -21,9 +21,13 @@ import {
   type ConversationTurn,
 } from '@pt/contracts';
 
-export interface ConversationAdapter extends ConversationAdapterInterface {
+export interface ConversationAdapter extends Omit<ConversationAdapterInterface, 'models'> {
   providerId: 'stub:scripted';
-  models: ReadonlyArray<string>;
+  /** Models the provider can serve. Widened to `readonly` so
+   *  concrete adapters can expose immutable arrays (e.g. `'stub:scripted-v1' as const`)
+   *  without losing assignability to the Zod-inferred
+   *  `ConversationAdapterInterface` shape. */
+  readonly models: ReadonlyArray<string>;
   start(scenario: ConversationScenario, sessionId: string): Promise<ConversationSession>;
   nextTurn(session: ConversationSession, learnerTurn: ConversationTurn): Promise<ConversationTurn>;
   summary(session: ConversationSession, turns: ReadonlyArray<ConversationTurn>): Promise<ConversationSummary>;
@@ -78,14 +82,26 @@ export class ScriptedConversationAdapter implements ConversationAdapter {
     const learners = turns.filter((t) => t.role === 'learner');
     const teachers = turns.filter((t) => t.role === 'teacher');
     const script = this.scripts.get(_session.scenarioId) ?? [];
-    const rubricScores = (script[0]?.rubricPoints ?? ['fluency', 'accuracy', 'politeness']).map(
-      (criterion) => ({ criterion, score: 2 }),
+    // `rubricPoints` is `ReadonlyArray<string>`; `.map()` returns a
+    // readonly array, which can't be assigned to the mutable
+    // `Array<{criterion, score}>` shape the `ConversationSummary`
+    // schema infers. `Array.from` widens the result back to a
+    // mutable array so the return type lines up.
+    const rubricScores = Array.from(
+      (script[0]?.rubricPoints ?? ['fluency', 'accuracy', 'politeness']).map(
+        (criterion) => ({ criterion, score: 2 }),
+      ),
     );
     return {
       sessionId: _session.sessionId,
       learnerTurnCount: learners.length,
       teacherTurnCount: teachers.length,
-      vocabularyUsed: extractVocabulary(turns),
+      // `extractVocabulary` returns `ReadonlyArray<string>`; the
+      // contracts-inferred `ConversationSummary.vocabularyUsed`
+      // is mutable `string[]`. `Array.from` widens the readonly
+      // shape back to a mutable array so the return type lines
+      // up — same pattern as `rubricScores` above.
+      vocabularyUsed: Array.from(extractVocabulary(turns)),
       rubricScores,
       narrative: '[stub] Session completed in the in-memory adapter.',
     };
