@@ -37,14 +37,24 @@ export function getDatabaseUrl(): string {
  * The Proxy below makes the namespace export forward reads to the
  * lazy getter so existing `DATABASE_URL` references keep working.
  */
+// Backward-compat: `DATABASE_URL` used to be a module-level const.
+// Phase A callers read it as `import { DATABASE_URL } from './env.js'`.
+// The Proxy below makes the namespace export forward reads to the
+// lazy getter so existing `DATABASE_URL` references keep working
+// without firing the `getDatabaseUrl()` throw at module-load time.
+// The Proxy's `get` trap returns the live URL on every read; the
+// underlying `{} as object` target is intentionally empty. The
+// `unknown` cast handles `noUncheckedIndexedAccess: true` +
+// `exactOptionalPropertyTypes: true` — TS otherwise complains
+// "Conversion of type 'object' to type 'string' may be a mistake".
 export const DATABASE_URL: string = new Proxy(
-  {} as string,
+  {} as object,
   {
-    get(): string {
+    get(): unknown {
       return getDatabaseUrl();
     },
   },
-);
+) as unknown as string;
 
 let _authAllowedOrigins: ReadonlySet<string> | undefined;
 export function getAuthAllowedOrigins(): ReadonlySet<string> {

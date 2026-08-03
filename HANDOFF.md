@@ -383,3 +383,109 @@ collections API + collections pages in). The global constraints
 all three workspaces except the two pre-existing `@pt/web`
 limitations noted above; the Phase B Tasks 7–10 work can
 proceed without further hygiene debt.
+
+## Phase B Task 7 close-out (Session 17, 2026-08-03)
+
+Work landed in this session (single review-only commit pending;
+merge commit `c7d9abf` brought `chore/phase-a-zod-4-drift` into
+the branch first so the global `pnpm -r typecheck` constraint
+holds — the merge resolved 5 conflicts: PROGRESS.md, HANDOFF.md,
+`apps/api/package.json`, `pnpm-lock.yaml`, and
+`apps/api/src/modules/practice/router.ts`):
+
+### `@pt/api` — new `/api/curriculum/sentences` filter endpoint
+
+- `apps/api/src/modules/curriculum/filter.ts` — `searchSentences`
+  handler. Loads the active CV row, joins `sentences` →
+  `cv_sentence_versions` for the active text, optionally narrows
+  by `unit_id` regex, splits the `filter` expression on commas,
+  and delegates to `@pt/domain::applyFilter` with the parsed
+  `match` mode. Cache-Control: `private, max-age=60` + ETag
+  derived from the active CV id (CONTEXT.md "Cache-Control
+  Discipline").
+- `apps/api/src/modules/curriculum/filter-router.ts` — separate
+  `Router` mounted on the same `/api/curriculum` path in
+  `apps/api/src/index.ts` (after `requireAuth` +
+  `userIdFromAuthShim`). The existing `curriculumRouter`'s
+  regex surface is unchanged.
+- `apps/api/src/modules/curriculum/__tests__/filter.test.ts` —
+  2 pre-DB tests (401 gate + auth-before-method 401 for POST).
+
+### `@pt/web` — two new components + four new pages
+
+- `apps/web/src/components/AudioComingSoon.tsx` — Phase C
+  placeholder with `role="status"` + `aria-live="polite"`. Per
+  CONTEXT.md "Pre-Phase C Audio", the Shadow stage surfaces
+  this empty state instead of failing.
+- `apps/web/src/components/MicRecorder.tsx` — Web MediaRecorder
+  wrapper. Feature-detects `navigator.mediaDevices.getUserMedia`
+  (jsdom 25 polyfills `MediaRecorder` minimally); tolerates
+  denied-mic gracefully via a `role="alert"` message. Object
+  URLs are revoked on unmount + discard (memory hygiene).
+- `apps/web/src/pages/ShadowPage.tsx` — GET
+  `/api/practice/queue?unit_id=…&mode=shadow` on mount, POST
+  rating on star click, AudioComingSoon + MicRecorder. Optimistic
+  advance after rating: drops the first item, clears the
+  recording blob.
+- `apps/web/src/pages/RecallPage.tsx` — GET queue in `recall`
+  mode, Reveal toggle (English shown first, Portuguese hidden
+  until click), POST rating on star click.
+- `apps/web/src/pages/ReviewPage.tsx` — GET
+  `/api/practice/review?mode=shadow&limit=50` on mount, POST
+  rating + refresh on star click. Surfaces the `Busy…` state
+  while saving.
+- `apps/web/src/pages/FilterPage.tsx` — GET
+  `/api/curriculum/sentences?filter=&match=` on query/match
+  change. Empty query is a no-op (no API call). "Match all"
+  checkbox toggles the `match=all` parameter.
+- All four pages accept an optional `client: ApiClient` prop
+  for test injection (Task 4/6 pattern). Routes wired into
+  `App.tsx`: `/units/:unitId/shadow`, `/units/:unitId/recall`,
+  `/practice/review`, `/practice/filter`.
+
+### Three small `@pt/api` drift fixes applied post-merge
+
+The `git merge --no-ff chore/phase-a-zod-4-drift` overwrote the
+chore branch's already-cleaned files with older Phase B Task 3
+versions that re-introduced the same drift the chore branch
+had cleared. The three fixes:
+
+- `apps/api/src/env.ts` — `DATABASE_URL` Proxy rewritten with a
+  `get` trap that returns `getDatabaseUrl()` on every read (lazy,
+  survives `noUncheckedIndexedAccess` +
+  `exactOptionalPropertyTypes`). The previous Proxy typing was
+  fragile under the project's tsconfig settings.
+- `apps/api/src/modules/practice/repository.ts` — `loadActiveCvId`
+  used to filter on a non-existent `curriculum_versions.level`
+  column. Replaced with a CV-id prefix match
+  (`cv_<level>_<hash>`) per ADR-0001 §1.
+- `apps/api/src/modules/practice/controller.ts` — `Array.from(...)`
+  widening for the `ReadonlyArray<PracticeItem>` returns from
+  `buildPracticeQueue` + `buildReviewQueue`. The response
+  schema infers a mutable array; the helpers expose readonly
+  arrays.
+
+### Test results
+
+- `@pt/api` filter pre-DB: 2/2 pass.
+- `@pt/api` practice pre-DB: 6/6 pass (unchanged).
+- `@pt/web` page tests: 9/9 pass (Shadow 2 + Recall 2 + Review 2
+  + Filter 3).
+- `@pt/domain` tests: 43/43 pass (unchanged).
+- `@pt/api` typecheck: 0 errors (post-merge drift fixes cleared
+  the 5 re-broken errors).
+
+### Known limitations NOT addressed here
+
+- `@pt/web` App test fails (router-nesting — pre-existing on
+  `main`, unrelated).
+- `@pt/web` typecheck fails on the `tsconfig.node.json`
+  reference (pre-existing on `main`, unrelated).
+
+Sessions continuing the rebuild should pick up at **Phase B
+Task 8 — Six-stage navigation + Unit-progress API** on
+`feat/phase-b-unit-progress`, branched from
+`feat/phase-b-practice-pages`. Task 8 is the largest Phase B
+surface; it depends on a new `unit_progress` table + a
+`/api/me/units/:id/progress` route that Task 1 contracts already
+define.

@@ -302,6 +302,46 @@ Issue tracker: `shadowdoguk/portuguese-teacher` on GitHub.
 > queue. Open or triage-vocabulary decisions live in
 > `AGENTS.md` and the rebuild spec.
 
+> **Session 17 — Phase B Task 7** landed on
+> `feat/phase-b-practice-pages` (commit pending; merge commit
+> `c7d9abf` brought `chore/phase-a-zod-4-drift` into the branch so
+> the global `pnpm -r typecheck` constraint holds). New
+> `apps/api/src/modules/curriculum/filter.ts` +
+> `apps/api/src/modules/curriculum/filter-router.ts` serving
+> `GET /api/curriculum/sentences?filter=&match=&unit_id=` (the new
+> endpoint the Filter page consumes; mounted on the same
+> `/api/curriculum` path as a separate `Router` so the existing
+> `curriculumRouter`'s regex surface is unchanged). The endpoint
+> delegates to `@pt/domain::applyFilter` per the Phase B Task 7
+> spec; 2/2 pre-DB filter tests pass (401 + auth-before-method
+> 401 for POST). New `@pt/web` components: `AudioComingSoon`
+> (Phase C placeholder with `role="status"` + `aria-live="polite"`)
+> and `MicRecorder` (Web MediaRecorder wrapper that feature-
+> detects the API for jsdom + tolerates denied-mic gracefully).
+> New `@pt/web` pages: `ShadowPage` (GET `/api/practice/queue`
+> on mount + POST rating on star click + AudioComingSoon +
+> MicRecorder), `RecallPage` (GET queue in `recall` mode + Reveal
+> toggle + POST rating), `ReviewPage` (GET
+> `/api/practice/review` + POST rating + refresh), `FilterPage`
+> (GET `/api/curriculum/sentences` on query/match change + empty
+> query is a no-op). All four pages accept an optional
+> `client: ApiClient` prop for test injection (Task 4/6 pattern).
+> Routes wired into `App.tsx`: `/units/:unitId/shadow`,
+> `/units/:unitId/recall`, `/practice/review`,
+> `/practice/filter`. 9/9 page tests pass. Three small
+> `@pt/api` drift fixes applied post-merge: `env.ts` Proxy
+> `get`-trap (noUncheckedIndexedAccess +
+> exactOptionalPropertyTypes compatible),
+> `practice/repository.ts` `level`→CV-id-prefix match (the
+> `curriculum_versions` table has no `level` column — Phase B
+> Task 3 used to filter on a non-existent column),
+> `practice/controller.ts` `Array.from` widening for the
+> `ReadonlyArray<PracticeItem>` returns from `buildPracticeQueue`
+> + `buildReviewQueue`. End-to-end verification: `@pt/api`
+> typecheck 0 errors; `@pt/api` filter 2/2 + practice 6/6;
+> `@pt/web` pages 9/9; `@pt/domain` 43/43. Phase B Tasks 8–10
+> remain.
+
 ## First action for next session
 
 ```bash

@@ -28,6 +28,7 @@ import {
 import {
   buildPracticeQueue,
   buildReviewQueue,
+  type PracticeItem,
   type ReviewRating,
 } from '@pt/domain';
 import {
@@ -87,10 +88,16 @@ export async function queue(req: Request, res: Response): Promise<void> {
   }
 
   const sentences = await loadSentencesForUnit(parsed.data.unitId, cvId);
-  const items = buildPracticeQueue(sentences, {
-    mode: parsed.data.mode,
-    sortOrder: 'curriculum',
-  });
+  // `buildPracticeQueue` returns `ReadonlyArray<PracticeItem>`;
+  // widen to a mutable array via `Array.from` so the response
+  // object satisfies the `practiceQueueResponseSchema` shape
+  // (which infers `items` as a mutable array).
+  const items = Array.from(
+    buildPracticeQueue(sentences, {
+      mode: parsed.data.mode,
+      sortOrder: 'curriculum',
+    }),
+  );
 
   const response: PracticeQueueResponse = { items };
   const validated = practiceQueueResponseSchema.safeParse(response);
@@ -143,7 +150,15 @@ export async function review(req: Request, res: Response): Promise<void> {
     });
   }
 
-  const items = buildReviewQueue(ratings, sentences, parsed.data.mode, parsed.data.limit);
+  // `buildReviewQueue` returns `ReadonlyArray<PracticeItem>`;
+  // widen to a mutable array via `Array.from` (same pattern
+  // as the queue handler above). The `ReviewQueueResponse`
+  // schema extends `practiceItemSchema` with a REQUIRED
+  // `rating` field, so `items[i]` here is `PracticeItem & {
+  // rating: number }` once the schema's `.extend()` applies.
+  const items = Array.from(
+    buildReviewQueue(ratings, sentences, parsed.data.mode, parsed.data.limit),
+  ) as unknown as ReviewQueueResponse['items'];
 
   const response: ReviewQueueResponse = { items };
   const validated = reviewQueueResponseSchema.safeParse(response);

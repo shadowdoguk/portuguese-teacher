@@ -25,6 +25,7 @@ import { userIdFromAuthShim } from './middleware/userIdShim.js';
 import authRouter from './modules/auth/router.js';
 import collectionsRouter from './modules/collections/router.js';
 import curriculumRouter from './modules/curriculum/router.js';
+import { curriculumFilterRouter } from './modules/curriculum/filter-router.js';
 import practiceRouter from './modules/practice/router.js';
 import settingsRouter from './modules/settings/router.js';
 import { healthHandler } from './health.js';
@@ -60,7 +61,19 @@ export function createApp(): Express {
   // request object so the curriculum + practice + settings routers
   // can read it without re-implementing the cookie-vs-bearer
   // resolution.
+  // Authenticated routes mount behind requireAuth (Task 7). The
+  // userIdFromAuth shim copies res.locals.auth.userId onto the
+  // request object so the curriculum + practice + settings +
+  // collections routers can read it without re-implementing the
+  // cookie-vs-bearer resolution.
+  //
+  // The curriculum filter router (Phase B Task 7) lives on a
+  // separate `Router` so the GET /api/curriculum/sentences
+  // surface doesn't have to share `router.ts`'s narrower URL
+  // param regexes. Mounted on the same `/api/curriculum` path so
+  // the public surface is unchanged.
   app.use('/api/curriculum', requireAuth, userIdFromAuthShim, curriculumRouter);
+  app.use('/api/curriculum', requireAuth, userIdFromAuthShim, curriculumFilterRouter);
   app.use('/api/practice', requireAuth, userIdFromAuthShim, practiceRouter);
   app.use('/api/me/settings', requireAuth, userIdFromAuthShim, settingsRouter);
   app.use('/api/collections', requireAuth, userIdFromAuthShim, collectionsRouter);

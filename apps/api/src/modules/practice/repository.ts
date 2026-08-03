@@ -61,12 +61,20 @@ export async function loadActiveCvId(
   database: Database = defaultDb,
   level: 'a1' | 'a2' = 'a1',
 ): Promise<string | null> {
+  // The `curriculum_versions` table has no `level` column — the
+  // active-CV pointer is global per Level via the `cv_<level>_<hash>`
+  // id prefix (see ADR-0001 + amendment A2). We filter on the
+  // `id` prefix post-fetch rather than in the WHERE clause; the
+  // CV id encoding is the canonical contract for "which level".
+  // Phase B Task 3 used to filter on a non-existent `level`
+  // column; the chore branch surfaced the regression.
   const rows = (await database
     .select({ id: curriculumVersions.id })
     .from(curriculumVersions)
-    .where(and(eq(curriculumVersions.level, level), eq(curriculumVersions.active, 1)))
-    .limit(1)) as ActiveCvRow[];
-  return rows[0]?.id ?? null;
+    .where(eq(curriculumVersions.active, 1))
+    .limit(10)) as ActiveCvRow[];
+  const prefix = `cv_${level}`;
+  return rows.find((r) => r.id.startsWith(prefix))?.id ?? null;
 }
 
 /**
