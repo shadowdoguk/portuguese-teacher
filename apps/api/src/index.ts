@@ -25,6 +25,7 @@ import { userIdFromAuthShim } from './middleware/userIdShim.js';
 import authRouter from './modules/auth/router.js';
 import curriculumRouter from './modules/curriculum/router.js';
 import practiceRouter from './modules/practice/router.js';
+import settingsRouter from './modules/settings/router.js';
 import { healthHandler } from './health.js';
 
 // Re-export the userId shim from its dedicated module so existing
@@ -55,10 +56,12 @@ export function createApp(): Express {
 
   // Authenticated routes mount behind requireAuth (Task 7). The
   // userIdFromAuth shim copies res.locals.auth.userId onto the
-  // request object so the curriculum + practice routers can read it
-  // without re-implementing the cookie-vs-bearer resolution.
+  // request object so the curriculum + practice + settings routers
+  // can read it without re-implementing the cookie-vs-bearer
+  // resolution.
   app.use('/api/curriculum', requireAuth, userIdFromAuthShim, curriculumRouter);
   app.use('/api/practice', requireAuth, userIdFromAuthShim, practiceRouter);
+  app.use('/api/me/settings', requireAuth, userIdFromAuthShim, settingsRouter);
 
   // 404 for unknown /api routes — return the canonical envelope.
   app.use((_req, res) => {

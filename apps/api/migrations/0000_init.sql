@@ -164,3 +164,20 @@ CREATE UNIQUE INDEX practice_ratings_user_sentence_mode_idx
   ON practice_ratings (user_id, sentence_id, mode);
 CREATE UNIQUE INDEX practice_ratings_user_mutation_idx
   ON practice_ratings (user_id, client_mutation_id);
+
+-- ---------- Per-Learner settings (CONTEXT.md "Settings", Phase B Task 4) --
+
+CREATE TABLE user_settings (
+  user_id      text         PRIMARY KEY REFERENCES auth_users (user_id) ON DELETE CASCADE,
+  audio_speed  integer      NOT NULL DEFAULT 100,
+  repetitions  integer      NOT NULL DEFAULT 2,
+  pause_ms     integer      NOT NULL DEFAULT 1000,
+  text_size    text         NOT NULL DEFAULT 'default',
+  sort_order   text         NOT NULL DEFAULT 'curriculum',
+  loop         integer      NOT NULL DEFAULT 0,
+  updated_at   timestamptz  NOT NULL DEFAULT now(),
+  CHECK (audio_speed BETWEEN 50 AND 200),
+  CHECK (repetitions BETWEEN 1 AND 5),
+  CHECK (text_size IN ('small', 'default', 'large', 'extraLarge')),
+  CHECK (sort_order IN ('curriculum', 'easyToHard', 'hardToEasy'))
+);

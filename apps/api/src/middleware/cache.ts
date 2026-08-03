@@ -17,6 +17,7 @@ import type { Request, Response, NextFunction } from 'express';
 const CURRICULUM_PREFIX = '/api/curriculum/';
 const NO_STORE_PREFIXES: ReadonlyArray<string> = [
   '/api/auth/',
+  '/api/me/',
   '/api/practice/ratings',
   '/api/practice/events',
   '/api/practice/sessions',

@@ -105,3 +105,20 @@ describe('migration 0000_init.sql — curriculum_versions', () => {
     );
   });
 });
+
+describe('migration 0000_init.sql — user_settings (Phase B Task 4)', () => {
+  it('declares user_settings with PK + FK to auth_users', () => {
+    expect(migrationSql).toMatch(
+      /CREATE TABLE user_settings\s*\([^)]*user_id\s+text\s+PRIMARY KEY\s+REFERENCES\s+auth_users\s*\(\s*user_id\s*\)\s+ON DELETE CASCADE/,
+    );
+  });
+
+  it('declares the four CHECK constraints', () => {
+    expect(migrationSql).toMatch(/CHECK\s*\(\s*audio_speed\s+BETWEEN\s+50\s+AND\s+200\s*\)/);
+    expect(migrationSql).toMatch(/CHECK\s*\(\s*repetitions\s+BETWEEN\s+1\s+AND\s+5\s*\)/);
+    expect(migrationSql).toMatch(/CHECK\s*\(\s*text_size\s+IN\s*\(\s*'small'\s*,\s*'default'\s*,\s*'large'\s*,\s*'extraLarge'\s*\)\s*\)/);
+    expect(migrationSql).toMatch(
+      /CHECK\s*\(\s*sort_order\s+IN\s*\(\s*'curriculum'\s*,\s*'easyToHard'\s*,\s*'hardToEasy'\s*\)\s*\)/,
+    );
+  });
+});

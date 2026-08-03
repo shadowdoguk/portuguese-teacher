@@ -42,13 +42,23 @@ export interface ApiClientOptions {
 
 export class ApiClient {
   private readonly baseUrl: string;
-  private readonly fetchImpl: typeof fetch;
+  private readonly fetchImplOverride: typeof fetch | undefined;
   private readonly clientPlatform: 'web' | 'android';
 
   constructor(options: ApiClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, '');
-    this.fetchImpl = options.fetchImpl ?? fetch.bind(globalThis);
+    // `fetchImpl` is captured as an override reference, but the
+    // default falls back to `globalThis.fetch` *at call time* so
+    // tests that `vi.stubGlobal('fetch', ...)` after module load
+    // still see the stub. Capturing `fetch.bind(globalThis)` at
+    // construction time defeats stubbing (the captured reference
+    // is whatever jsdom / undici provided at import time).
+    this.fetchImplOverride = options.fetchImpl;
     this.clientPlatform = options.clientPlatform ?? 'web';
+  }
+
+  private get fetchImpl(): typeof fetch {
+    return this.fetchImplOverride ?? (globalThis.fetch as typeof fetch);
   }
 
   async get<T>(path: string): Promise<T> {
@@ -59,7 +69,11 @@ export class ApiClient {
     return this.request<T>('POST', path, body);
   }
 
-  async request<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
+  async patch<T>(path: string, body: unknown): Promise<T> {
+    return this.request<T>('PATCH', path, body);
+  }
+
+  async request<T>(method: 'GET' | 'POST' | 'PATCH', path: string, body?: unknown): Promise<T> {
     const url = path.startsWith('/') ? `${this.baseUrl}${path}` : `${this.baseUrl}/${path}`;
     const init: RequestInit = {
       method,

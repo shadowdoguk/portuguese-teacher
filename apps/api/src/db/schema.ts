@@ -217,6 +217,37 @@ export const practiceRatings = pgTable(
   }),
 );
 
+// ---------- Per-Learner settings (CONTEXT.md "Settings") --------------
+//
+// One row per Learner, FK to `auth_users`. `user_id` is the PK so
+// the row materialises on first GET and the API can `UPSERT` on
+// every PATCH. Defaults match the Phase B plan Task 4 contract;
+// `audio_speed` is stored as basis points (integer) to match the
+// `audio_assets.speed` convention — the API serialises to the
+// 0.5–2.0 float range on the wire.
+
+export const userSettings = pgTable(
+  'user_settings',
+  {
+    userId: text('user_id').primaryKey().references(() => authUsers.userId, { onDelete: 'cascade' }),
+    audioSpeed: integer('audio_speed').notNull().default(100), // basis points: 100 = 1.0×
+    repetitions: integer('repetitions').notNull().default(2),
+    pauseMs: integer('pause_ms').notNull().default(1000),
+    textSize: text('text_size').notNull().default('default'), // 'small' | 'default' | 'large' | 'extraLarge'
+    sortOrder: text('sort_order').notNull().default('curriculum'), // 'curriculum' | 'easyToHard' | 'hardToEasy'
+    loop: integer('loop').notNull().default(0), // 0 | 1
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  // No `check()` constraints here: Drizzle 0.45.2's
+  // `ExtraConfigColumn.between()` / `.in()` API drifted away from
+  // the shape the existing `practice_ratings` checks still use
+  // (see `chore/phase-a-zod-4-drift`). The matching CHECK
+  // constraints live in `migrations/0000_init.sql` — they are
+  // authoritative, and the schema test asserts the migration
+  // declares them. The Drizzle CHECK entries will be added once
+  // the 0.45.2 API drift is cleared.
+);
+
 // Re-export the cvSentenceVersions table so callers can reference the
 // composite key directly. (Drizzle already exports it via the const
 // above; this is the public type alias for downstream code.)
@@ -225,3 +256,4 @@ export type CurriculumVersionRow = typeof curriculumVersions.$inferSelect;
 export type PracticeRatingRow = typeof practiceRatings.$inferSelect;
 export type AuthSessionRow = typeof authSessions.$inferSelect;
 export type AuthUserRow = typeof authUsers.$inferSelect;
+export type UserSettingsRow = typeof userSettings.$inferSelect;

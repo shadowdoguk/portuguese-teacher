@@ -5,9 +5,37 @@ where the last one left off. Update it whenever an issue transitions
 state, a branch lands, a decision is made, or a blocker appears or
 clears.
 
-**Last updated:** 2026-08-03 (Session 16 — Phase B Task 3 land.
-Phase A close-out (Session 14) on `feat/phase-b-contracts`. Phase B
-Task 1 in `2e2bd87` + `525b87c` + `2d6fddb` + `0b6cf64`. Phase B
+**Last updated:** 2026-08-03 (Session 17 — Phase B Task 4 land
+on `feat/phase-b-settings`. New
+`apps/api/src/modules/settings/{repository,controller,router}.ts`
+serving `GET /api/me/settings` + `PATCH /api/me/settings`; first-
+access defaults materialise server-side via the new `user_settings`
+table (`apps/api/src/db/schema.ts` + matching CREATE TABLE in
+`apps/api/migrations/0000_init.sql`). `audio_speed` stored as basis
+points (50–200 = 0.5–2.0×) to match the `audio_assets.speed`
+convention; controller translates to/from float on the wire.
+`/api/me/` added to the `cacheControl` `NO_STORE_PREFIXES` list;
+`/api/me/settings` mounted behind `requireAuth` + `userIdFromAuthShim`
+in `apps/api/src/index.ts`. Schema test asserts the four CHECK
+constraints land in the migration. `apps/web/src/pages/SettingsPage.tsx`
++ route in `App.tsx` (GET on mount, PATCH on Save). Web `ApiClient`
+extended with a `patch<T>` method; lazy `globalThis.fetch` lookup so
+tests can inject a custom client via the page's optional `client`
+prop. Settings API test (pre-DB, mirroring Task 3 practice pattern):
+8/8 pass (401, validation_failed, `no-store`). Settings page test:
+3/3 pass. Schema test for the new table passes. `@pt/contracts` +
+`@pt/domain` clean. `@pt/api` drift-neutral (no new typecheck errors
+introduced vs. the pre-existing 19 errors documented in HANDOFF §
+"Open question for Session 17"; the new `user_settings` Drizzle
+CHECK entries are deliberately omitted — the matching CHECK
+constraints in the migration are authoritative, and the
+0.45.2 `between()` / `in()` API drift would surface as TS errors
+until the chore branch clears it). Pre-existing `@pt/web` App test
+fails (router-nesting — `App.tsx` wraps `<HashRouter>` and the test
+also wraps `<MemoryRouter>`; stash test on the upstream tip shows
+identical pre-existing baseline, unrelated to Task 4). Pre-existing
+`@pt/web` typecheck error on `tsconfig.node.json` reference is
+unrelated. Phase A close-out (Session 14) on `feat/phase-b-contracts`.
 Task 2 in `aec59b4`. Phase B Task 3 landed on `feat/phase-b-practice-api`
 in `633f705`: new `controller.ts` + `repository.ts`; `router.ts`
 rewritten (Phase A's inlined logic split into controller/repository/

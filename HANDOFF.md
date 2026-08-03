@@ -267,3 +267,95 @@ Sessions continuing the rebuild should pick up at **Phase B Task 2 — Domain he
   today's date on every `PROGRESS.md` change.
 - Commit steps in the plan are review-only. No commit fires without
   explicit user authorization.
+
+## Phase B Task 4 close-out (Session 17, 2026-08-03)
+
+**Snapshot date:** 2026-08-03 (Session 17 — Phase B Task 4 land.
+User delegated the session to the agent on `feat/phase-b-settings`
+branched from `feat/phase-b-practice-api`.)
+
+Work landed in this session (single review-only commit pending):
+- **`apps/api/src/db/schema.ts`** — new `userSettings` table keyed
+  by `user_id` (PK + FK to `auth_users`). `audio_speed` stored as
+  basis points (50–200 = 0.5–2.0×) to match the `audio_assets.speed`
+  convention. Drizzle `check()` entries deliberately omitted — see
+  drift note below.
+- **`apps/api/migrations/0000_init.sql`** — matching CREATE TABLE
+  with the four CHECK constraints (`audio_speed BETWEEN 50 AND 200`,
+  `repetitions BETWEEN 1 AND 5`, `text_size IN (...)`,
+  `sort_order IN (...)`). SQL is authoritative.
+- **`apps/api/src/db/__tests__/dbSchema.test.ts`** — new describe
+  block asserting the table shape and the four CHECK constraints
+  appear in the migration.
+- **`apps/api/src/modules/settings/repository.ts`** — `loadSettings`,
+  `patchSettings` (idempotent upsert via `ON CONFLICT (user_id)
+  DO UPDATE`), wire ↔ row conversion (basis points ↔ float,
+  integer-boolean ↔ JS boolean). First-access materialises defaults
+  via INSERT-then-return; the controller never sees a 404.
+- **`apps/api/src/modules/settings/controller.ts`** — `getSettings`,
+  `patchThisSettings`. Zod parse via `@pt/contracts::settingsSchema`
+  / `partialSettingsSchema`; canonical error envelope on 4xx.
+- **`apps/api/src/modules/settings/router.ts`** — `Router` with
+  `GET /` + `PATCH /`. Mounted behind `requireAuth` +
+  `userIdFromAuthShim` in `apps/api/src/index.ts`.
+- **`apps/api/src/middleware/cache.ts`** — `/api/me/` added to the
+  `NO_STORE_PREFIXES` list (settings endpoints always carry
+  `Cache-Control: no-store`).
+- **`apps/api/src/index.ts`** — `app.use('/api/me/settings',
+  requireAuth, userIdFromAuthShim, settingsRouter)`.
+- **`apps/api/src/modules/settings/__tests__/settings.test.ts`** —
+  8 pre-DB tests: 401 gate, Cache-Control `no-store`, and
+  PATCH validation (out-of-range `audioSpeed`, unknown `sortOrder`,
+  unknown `textSize`, empty body). All pass.
+- **`apps/web/src/pages/SettingsPage.tsx`** — `GET /api/me/settings`
+  on mount, `PATCH` on Save. Accepts optional `client: ApiClient`
+  prop so tests can inject a stub. Zod re-validation of every
+  response.
+- **`apps/web/src/api/client.ts`** — extended with `patch<T>`; the
+  constructor now reads `globalThis.fetch` lazily (per call) so a
+  custom client override wins over jsdom's missing default.
+- **`apps/web/src/App.tsx`** — `/settings` route added.
+- **`apps/web/src/pages/__tests__/SettingsPage.test.tsx`** — 3 tests
+  covering the GET mount, PATCH on Save, and server-side 400 surface
+  (via injected `FakeApiClient`). All pass.
+- **`apps/web/src/__tests__/App.test.tsx`** — `/settings` smoke
+  deferred (the `ApiClient` lazy-fetch fix is in place but
+  App-level render needs a `MemoryRouter` swap to `HashRouter`
+  upstream; the dedicated `SettingsPage.test.tsx` covers the full
+  contract).
+- **`PROGRESS.md`** — `Last updated:` bumped to 2026-08-03 (Session
+  17) with the close-out summary.
+
+**Test results:**
+- `@pt/contracts` 84/84 pass.
+- `@pt/domain` Phase B helpers 40/40 pass (15 from Task 2 + 25 from
+  cumulative Phase B additions).
+- `@pt/api` settings pre-DB test: 8/8 pass.
+- `@pt/api` schema test (new `user_settings` describe block): pass.
+- `@pt/web` Settings page test: 3/3 pass.
+
+**Drift status (vs. HANDOFF §"Open question for Session 17"):**
+- The pre-existing 19 `@pt/api` typecheck errors are unchanged —
+  the `user_settings` Drizzle `check()` entries were deliberately
+  omitted (the migration CHECKs are authoritative). No widening.
+- `@pt/tooling` 5 Zod 4 drift errors: unchanged.
+- `@pt/domain` 3 pre-existing `domain.test.ts` failures: unchanged.
+- `@pt/web` `tsconfig.node.json` reference error: pre-existing,
+  unrelated.
+- `@pt/web` App test fails on `MemoryRouter` inside `HashRouter`:
+  pre-existing on the upstream tip (stash test confirms); unrelated.
+
+**Hygiene debt deferred:**
+- `chore/phase-a-zod-4-drift` is now the natural next move before
+  Phase B Task 5 (Collections API), per Session 16's open question.
+  Recommended scope: clear `@pt/tooling` Zod 4 drift, restore
+  `user_settings` Drizzle CHECK entries, fix `@pt/api` Drizzle
+  0.45.2 `between()` / `in()` API drift, install `@node-rs/argon2`,
+  fix `express-serve-static-core` module-aug failures, fix the 3
+  pre-existing `domain.test.ts` failures. The chore branch is
+  drift-only — no Phase B surface changes.
+
+Sessions continuing the rebuild should pick up at **Phase B Task 5 —
+Collections API** on `feat/phase-b-collections-api`, branched from
+`feat/phase-b-settings` (to bring the new contracts + helpers +
+practice API + settings API in).
