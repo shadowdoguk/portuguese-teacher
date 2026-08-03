@@ -8,10 +8,18 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+// The migration lives three directories up from this test file
+// (`apps/api/src/db/__tests__/ → apps/api/migrations/0000_init.sql`):
+// `__tests__/` → `db/` → `src/` → `api/migrations/`.
+// Anchoring on `import.meta.url` makes the test cwd-independent —
+// the previous `process.cwd()` form broke when vitest ran from
+// `apps/api/` (it doubled the path).
+const here = dirname(fileURLToPath(import.meta.url));
 const migrationSql = readFileSync(
-  join(process.cwd(), 'apps/api/migrations/0000_init.sql'),
+  join(here, '..', '..', '..', 'migrations', '0000_init.sql'),
   'utf8',
 );
 

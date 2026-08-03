@@ -8,10 +8,15 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+// Anchor on `import.meta.url` (same pattern as dbSchema.test.ts)
+// so the migration path is cwd-independent. Three `..` segments
+// walk `__tests__/` → `db/` → `src/` → `api/migrations/`.
+const here = dirname(fileURLToPath(import.meta.url));
 const migrationSql = readFileSync(
-  join(process.cwd(), 'apps/api/migrations/0000_init.sql'),
+  join(here, '..', '..', '..', 'migrations', '0000_init.sql'),
   'utf8',
 );
 

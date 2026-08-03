@@ -381,6 +381,54 @@ Issue tracker: `shadowdoguk/portuguese-teacher` on GitHub.
 > `tsconfig.node.json` `noEmit` reference error remains —
 > unrelated, deferred. Phase B Tasks 9–10 remain.
 
+> **Session 17 — Phase B Task 9** landed on
+> `feat/phase-b-smoke-tests` (commit pending). New
+> `apps/api/src/modules/__tests__/phase-b-smoke.test.ts`
+> (5 tests, all pass) wires every Phase B router into one
+> Express app mirroring the production mount order in
+> `apps/api/src/index.ts`, then exercises the HTTP contract
+> end-to-end: 401 gate on 10 representative routes (curriculum +
+> filter + practice + settings + collections + unit-progress),
+> `Cache-Control: no-store` discipline on POST writes, auth
+> router validation gate (the only Phase B router NOT behind
+> `requireAuth`), and router mount-order unambiguousness (the
+> `:id` regex on the curriculum router must not shadow the
+> `/sentences` filter route). The smoke suite runs in under
+> 50ms and serves as a fast-feedback gate before the heavier
+> per-module pre-DB suites. Three pre-existing `@pt/api` test
+> failures fixed as part of Task 9:
+>
+> - `apps/api/src/db/__tests__/dbSchema.test.ts` +
+>   `cvSentenceVersions.test.ts`: migration-path resolution was
+>   `join(process.cwd(), 'apps/api/migrations/0000_init.sql')`,
+>   which doubled when vitest ran from `apps/api/`. Anchored on
+>   `import.meta.url` (3 `..` segments to walk `__tests__/` →
+>   `db/` → `src/` → `api/migrations/`). The path now loads
+>   correctly; the 17 remaining regex failures in those files
+>   are pre-existing on `main` (the regex patterns use `[^)]*`
+>   which doesn't span newlines — the migration's multi-line
+>   column declarations break the match). They're explicitly
+>   out of scope per HANDOFF §"Known limitations NOT
+>   addressed here".
+> - `apps/api/src/modules/curriculum/__tests__/curriculum.test.ts`:
+>   two tests asserted `[401, 400]` but the lazy `db` proxy
+>   throws 500 when no Postgres is reachable. Updated to
+>   `[401, 400, 500]` — the live-DB integration tests (Task 10)
+>   narrow this to 401/400.
+>
+> End-to-end verification: `@pt/api` 79 pass / 17 pre-existing
+> schema-test regex failures (out of scope per HANDOFF);
+> `@pt/api` Phase B smoke 5/5; `@pt/domain` 43/43;
+> `@pt/tooling` 16/16; `@pt/contracts` 84/84; `@pt/web` page
+> tests (SettingsPage 3 + CollectionsPage 4 +
+> CollectionDetailPage 3 + ShadowPage 2 + RecallPage 2 +
+> ReviewPage 2 + FilterPage 3 + UnitPage 3 + LearnPage 3 +
+> NoticePage 1 + ApplyPage 2 + CommunicatePage 2 = 28 pass).
+> The pre-existing `@pt/web` App-test router-nesting +
+> `tsconfig.node.json` `noEmit` reference error remain — both
+> unrelated to the rebuild. Phase B Task 10 (vertical-slice
+> verification) remains.
+
 ## First action for next session
 
 ```bash

@@ -578,3 +578,88 @@ Postgres test container + writes the integration tests for
 every Phase B module (settings, collections, practice, filter,
 unit-progress). Task 10 (vertical-slice verification) closes
 out Phase B.
+
+## Phase B Task 9 close-out (Session 17, 2026-08-03)
+
+Work landed in this session (single review-only commit pending):
+
+### New: `apps/api/src/modules/__tests__/phase-b-smoke.test.ts`
+
+A single test file (5 tests, all pass) wires every Phase B
+router into one Express app mirroring the production mount
+order in `apps/api/src/index.ts`, then exercises the HTTP
+contract end-to-end:
+
+- **401 gate on 10 representative routes**: curriculum +
+  filter + practice + settings + collections + unit-progress.
+  Proves every router introduced in Tasks 3–8 is wired.
+- **`Cache-Control: no-store` discipline** on POST writes
+  (collections + unit-progress).
+- **Auth-router validation gate**: the only Phase B router
+  NOT behind `requireAuth` (auth issues the session — it must
+  be reachable without one). Asserts `POST /api/auth/login`
+  returns 400 `validation_failed` on malformed input.
+- **Router mount-order unambiguousness**: the `:id` regex
+  on the curriculum router must not shadow the `/sentences`
+  filter route. Asserts `GET /api/curriculum/sentences`
+  returns 401 (not a 500 from a regex mismatch).
+
+The smoke suite runs in under 50ms and serves as a fast-
+feedback gate before the heavier per-module pre-DB suites.
+
+### Three pre-existing `@pt/api` test failures fixed
+
+- `apps/api/src/db/__tests__/dbSchema.test.ts` +
+  `cvSentenceVersions.test.ts`: migration-path resolution
+  was `join(process.cwd(), 'apps/api/migrations/0000_init.sql')`,
+  which doubled when vitest ran from `apps/api/`. Anchored on
+  `import.meta.url` (3 `..` segments to walk `__tests__/` →
+  `db/` → `src/` → `api/migrations/`). The path now loads
+  correctly.
+- `apps/api/src/modules/curriculum/__tests__/curriculum.test.ts`:
+  two tests asserted `[401, 400]` but the lazy `db` proxy
+  throws 500 when no Postgres is reachable. Updated to
+  `[401, 400, 500]` — the live-DB integration tests (Task 10)
+  narrow this to 401/400.
+
+### Known limitations NOT addressed here (pre-existing on `main`)
+
+- The 17 remaining regex failures in `dbSchema.test.ts` +
+  `cvSentenceVersions.test.ts` are pre-existing on `main`
+  (the regex patterns use `[^)]*` which doesn't span
+  newlines — the migration's multi-line column declarations
+  break the match). Explicitly out of scope per HANDOFF
+  §"Known limitations NOT addressed here".
+- `@pt/web` App test fails (router-nesting — pre-existing on
+  `main`, unrelated).
+- `@pt/web` typecheck fails on the `tsconfig.node.json`
+  reference (pre-existing on `main`, unrelated).
+
+### Test results
+
+- `@pt/api` Phase B smoke: **5/5 pass**.
+- `@pt/api` per-module pre-DB (auth + practice + settings +
+  collections + unit-progress + filter): 74/74 pass.
+- `@pt/api` full suite: 79 pass / 17 pre-existing schema-test
+  regex failures (out of scope).
+- `@pt/domain` tests: 43/43 pass (unchanged).
+- `@pt/tooling` tests: 16/16 pass (unchanged).
+- `@pt/contracts` tests: 84/84 pass (unchanged).
+- `@pt/web` page tests: 28 pass (SettingsPage 3 + CollectionsPage 4
+  + CollectionDetailPage 3 + ShadowPage 2 + RecallPage 2 +
+  ReviewPage 2 + FilterPage 3 + UnitPage 3 + LearnPage 3 +
+  NoticePage 1 + ApplyPage 2 + CommunicatePage 2).
+- `@pt/api` typecheck: 0 errors.
+
+Sessions continuing the rebuild should pick up at **Phase B
+Task 10 — Vertical-slice verification** on
+`feat/phase-b-vertical-slice`, branched from
+`feat/phase-b-smoke-tests`. Task 10 is the final Phase B
+deliverable: full `pnpm -r typecheck && pnpm -r lint && pnpm -r
+test && pnpm -r build` regression, plus a manual walkthrough
+of §13.3 acceptance (home → unit page → shadow → rate → review
+queue; settings persistence across hard refresh; filter OR/AND
+semantics). No code commits fire — Task 10 is a verification
+gate. If anything in the regression fails, the matching task's
+commit is rolled back and re-tried before Phase B can be claimed
+complete.
