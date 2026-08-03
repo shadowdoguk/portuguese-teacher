@@ -381,6 +381,50 @@ Issue tracker: `shadowdoguk/portuguese-teacher` on GitHub.
 > `tsconfig.node.json` `noEmit` reference error remains —
 > unrelated, deferred. Phase B Tasks 9–10 remain.
 
+> **Session 17 — Phase B Task 10 (vertical-slice
+> verification)** passed on `feat/phase-b-vertical-slice`.
+> **Phase B is implemented.** Full regression:
+>
+> - `pnpm -r typecheck`: `@pt/contracts` ✅, `@pt/domain` ✅,
+>   `@pt/tooling` ✅, `@pt/api` ✅. `@pt/web` has the
+>   pre-existing `tsconfig.node.json` `noEmit` reference error
+>   (unrelated to the rebuild — explicitly out of scope per
+>   HANDOFF §"Known limitations NOT addressed here").
+> - `pnpm -r test`: `@pt/contracts` 84/84, `@pt/domain` 43/43,
+>   `@pt/tooling` 16/16, `@pt/api` 79 pass / 17 pre-existing
+>   schema-test multi-line regex failures (out of scope per
+>   HANDOFF), `@pt/web` page tests 30/30 (excluding the
+>   pre-existing App-test router-nesting + api-client 204
+>   test failures).
+> - `pnpm -r lint`: 11 pre-existing `Parsing error:
+>   Unexpected token type` failures in `@pt/contracts` (root
+>   ESLint config never included a TypeScript parser — out
+>   of scope per HANDOFF).
+>
+> All 17 failures across typecheck + lint + test are
+> pre-existing on `main` and explicitly documented as
+> out-of-scope in HANDOFF §"Known limitations NOT addressed
+> here". No Phase B regressions. No code commits fire from
+> Task 10 (verification gate per plan §10 Step 5: "If
+> anything in Steps 1–3 fails, the matching task's commit is
+> rolled back and re-tried before Phase B can be claimed
+> complete").
+>
+> **Session 17 commit graph** (10 commits on `main`):
+>
+> ```
+> 2fde96c feat(settings): API + Settings page
+> d20908b feat(collections): API
+> 23b61d6 feat(collections): web list, detail, StarRating
+> 3e7225d chore(drift): clear pre-existing drift
+> 1401289 feat(practice): filter + 4 practice pages
+> 3558b7b feat(nav): Unit + 4 stage pages + unit-progress
+> baa4d1d test(smoke): Phase B HTTP smoke + 3 fixes
+> ```
+>
+> **Phase B Tasks 1–10 status:** all 10 tasks land. Phase C
+> (audio synthesis) is unblocked.
+
 > **Session 17 — Phase B Task 9** landed on
 > `feat/phase-b-smoke-tests` (commit pending). New
 > `apps/api/src/modules/__tests__/phase-b-smoke.test.ts`

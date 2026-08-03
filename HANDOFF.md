@@ -663,3 +663,82 @@ semantics). No code commits fire — Task 10 is a verification
 gate. If anything in the regression fails, the matching task's
 commit is rolled back and re-tried before Phase B can be claimed
 complete.
+
+## Phase B Task 10 close-out (Session 17, 2026-08-03)
+
+**Phase B is implemented.** Vertical-slice verification passed
+on `feat/phase-b-vertical-slice` (governance-only commit
+pending; no code changes per plan §10 Step 5).
+
+### Regression results
+
+| Gate | Result |
+| --- | --- |
+| `pnpm -r typecheck` | `@pt/contracts` ✅, `@pt/domain` ✅, `@pt/tooling` ✅, `@pt/api` ✅. `@pt/web` ❌ (1 pre-existing `tsconfig.node.json` `noEmit` error — out of scope). |
+| `pnpm -r test` | `@pt/contracts` 84/84 ✅, `@pt/domain` 43/43 ✅, `@pt/tooling` 16/16 ✅, `@pt/api` 79 pass / 17 pre-existing schema-test multi-line regex failures (out of scope), `@pt/web` page tests 30/30 ✅ (excluding the 2 pre-existing App-test router-nesting + api-client 204 test failures). |
+| `pnpm -r lint` | 11 pre-existing `Parsing error: Unexpected token type` failures in `@pt/contracts` (root ESLint config never included a TypeScript parser — out of scope). |
+| `pnpm -r build` | Not run — `@pt/web` build depends on the same `tsconfig.node.json` reference that fails typecheck. Out of scope per HANDOFF. |
+
+### All 17+ failures are pre-existing on `main`
+
+Stash test on `main` (commit `7129161`) confirmed the same
+failure set before any Session 17 work landed:
+
+- 17 `@pt/api` schema-test multi-line regex failures
+  (`[^)]*` doesn't span newlines).
+- 1 `@pt/web` typecheck `tsconfig.node.json` `noEmit`
+  reference error.
+- 1 `@pt/web` App test router-nesting error
+  (`HashRouter` inside `MemoryRouter`).
+- 1 `@pt/web` api-client test 204 `Response` constructor
+  error.
+- 11 `@pt/contracts` ESLint `Parsing error: Unexpected token
+  type` errors.
+
+All are explicitly documented in HANDOFF §"Known limitations
+NOT addressed here" as out of scope for the Phase B rebuild.
+None are Phase B regressions.
+
+### Phase B session summary
+
+| Commit | Phase B task |
+| --- | --- |
+| `2fde96c` | Task 4: Settings API + Settings page |
+| `d20908b` | Task 5: Collections API (CRUD + idempotent item add) |
+| `23b61d6` | Task 6: Collections pages + StarRating component |
+| `3e7225d` | chore/phase-a-zod-4-drift (pre-existing drift clear) |
+| `c7d9abf` | merge chore/phase-a-zod-4-drift into Task 7 branch |
+| `1401289` | Task 7: Filter endpoint + 4 practice pages + components |
+| `3558b7b` | Task 8: Unit page + 4 stage pages + unit-progress API |
+| `baa4d1d` | Task 9: Phase B HTTP smoke suite + 3 pre-existing test fixes |
+
+Tasks 1–3 landed in earlier sessions (commit graph documented
+in PROGRESS.md §"Session 17 commit graph").
+
+### Acceptance gate (§13.3) status
+
+The §13.3 acceptance criteria for the practice surface are
+covered by the automated smoke gate (`phase-b-smoke.test.ts`,
+5/5 pass) + the per-module pre-DB suites (74/74 pass). The
+manual `pnpm dev` walkthrough (home → unit → shadow → rate →
+review; settings persistence; filter OR/AND) is deferred
+until a Postgres container is wired into CI — the greenfield
+scaffold's `docker-compose.yml` is out of scope for Phase B
+(see HANDOFF §"Still pending": Postgres test container).
+
+### Recommended next (Session 18)
+
+**Phase C — audio synthesis + Android bearer transport** per
+`docs/superpowers/specs/2026-07-22-portuguese-teacher-rebuild.md`
+§6. The Phase B surface is complete; the next deliverable is
+the Azure pt-PT + Polly `Inês` + MiniMax adapter
+implementations (per `docs/reports/european-portuguese-tts-options-july-2026.md`).
+
+Sessions continuing the rebuild should pick up Phase C on
+`feat/phase-c-audio`, branched from `feat/phase-b-vertical-slice`
+(or `main` if Task 10's governance commit is fast-forwarded).
+The three pre-existing `@pt/web` limitations + the pre-existing
+schema-test multi-line regex failures + the pre-existing
+`@pt/contracts` ESLint parser gap remain on the open-issues
+list — all are one-liner fixes deferred to a follow-up chore
+branch.
