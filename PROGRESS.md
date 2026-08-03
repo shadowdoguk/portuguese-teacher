@@ -342,6 +342,45 @@ Issue tracker: `shadowdoguk/portuguese-teacher` on GitHub.
 > `@pt/web` pages 9/9; `@pt/domain` 43/43. Phase B Tasks 8–10
 > remain.
 
+> **Session 17 — Phase B Task 8** landed on
+> `feat/phase-b-unit-progress` (commit pending). New
+> `unit_progress` table (`user_id, unit_id, stage, status,
+> completed_at` PK on `(user_id, unit_id, stage)`, FK cascade to
+> `auth_users` + `units`, `unit_progress_user_idx` +
+> `unit_progress_unit_idx` secondary indexes per Task 8 spec;
+> `apps/api/src/db/schema.ts` +
+> `apps/api/migrations/0000_init.sql` + new describe block in
+> `dbSchema.test.ts`). New `apps/api/src/modules/unit-progress/`
+> module (repository + controller + router) serving two routes:
+> `GET /api/unit-progress/:unitId` (list every completion row
+> for the unit, ordered by `completed_at ASC`) and `POST
+> /api/unit-progress/:unitId/:stage` (idempotent upsert via
+> `onConflictDoUpdate` on the composite PK). The controller
+> validates `:stage` against `unitStageSchema` (returns
+> `400 stage_unknown` on mismatch) and the body against
+> `unitProgressWriteSchema` (returns `400
+> unit_progress_invalid_status` on shape mismatch). Mounted on
+> `/api/unit-progress` behind `requireAuth` +
+> `userIdFromAuthShim` in `apps/api/src/index.ts`. 7/7 pre-DB
+> unit-progress tests pass (401 + Cache-Control + validation).
+> New `@pt/web` pages: `UnitPage` (six-stage loop navigator with
+> `nextStageRecommendation` from `@pt/domain` pointing to the
+> first incomplete stage + ✓ marker on completed stages),
+> `LearnPage` / `NoticePage` / `ApplyPage` (each with a "Mark
+> complete" button that POSTs to
+> `/api/unit-progress/:unitId/:stage`; `ApplyPage` also fetches
+> the unit's islands list and renders the `AudioComingSoon`
+> placeholder per `Pre-Phase C Audio`), `CommunicatePage`
+> (read-only stub for Phase D's AI role-play, no "Mark
+> complete" button — Phase D owns completion). Routes wired
+> into `App.tsx`: `/units/:unitId` +
+> `/units/:unitId/{learn,notice,apply,communicate}`. 11/11 page
+> tests pass. End-to-end verification: `@pt/api` typecheck 0
+> errors; `@pt/api` unit-progress 7/7; `@pt/web` pages 11/11;
+> `@pt/domain` 43/43. The pre-existing `@pt/web`
+> `tsconfig.node.json` `noEmit` reference error remains —
+> unrelated, deferred. Phase B Tasks 9–10 remain.
+
 ## First action for next session
 
 ```bash

@@ -155,3 +155,19 @@ describe('migration 0000_init.sql — collections (Phase B Task 5)', () => {
     );
   });
 });
+
+describe('migration 0000_init.sql — unit_progress (Phase B Task 8)', () => {
+  it('declares unit_progress with composite PK + FKs to auth_users and units', () => {
+    expect(migrationSql).toMatch(
+      /CREATE TABLE unit_progress\s*\([^)]*user_id\s+text\s+NOT NULL\s+REFERENCES\s+auth_users\s*\(\s*user_id\s*\)\s+ON DELETE CASCADE[^)]*unit_id\s+text\s+NOT NULL\s+REFERENCES\s+units\s*\(\s*unit_id\s*\)\s+ON DELETE CASCADE/,
+    );
+    expect(migrationSql).toMatch(
+      /CREATE TABLE unit_progress\s*\([^)]*PRIMARY KEY\s*\(\s*user_id\s*,\s*unit_id\s*,\s*stage\s*\)/,
+    );
+  });
+
+  it('declares the unit_progress_user_idx + unit_progress_unit_idx secondary indexes', () => {
+    expect(migrationSql).toMatch(/CREATE INDEX unit_progress_user_idx\s+ON\s+unit_progress\s*\(\s*user_id\s*\)/);
+    expect(migrationSql).toMatch(/CREATE INDEX unit_progress_unit_idx\s+ON\s+unit_progress\s*\(\s*unit_id\s*\)/);
+  });
+});

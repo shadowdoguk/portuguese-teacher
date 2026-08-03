@@ -489,3 +489,92 @@ Task 8 — Six-stage navigation + Unit-progress API** on
 surface; it depends on a new `unit_progress` table + a
 `/api/me/units/:id/progress` route that Task 1 contracts already
 define.
+
+## Phase B Task 8 close-out (Session 17, 2026-08-03)
+
+Work landed in this session (single review-only commit pending):
+
+### `@pt/api` — new `unit_progress` table + two routes
+
+- `apps/api/src/db/schema.ts` — new `unitProgress` table
+  (`user_id, unit_id, stage, status, completed_at` PK on
+  `(user_id, unit_id, stage)`, FK cascade to `auth_users` +
+  `units`). `unit_progress_user_idx` +
+  `unit_progress_unit_idx` secondary indexes for per-user +
+  per-unit list queries.
+- `apps/api/migrations/0000_init.sql` — matching CREATE TABLE +
+  CREATE INDEX statements.
+- `apps/api/src/db/__tests__/dbSchema.test.ts` — new describe
+  block asserting the table shape, FKs, and indexes land in
+  the migration.
+- `apps/api/src/modules/unit-progress/repository.ts` —
+  `markComplete` (idempotent upsert via `onConflictDoUpdate` on
+  the composite PK; refreshes `completed_at` so a retry surfaces
+  a fresh timestamp) + `listForUnit` (read every completion
+  row for `(userId, unitId)`, ordered by `completed_at ASC`).
+- `apps/api/src/modules/unit-progress/controller.ts` — `mark`
+  (POST handler: validates `:stage` against `unitStageSchema`,
+  body against `unitProgressWriteSchema`, surfaces
+  `400 stage_unknown` or `400 unit_progress_invalid_status` on
+  mismatch) + `list` (GET handler: validates the response via
+  `unitProgressListResponseSchema`).
+- `apps/api/src/modules/unit-progress/router.ts` — separate
+  `Router` mounted on `/api/unit-progress` behind `requireAuth`
+  + `userIdFromAuthShim` in `apps/api/src/index.ts`.
+- `apps/api/src/modules/unit-progress/__tests__/unit-progress.test.ts` —
+  7 pre-DB tests (401 gate + Cache-Control `no-store` discipline
+  on POST + validation: `stage_unknown` on bad URL param,
+  `unit_progress_invalid_status` on bad body).
+
+### `@pt/web` — five new pages
+
+- `apps/web/src/pages/UnitPage.tsx` — six-stage loop navigator.
+  GET `/api/unit-progress/:unitId` on mount, renders the six
+  stages in `STAGE_ORDER` with ✓ markers on completed stages,
+  uses `nextStageRecommendation` from `@pt/domain` to surface
+  the "Continue → {first incomplete}" link.
+- `apps/web/src/pages/LearnPage.tsx` — Learn stage stub + "Mark
+  complete" button that POSTs to
+  `/api/unit-progress/:unitId/learn`. Vocabulary deck placeholder
+  (Phase C fills).
+- `apps/web/src/pages/NoticePage.tsx` — Notice stage stub +
+  "Mark complete" button (POSTs to `:unitId/notice`). Grammar +
+  pronunciation prose placeholder (Phase C fills).
+- `apps/web/src/pages/ApplyPage.tsx` — Apply stage. GET
+  `/api/curriculum/units/:unitId` on mount, renders each
+  island's sentences, renders the `AudioComingSoon` placeholder
+  per `Pre-Phase C Audio`, "Mark complete" button (POSTs to
+  `:unitId/apply`).
+- `apps/web/src/pages/CommunicatePage.tsx` — Communicate stage
+  stub for Phase D's AI role-play. Renders the unit's scenarios;
+  no "Mark complete" button (Phase D owns completion via the
+  conversation session end hook).
+- All five pages accept an optional `client: ApiClient` prop
+  for test injection (Task 4/6/7 pattern). Routes wired into
+  `App.tsx`: `/units/:unitId` +
+  `/units/:unitId/{learn,notice,apply,communicate}`.
+- 11 page tests: UnitPage 3 + LearnPage 3 + NoticePage 1 +
+  ApplyPage 2 + CommunicatePage 2.
+
+### Test results
+
+- `@pt/api` unit-progress pre-DB: **7/7 pass**.
+- `@pt/web` page tests: **11/11 pass**.
+- `@pt/api` typecheck: **0 errors** (Task 7's drift fixes held;
+  no new Task 8 errors).
+- `@pt/domain` tests: 43/43 pass (unchanged).
+
+### Known limitations NOT addressed here
+
+- `@pt/web` App test fails (router-nesting — pre-existing on
+  `main`, unrelated).
+- `@pt/web` typecheck fails on the `tsconfig.node.json`
+  reference (pre-existing on `main`, unrelated).
+
+Sessions continuing the rebuild should pick up at **Phase B
+Task 9 — Phase B smoke test suite** on `feat/phase-b-smoke-tests`,
+branched from `feat/phase-b-unit-progress`. Task 9 wires a live
+Postgres test container + writes the integration tests for
+every Phase B module (settings, collections, practice, filter,
+unit-progress). Task 10 (vertical-slice verification) closes
+out Phase B.

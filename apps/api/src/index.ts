@@ -28,6 +28,7 @@ import curriculumRouter from './modules/curriculum/router.js';
 import { curriculumFilterRouter } from './modules/curriculum/filter-router.js';
 import practiceRouter from './modules/practice/router.js';
 import settingsRouter from './modules/settings/router.js';
+import { unitProgressRouter } from './modules/unit-progress/router.js';
 import { healthHandler } from './health.js';
 
 // Re-export the userId shim from its dedicated module so existing
@@ -77,6 +78,12 @@ export function createApp(): Express {
   app.use('/api/practice', requireAuth, userIdFromAuthShim, practiceRouter);
   app.use('/api/me/settings', requireAuth, userIdFromAuthShim, settingsRouter);
   app.use('/api/collections', requireAuth, userIdFromAuthShim, collectionsRouter);
+  // Phase B Task 8: per-Learner six-stage loop (POST mark +
+  // GET list). Both routes are authenticated, both emit
+  // `Cache-Control: no-store` (the controller sets it
+  // explicitly; the cacheControl middleware's "any non-GET →
+  // no-store" rule covers the POST path as a belt-and-braces).
+  app.use('/api/unit-progress', requireAuth, userIdFromAuthShim, unitProgressRouter);
 
   // 404 for unknown /api routes — return the canonical envelope.
   app.use((_req, res) => {

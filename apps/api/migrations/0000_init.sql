@@ -204,3 +204,17 @@ CREATE TABLE collection_items (
 CREATE UNIQUE INDEX collection_items_order_idx
   ON collection_items (collection_id, order_index);
 CREATE INDEX collection_items_sentence_idx ON collection_items (sentence_id);
+
+-- ---------- Unit progress (CONTEXT.md "Six-Stage Unit Loop", Phase B Task 8) --
+
+CREATE TABLE unit_progress (
+  user_id      text         NOT NULL REFERENCES auth_users (user_id) ON DELETE CASCADE,
+  unit_id      text         NOT NULL REFERENCES units (unit_id) ON DELETE CASCADE,
+  stage        text         NOT NULL,
+  status       text         NOT NULL DEFAULT 'complete',
+  completed_at timestamptz  NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, unit_id, stage)
+);
+
+CREATE INDEX unit_progress_user_idx ON unit_progress (user_id);
+CREATE INDEX unit_progress_unit_idx ON unit_progress (unit_id);

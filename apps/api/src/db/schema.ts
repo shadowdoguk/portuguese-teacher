@@ -314,3 +314,37 @@ export const collectionItems = pgTable(
 
 export type CollectionRow = typeof collections.$inferSelect;
 export type CollectionItemRow = typeof collectionItems.$inferSelect;
+
+// ---------- Unit progress (CONTEXT.md "Six-Stage Unit Loop") -----------
+//
+// Per CONTEXT.md "Six-Stage Unit Loop" + SPEC §12.4, the
+// `(user_id, unit_id, stage)` triple is the per-learner record of
+// which stages of which unit have been completed. Stage
+// completion is the only status Phase B writes — "skipped" and
+// "in_progress" are deferred. The PK enforces no double-completion
+// across stages; the `unit_progress_user_idx` secondary index
+// supports the per-user list queries.
+//
+// The `stage` column is `text` rather than a PG enum because the
+// stage set is documented in `@pt/contracts::unitStageSchema` and
+// adding new stages (Phase C may extend) is easier via the
+// application contract than a DDL change. The repository enforces
+// the allowed set at write time.
+
+export const unitProgress = pgTable(
+  'unit_progress',
+  {
+    userId: text('user_id').notNull().references(() => authUsers.userId, { onDelete: 'cascade' }),
+    unitId: text('unit_id').notNull().references(() => units.unitId, { onDelete: 'cascade' }),
+    stage: text('stage').notNull(), // 'learn' | 'notice' | 'shadow' | 'recall' | 'apply' | 'communicate'
+    status: text('status').notNull().default('complete'), // 'complete' only in Phase B
+    completedAt: timestamp('completed_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.unitId, table.stage] }),
+    userIdx: index('unit_progress_user_idx').on(table.userId),
+    unitIdx: index('unit_progress_unit_idx').on(table.unitId),
+  }),
+);
+
+export type UnitProgressRow = typeof unitProgress.$inferSelect;
