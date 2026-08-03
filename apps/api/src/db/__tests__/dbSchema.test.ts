@@ -122,3 +122,36 @@ describe('migration 0000_init.sql — user_settings (Phase B Task 4)', () => {
     );
   });
 });
+
+describe('migration 0000_init.sql — collections (Phase B Task 5)', () => {
+  it('declares collections with PK + FK to auth_users', () => {
+    expect(migrationSql).toMatch(
+      /CREATE TABLE collections\s*\([^)]*id\s+text\s+PRIMARY KEY[^)]*user_id\s+text\s+NOT NULL\s+REFERENCES\s+auth_users\s*\(\s*user_id\s*\)\s+ON DELETE CASCADE/,
+    );
+  });
+
+  it('declares the collections_user_idx secondary index', () => {
+    expect(migrationSql).toMatch(/CREATE INDEX collections_user_idx\s+ON\s+collections\s*\(\s*user_id\s*,\s*created_at\s*\)/);
+  });
+
+  it('declares collection_items with composite PK', () => {
+    expect(migrationSql).toMatch(
+      /CREATE TABLE collection_items\s*\([^)]*collection_id[^)]*sentence_id[^)]*PRIMARY KEY\s*\(\s*collection_id\s*,\s*sentence_id\s*\)/,
+    );
+  });
+
+  it('declares collection_items FKs to collections and sentences', () => {
+    expect(migrationSql).toMatch(
+      /collection_items[^)]*collection_id\s+text\s+NOT NULL\s+REFERENCES\s+collections\s*\(\s*id\s*\)\s+ON DELETE CASCADE/,
+    );
+    expect(migrationSql).toMatch(
+      /collection_items[^)]*sentence_id\s+text\s+NOT NULL\s+REFERENCES\s+sentences\s*\(\s*sentence_id\s*\)\s+ON DELETE CASCADE/,
+    );
+  });
+
+  it('declares the unique index on (collection_id, order_index)', () => {
+    expect(migrationSql).toMatch(
+      /CREATE UNIQUE INDEX collection_items_order_idx\s+ON\s+collection_items\s*\(\s*collection_id\s*,\s*order_index\s*\)/,
+    );
+  });
+});

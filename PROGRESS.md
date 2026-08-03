@@ -59,7 +59,29 @@ to `chore/phase-a-zod-4-drift`. Phase B Practice surface
 web integration.)
 `@pt/tooling` Zod 4 drift (5 typecheck errors) and the 3 Phase A
 domain test failures stay on the chore branch handoff for the
-next session.)
+next session. **Session 17 also landed Phase B Task 5** —
+Collections API on `feat/phase-b-collections-api`. New
+`apps/api/src/modules/collections/{repository,controller,router}.ts`
+serving `GET/POST /api/collections` + `GET /api/collections/:id` +
+`POST /api/collections/:id/items` + `DELETE /api/collections/:id/items/:sentenceId`
++ `DELETE /api/collections/:id`. New `collections` + `collection_items`
+tables (composite PK `(collection_id, sentence_id)` makes add
+idempotent; `collection_items_order_idx` UNIQUE enforces per-
+collection order-index uniqueness; FK cascade removes items when
+the parent collection is deleted). Schema test asserts the new
+table shape + FKs + index land in the migration. Cache-Control
+discipline: `no-store` on every write route + the list route
+(controlled by the cache middleware's "any non-GET → no-store"
+rule plus the controller's explicit `no-store`); the detail
+route emits `private, max-age=60` + an ETag derived from the
+collection id. 8/8 pre-DB tests pass (401, validation_failed,
+collection_name_required, no-store discipline). Drift is
+**negative**: 26 `@pt/api` typecheck errors vs. 29 on the upstream
+tip — the 7 `userIdFromAuth` errors on my new controller share
+the same pre-existing `express-serve-static-core` module-aug
+drift root cause as practice + settings; the 3-error reduction
+comes from fixing my own `removeItem` import-name clash and the
+Express 5 `req.params` narrowing in this session.)
 
 ## Current focus
 

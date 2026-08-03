@@ -23,6 +23,7 @@ import { cacheControl } from './middleware/cache.js';
 import { requireAuth } from './middleware/requireAuth.js';
 import { userIdFromAuthShim } from './middleware/userIdShim.js';
 import authRouter from './modules/auth/router.js';
+import collectionsRouter from './modules/collections/router.js';
 import curriculumRouter from './modules/curriculum/router.js';
 import practiceRouter from './modules/practice/router.js';
 import settingsRouter from './modules/settings/router.js';
@@ -62,6 +63,7 @@ export function createApp(): Express {
   app.use('/api/curriculum', requireAuth, userIdFromAuthShim, curriculumRouter);
   app.use('/api/practice', requireAuth, userIdFromAuthShim, practiceRouter);
   app.use('/api/me/settings', requireAuth, userIdFromAuthShim, settingsRouter);
+  app.use('/api/collections', requireAuth, userIdFromAuthShim, collectionsRouter);
 
   // 404 for unknown /api routes — return the canonical envelope.
   app.use((_req, res) => {

@@ -257,3 +257,53 @@ export type PracticeRatingRow = typeof practiceRatings.$inferSelect;
 export type AuthSessionRow = typeof authSessions.$inferSelect;
 export type AuthUserRow = typeof authUsers.$inferSelect;
 export type UserSettingsRow = typeof userSettings.$inferSelect;
+
+// ---------- Collections (CONTEXT.md "Collections") ---------------------
+//
+// Per CONTEXT.md: a Collection is a named, ordered set of sentence
+// references. Practising a sentence inside a Collection routes
+// through the same `(user_id, sentence_id, mode)` ratings table;
+// ratings are global to the user, not per-collection. Two tables:
+//
+//   * `collections(id, user_id, name, created_at)` — per-Learner
+//     collection header. `id` is a stable `col_<slug>` slug; the
+//     slug generator lives in the API layer, not the schema.
+//   * `collection_items(collection_id, sentence_id, order_index)` —
+//     the membership rows. Composite PK
+//     `(collection_id, sentence_id)` makes the membership
+//     idempotent: an `INSERT ... ON CONFLICT DO NOTHING` on the
+//     same `(col, sen)` pair is a no-op, so clients can retry
+//     "add sentence" without duplicating rows. `order_index` is
+//     positive-integer and unique per collection via the
+//     `collection_items_order_idx` index — gaps are permitted.
+
+export const collections = pgTable(
+  'collections',
+  {
+    id: text('id').primaryKey(), // col_<slug>
+    userId: text('user_id').notNull().references(() => authUsers.userId, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    userIdx: index('collections_user_idx').on(table.userId, table.createdAt),
+  }),
+);
+
+export const collectionItems = pgTable(
+  'collection_items',
+  {
+    collectionId: text('collection_id').notNull().references(() => collections.id, { onDelete: 'cascade' }),
+    sentenceId: text('sentence_id').notNull().references(() => sentences.sentenceId, { onDelete: 'cascade' }),
+    orderIndex: integer('order_index').notNull(),
+    addedAt: timestamp('added_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.collectionId, table.sentenceId] }),
+    orderIdx: uniqueIndex('collection_items_order_idx').on(table.collectionId, table.orderIndex),
+    sentenceIdx: index('collection_items_sentence_idx').on(table.sentenceId),
+  }),
+);
+
+export type CollectionRow = typeof collections.$inferSelect;
+export type CollectionItemRow = typeof collectionItems.$inferSelect;

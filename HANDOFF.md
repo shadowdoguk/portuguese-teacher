@@ -359,3 +359,69 @@ Sessions continuing the rebuild should pick up at **Phase B Task 5 —
 Collections API** on `feat/phase-b-collections-api`, branched from
 `feat/phase-b-settings` (to bring the new contracts + helpers +
 practice API + settings API in).
+
+## Phase B Task 5 close-out (Session 17, 2026-08-03)
+
+Work landed in this session (single review-only commit pending):
+- **`apps/api/src/db/schema.ts`** — new `collections` table
+  (PK `id`, FK `user_id → auth_users`, `name`, `created_at`) and
+  `collection_items` table (composite PK `(collection_id,
+  sentence_id)`, `order_index`, FK cascade to both parent tables,
+  `collection_items_order_idx` UNIQUE index on `(collection_id,
+  order_index)`). Per CONTEXT.md "Collections", ratings are global
+  to the user, not per-collection — the rating table is untouched.
+- **`apps/api/migrations/0000_init.sql`** — matching CREATE TABLE
+  + CREATE INDEX statements.
+- **`apps/api/src/db/__tests__/dbSchema.test.ts`** — new describe
+  block asserting the table shape, FKs, and unique index land in
+  the migration.
+- **`apps/api/src/modules/collections/repository.ts`** —
+  `listCollections`, `getCollection`, `createCollection`,
+  `addItem` (idempotent on the composite PK via `onConflictDoNothing`),
+  `removeItem`, `deleteCollection`. Drizzle-typed calls mirror the
+  Task 4 settings repository pattern.
+- **`apps/api/src/modules/collections/controller.ts`** — six
+  handlers (`list`, `create`, `detail`, `add`, `removeItem`,
+  `destroy`) plus `listStrict` for future response-shape re-
+  validation. Zod parse via `@pt/contracts::collections`; canonical
+  error envelope on 4xx; `Cache-Control: no-store` on every write
+  route and the list route; `private, max-age=60` + ETag on the
+  detail route. `paramString()` helper narrows Express 5's
+  `string | string[] | undefined` `req.params` shape.
+- **`apps/api/src/modules/collections/router.ts`** — `Router` with
+  the six endpoints.
+- **`apps/api/src/index.ts`** — `app.use('/api/collections',
+  requireAuth, userIdFromAuthShim, collectionsRouter)`.
+- **`apps/api/src/modules/collections/__tests__/collections.test.ts`** —
+  8 pre-DB tests: 401 gate on every route, Cache-Control `no-store`
+  discipline on POST, PATCH-style validation gates
+  (`collection_name_required` for empty name; `validation_failed`
+  for malformed `sentenceId`). All pass.
+- **`PROGRESS.md`** — `Last updated:` Session 17 entry extended
+  with the Task 5 close-out.
+
+**Test results:** `@pt/api` collections test 8/8 pass.
+
+**Drift status (vs. HANDOFF §"Open question for Session 17"):**
+- 26 `@pt/api` typecheck errors vs. 29 on the upstream tip —
+  **drift-negative**. The 7 `userIdFromAuth` errors on my new
+  controller share the same pre-existing `express-serve-static-core`
+  module-aug drift root cause as practice + settings. The
+  3-error reduction comes from fixing my own `removeItem` import-
+  name clash and the Express 5 `req.params` narrowing in this
+  session.
+- All other drift surfaces (`@pt/tooling` Zod 4, 3 Phase A
+  `@pt/domain` test failures, `@pt/web` App-test router-nesting,
+  `@pt/web` typecheck `tsconfig.node.json` reference) unchanged.
+
+**Known limitation surfaced:** the `dbSchema.test.ts` "no tests"
+failure (`process.cwd()` from inside `apps/api` is the workspace
+root) is **pre-existing** on the upstream tip. The fix is a
+one-liner (`apps/api/migrations/0000_init.sql` instead of
+`apps/api/migrations/0000_init.sql` when cwd is `apps/api`) and
+belongs in `chore/phase-a-zod-4-drift`.
+
+Sessions continuing the rebuild should pick up at **Phase B Task 6 —
+Collections pages** on `feat/phase-b-collections-pages`, branched
+from `feat/phase-b-collections-api` (to bring the new contracts +
+helpers + practice API + settings API + collections API in).

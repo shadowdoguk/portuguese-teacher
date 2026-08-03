@@ -181,3 +181,26 @@ CREATE TABLE user_settings (
   CHECK (text_size IN ('small', 'default', 'large', 'extraLarge')),
   CHECK (sort_order IN ('curriculum', 'easyToHard', 'hardToEasy'))
 );
+
+-- ---------- Collections (CONTEXT.md "Collections", Phase B Task 5) ----
+
+CREATE TABLE collections (
+  id          text         PRIMARY KEY,
+  user_id     text         NOT NULL REFERENCES auth_users (user_id) ON DELETE CASCADE,
+  name        text         NOT NULL,
+  created_at  timestamptz  NOT NULL DEFAULT now()
+);
+
+CREATE INDEX collections_user_idx ON collections (user_id, created_at);
+
+CREATE TABLE collection_items (
+  collection_id  text         NOT NULL REFERENCES collections (id) ON DELETE CASCADE,
+  sentence_id    text         NOT NULL REFERENCES sentences (sentence_id) ON DELETE CASCADE,
+  order_index    integer      NOT NULL,
+  added_at       timestamptz  NOT NULL DEFAULT now(),
+  PRIMARY KEY (collection_id, sentence_id)
+);
+
+CREATE UNIQUE INDEX collection_items_order_idx
+  ON collection_items (collection_id, order_index);
+CREATE INDEX collection_items_sentence_idx ON collection_items (sentence_id);
