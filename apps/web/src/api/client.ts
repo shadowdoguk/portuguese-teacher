@@ -73,7 +73,11 @@ export class ApiClient {
     return this.request<T>('PATCH', path, body);
   }
 
-  async request<T>(method: 'GET' | 'POST' | 'PATCH', path: string, body?: unknown): Promise<T> {
+  async delete<T = void>(path: string): Promise<T> {
+    return this.request<T>('DELETE', path);
+  }
+
+  async request<T>(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', path: string, body?: unknown): Promise<T> {
     const url = path.startsWith('/') ? `${this.baseUrl}${path}` : `${this.baseUrl}/${path}`;
     const init: RequestInit = {
       method,

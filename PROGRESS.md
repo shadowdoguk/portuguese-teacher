@@ -340,3 +340,19 @@ git log --oneline -10
 
 Sessions continuing the rebuild should pick up at **Task 0** of the
 Phase A plan unless `PROGRESS.md` records further progress.
+
+> **Session 17 — Phase B Task 6** landed on
+> `feat/phase-b-collections-pages` (commit pending). New
+> `apps/web/src/pages/CollectionsPage.tsx`
+> (GET `/api/collections` on mount + POST create + empty-name
+> client-side validation + `collection_name_required` server-side
+> error surface) and
+> `apps/web/src/pages/CollectionDetailPage.tsx`
+> (GET `/api/collections/:id` on mount + DELETE on Remove + 404
+> `collection_not_found` surface). New accessible
+> `apps/web/src/components/StarRating.tsx` (`role="radiogroup"`,
+> per-star `role="radio"` + `aria-checked`, hover + focus parity) —
+> wired into the practice pages in Task 7. `apps/web/src/api/client.ts`
+> extended with `delete<T>`. Routes `/collections` + `/collections/:id`
+> added to `App.tsx`. 7/7 web tests pass (CollectionsPage 4/4 +
+> CollectionDetailPage 3/3).

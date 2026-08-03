@@ -425,3 +425,51 @@ Sessions continuing the rebuild should pick up at **Phase B Task 6 —
 Collections pages** on `feat/phase-b-collections-pages`, branched
 from `feat/phase-b-collections-api` (to bring the new contracts +
 helpers + practice API + settings API + collections API in).
+
+## Phase B Task 6 close-out (Session 17, 2026-08-03)
+
+Work landed in this session (single review-only commit pending):
+- **`apps/web/src/components/StarRating.tsx`** — accessible 1..5
+  star rating radio group (`role="radiogroup"` on the container,
+  per-star `role="radio"` + `aria-checked` + screen-reader-friendly
+  `aria-label`, hover + focus parity). Inline `style` placeholder
+  fills; the project's design system ships in Phase C. Kept as
+  a reusable component for the practice pages in Task 7.
+- **`apps/web/src/pages/CollectionsPage.tsx`** — `GET
+  /api/collections` on mount + `POST` create + empty-name
+  client-side validation (button disabled when `name.trim()` is
+  empty) + server-side `collection_name_required` error surface.
+  Accepts optional `client: ApiClient` prop for test injection.
+- **`apps/web/src/pages/CollectionDetailPage.tsx`** — `GET
+  /api/collections/:id` on mount + `DELETE` on Remove + server-
+  side `collection_not_found` (load path) error surface. Item
+  removed from local state on successful DELETE; busy state per
+  row to prevent double-clicks. Same `client` prop injection
+  pattern.
+- **`apps/web/src/api/client.ts`** — extended with `delete<T>`;
+  `request` now accepts `'GET' | 'POST' | 'PATCH' | 'DELETE'`.
+- **`apps/web/src/App.tsx`** — `/collections` and
+  `/collections/:id` routes added.
+- **`apps/web/src/pages/__tests__/CollectionsPage.test.tsx`** —
+  4 tests (initial GET, POST on Create, empty-name no-op, server
+  `collection_name_required` surface). All pass.
+- **`apps/web/src/pages/__tests__/CollectionDetailPage.test.tsx`** —
+  3 tests (initial GET, DELETE on Remove, server
+  `collection_not_found` surface). All pass.
+- **`PROGRESS.md`** — Session 17 lead extended with Task 6
+  close-out.
+
+**Test results:** `@pt/web` 7/7 pass (CollectionsPage 4/4 +
+CollectionDetailPage 3/3). `@pt/api` drift-neutral (no new
+errors introduced vs. Task 5's 26 baseline).
+
+**No schema/middleware changes** — Task 6 is web-only. The
+`StarRating` component will be the rating-capture primitive for
+Task 7's practice pages.
+
+Sessions continuing the rebuild should pick up at **Phase B Task 7 —
+Practice pages (Shadow, Recall, Review, Filter)** on
+`feat/phase-b-practice-pages`, branched from
+`feat/phase-b-collections-pages` (to bring the new contracts +
+helpers + practice API + settings API + collections API +
+collections pages in).
