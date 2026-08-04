@@ -1,5 +1,35 @@
 ## Agent skills
 
+### Project state — greenfield rebuild (Session 0, 2026-07-22)
+
+This repository is in the middle of a greenfield rebuild. The legacy
+Next.js application (and its accompanying `prisma/`, `scripts/`,
+`Dockerfile`, root `package.json`, root `pnpm-lock.yaml`, root
+`pnpm-workspace.yaml`, `tests/e2e/`, `playwright.config.ts`,
+`vitest.config.ts`, `lighthouserc*`, `.lighthouseci/`, the entire
+legacy `docs/` tree except `docs/superpowers/`, the legacy
+`AGENTS.md`/`HANDOFF.md`/`PROGRESS.md`/`CONTEXT.md`, and the legacy
+`docs/adr/*.md`) is being **archived** into `legacy/` on a single
+chore branch — that archive is **Task 0** of the Phase A
+implementation plan. As of Session 0, the archive is staged in the
+working tree (legacy files moved into `legacy/`; new governance at
+the root). It awaits the first commit on `chore/archive-legacy`.
+
+If you are reading this on disk and `legacy/` is empty (or absent),
+the greenfield archive has not yet landed. Do not modify any legacy
+file in place; either start the archive yourself on
+`chore/archive-legacy`, or wait for the next session to begin Task 0.
+
+The authoritative artefacts that drive the rebuild are:
+
+- Spec: `docs/superpowers/specs/2026-07-22-portuguese-teacher-rebuild.md`
+- Phase A plan: `docs/superpowers/plans/2026-07-22-portuguese-teacher-phase-a-foundation.md`
+- Source planning archive: `docs/superpowers/specs/2026-07-22-european-portuguese-learning-platform-design.md`
+  + `docs/superpowers/plans/2026-07-22-european-portuguese-foundation-curriculum-api.md`
+  + `docs/superpowers/plans/2026-07-22-european-portuguese-foundation-vertical-slice.md`
+- Research: `docs/reports/european-portuguese-tts-options-july-2026.md`
+- ADR counter restarts at `0001` after the legacy archive
+
 ### Session start
 
 At the **start of every session**, before opening an issue or touching code:
@@ -8,8 +38,9 @@ At the **start of every session**, before opening an issue or touching code:
 2. Skim [`HANDOFF.md`](./HANDOFF.md) — the point-in-time snapshot from the previous session. It tells you what landed, what's queued, what's still pending.
 3. Read [`CONTEXT.md`](./CONTEXT.md) — domain glossary and conventions. Use the glossary terms; don't invent synonyms.
 4. Skim [`docs/adr/`](./docs/adr/) — existing architectural decisions. Surface relevant ADRs in any plan rather than re-deciding.
-5. Run `pnpm progress:check` — confirms the tracker agrees with the live GitHub issue list. If it fails, update PROGRESS.md (or close the missing issue) before continuing.
-6. `git checkout main && git pull` and `git status` — confirm a clean working tree on `main` before branching.
+5. Read the rebuild spec and the latest phase plan under `docs/superpowers/`.
+6. `git checkout main && git pull` and `git status` — confirm what is on disk matches what PROGRESS.md claims. If `legacy/` is empty or absent, the greenfield archive has not landed; begin Task 0 before anything else.
+7. If the legacy tree has been archived into `legacy/`, the canonical `pnpm progress:check` script may need to be re-introduced by the Phase A plan; otherwise skip it during the rebuild phase.
 
 A new session that ignores this list will start with stale assumptions and will duplicate work or contradict the decisions log.
 
@@ -17,141 +48,12 @@ A new session that ignores this list will start with stale assumptions and will 
 
 ### Issue tracker
 
-Issues for this repo live in **GitHub Issues** for
-[`shadowdoguk/portuguese-teacher`](https://github.com/shadowdoguk/portuguese-teacher).
-Skills that read or write this tracker: `to-issues`, `triage`, `to-prd`, `qa`.
-
-#### CLI
-
-Uses the [`gh`](https://cli.github.com/) CLI. Authenticate once with
-`gh auth login`.
-
-```bash
-# Create an issue
-gh issue create --repo shadowdoguk/portuguese-teacher \
-  --title "..." --body "..." --label "needs-triage"
-
-# List issues by label
-gh issue list --repo shadowdoguk/portuguese-teacher \
-  --label "ready-for-agent" --state open
-
-# Apply a label
-gh issue edit <number> --repo shadowdoguk/portuguese-teacher \
-  --add-label "ready-for-agent"
-
-# View an issue
-gh issue view <number> --repo shadowdoguk/portuguese-teacher
-```
-
-#### Default repo
-
-When `gh` runs from inside a clone of this repo, `--repo` can be omitted —
-`gh` resolves the remote automatically. The explicit form above lets skills
-target the repo from any working directory.
-
-#### Conventions
-
-- One issue per discrete unit of work.
-- Title: short, imperative, present tense ("Add X", "Fix Y").
-- Body: include Why / What / Acceptance. The `to-issues` and `to-prd` skills
-  emit this shape by default.
-- Apply exactly one triage label at a time. See *Triage labels* below.
-
-#### Authentication check
-
-Before any write, verify auth:
-
-```bash
-gh auth status --repo shadowdog-dev/portuguese-teacher
-```
-
-If unauthenticated, stop and tell the user to run `gh auth login`. Never embed
-or log tokens.
+GitHub Issues at `shadowdoguk/portuguese-teacher`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-The `triage` skill moves issues through a five-state machine by applying
-these labels. **Exactly one triage label per issue at any time.**
-
-| Canonical role | Label string | Meaning |
-|---|---|---|
-| `needs-triage` | `needs-triage` | Maintainer needs to evaluate |
-| `needs-info` | `needs-info` | Waiting on reporter |
-| `ready-for-agent` | `ready-for-agent` | Fully specified, AFK-ready |
-| `ready-for-human` | `ready-for-human` | Needs human implementation |
-| `wontfix` | `wontfix` | Will not be actioned |
-
-#### Defaults
-
-Each role's string equals its name. The skills create these labels on first
-use via `gh issue edit --add-label`.
-
-#### State transitions
-
-```
-   new issue
-       │
-       ▼
-  needs-triage ─────► wontfix
-       │
-       ├──► needs-info ──► needs-triage (after reporter replies)
-       │
-       ├──► ready-for-agent
-       │
-       └──► ready-for-human
-```
-
-The `triage` skill is the only writer of these labels. Other skills
-(`to-issues`, `qa`) may read them but should not modify them.
-
-#### Overrides
-
-If you rename a label in GitHub (e.g. `bug:triage` instead of `needs-triage`),
-update the table above. Skills read this file on every invocation.
+Five canonical roles with default label strings. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
-This repo uses a **single-context** layout. Skills that need the project's
-domain language read `CONTEXT.md`; skills that need past decisions read
-`docs/adr/`.
-
-#### Layout
-
-```
-<repo root>/
-├── CONTEXT.md           # Domain language, key concepts, glossary
-└── docs/
-    └── adr/             # Architectural Decision Records (one .md per decision)
-```
-
-#### Consumer rules
-
-Skills that consume these docs (`improve-codebase-architecture`, `diagnose`,
-`tdd`, `zoom-out`) follow these rules:
-
-1. **Read `CONTEXT.md` first.** It defines the project's vocabulary. Use the
-   terms it defines; do not invent synonyms.
-2. **Skim `docs/adr/` for relevant decisions.** When proposing a change,
-   check whether an existing ADR already covers it — surface that ADR rather
-   than re-deciding.
-3. **Propose new ADRs for non-trivial decisions.** If a change introduces a
-   new architectural pattern, write `docs/adr/<NNNN>-<slug>.md` using
-   Context / Decision / Consequences.
-4. **Keep `CONTEXT.md` in sync.** When a change introduces a new domain
-   term, add it to `CONTEXT.md`'s glossary in the same change.
-
-#### When CONTEXT.md is missing
-
-If `CONTEXT.md` does not exist yet, consumer skills will:
-
-- Ask the user to draft one before deep architectural work, OR
-- Proceed without it and flag the gap in their final report.
-
-They will not invent domain terms on the user's behalf.
-
-#### Migrating to multi-context
-
-If this repo grows into a monorepo with separate frontend / backend / shared
-contexts, replace this file with a `CONTEXT-MAP.md` at the repo root pointing
-to per-context `CONTEXT.md` files. The consumer rules above then apply
-per-context, scoped to the subtree being changed.
+Single-context: `CONTEXT.md` at the root, `docs/adr/` for ADRs. See `docs/agents/domain.md`.

@@ -1,0 +1,40 @@
+{
+  "name": "@pt/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Vite + React 19 SPA for the greenfield Portuguese Teacher. Talks to @pt/api via cookie credentials (ADR-0002 §2).",
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint --max-warnings=0 'src/**/*.{ts,tsx}'",
+    "build": "tsc --noEmit && vite build",
+    "dev": "vite",
+    "preview": "vite preview --port 5173"
+  },
+  "dependencies": {
+    "@pt/contracts": "workspace:*",
+    "@pt/domain": "workspace:*",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-router-dom": "7.9.4"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@types/node": "^20.14.10",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "9.39.0",
+    "jsdom": "^25.0.1",
+    "typescript": "5.6.3",
+    "vite": "8.1.5",
+    "vitest": "4.1.10"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
