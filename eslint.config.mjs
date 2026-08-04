@@ -5,6 +5,8 @@
 // read-only reference material; new code never reaches into it (see legacy/README.md
 // and ADR-0001 / ADR-0002 for the boundary).
 
+import tsParser from '@typescript-eslint/parser';
+
 export default [
   {
     ignores: [
@@ -23,6 +25,11 @@ export default [
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: 2023,
+        sourceType: 'module',
+      },
     },
     rules: {
       'no-restricted-imports': [
