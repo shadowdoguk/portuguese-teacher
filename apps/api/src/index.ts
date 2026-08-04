@@ -103,14 +103,12 @@ export function createApp(): Express {
 export async function startServer(port = Number(process.env.PORT ?? 4000)): Promise<void> {
   const app = createApp();
   app.listen(port, () => {
-    // eslint-disable-next-line no-console
     console.log(`[pt/api] listening on :${port} (NODE_ENV=${NODE_ENV})`);
   });
 }
 
 function cryptoCorrelationId(): string {
   // Lazy import to keep this module's load path pure.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { randomUUID } = require('node:crypto') as typeof import('node:crypto');
   return randomUUID();
 }

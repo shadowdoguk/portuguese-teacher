@@ -13,7 +13,7 @@ export interface LearnPageProps {
   readonly client?: ApiClient;
 }
 
-export default function LearnPage({ client = apiClient }: LearnPageProps = {}): JSX.Element {
+export default function LearnPage({ client = apiClient }: LearnPageProps = {}) {
   const { unitId } = useParams<{ unitId: string }>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { apiClient, ApiError } from '../api/client';
 import { curriculumResponseSchema, type CurriculumResponse } from '@pt/contracts';
 
-export default function HomePage(): JSX.Element {
+export default function HomePage() {
   const [data, setData] = useState<CurriculumResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 

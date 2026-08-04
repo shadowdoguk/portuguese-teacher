@@ -14,7 +14,7 @@ export interface NoticePageProps {
   readonly client?: ApiClient;
 }
 
-export default function NoticePage({ client = apiClient }: NoticePageProps = {}): JSX.Element {
+export default function NoticePage({ client = apiClient }: NoticePageProps = {}) {
   const { unitId } = useParams<{ unitId: string }>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

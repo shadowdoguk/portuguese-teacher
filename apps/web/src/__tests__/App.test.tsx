@@ -2,11 +2,16 @@
 // and renders at least one route. The detailed per-page tests
 // (login submission, queue fetch, idempotent rating POST) live
 // in the per-page test files once Phase B's UI scope expands.
+//
+// App.tsx exports `AppRoutes` (no wrapper router) so tests can
+// render it inside MemoryRouter. The runtime `App` wraps it in
+// HashRouter; the test avoids the "Router inside Router" error
+// by not importing the default App export.
 
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import App from '../App';
+import { AppRoutes } from '../App';
 
 describe('App', () => {
   afterEach(() => {
@@ -16,7 +21,7 @@ describe('App', () => {
   it('renders the HomePage at the root path', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
-        <App />
+        <AppRoutes />
       </MemoryRouter>,
     );
     // HomePage shows an h1 with the text "Home" while the queue is
@@ -27,7 +32,7 @@ describe('App', () => {
   it('renders the LoginPage at /login', () => {
     render(
       <MemoryRouter initialEntries={['/login']}>
-        <App />
+        <AppRoutes />
       </MemoryRouter>,
     );
     expect(screen.getByRole('heading', { level: 1, name: /sign in/i })).toBeInTheDocument();
@@ -36,7 +41,7 @@ describe('App', () => {
   it('renders the PracticeShadowPage at /practice/shadow', () => {
     render(
       <MemoryRouter initialEntries={['/practice/shadow']}>
-        <App />
+        <AppRoutes />
       </MemoryRouter>,
     );
     expect(screen.getByRole('heading', { level: 1, name: /shadow practice/i })).toBeInTheDocument();

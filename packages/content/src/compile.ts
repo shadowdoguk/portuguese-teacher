@@ -80,7 +80,15 @@ export function compileManifest(manifest: ManifestSource): CompileResult {
   const manifestHash = sha256Hex(canonicalizeManifest(manifest));
   const units: CompiledUnit[] = [];
   const scenarios: CompiledScenario[] = [];
-  const cvSentenceVersions: CompileResult['cvSentenceVersions'] = [];
+  const cvSentenceVersions: Array<{
+    cvId: string;
+    sentenceId: string;
+    textPt: string;
+    textEn: string;
+    audioId: null;
+    textReviewedAt: null;
+    audioReviewedAt: null;
+  }> = [];
 
   for (const u of manifest.units) {
     const sentences: CompiledSentence[] = u.sentences.map((s) => ({

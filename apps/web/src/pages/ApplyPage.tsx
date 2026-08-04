@@ -29,7 +29,7 @@ interface UnitDetailShape {
   islands?: ReadonlyArray<UnitIsland>;
 }
 
-export default function ApplyPage({ client = apiClient }: ApplyPageProps = {}): JSX.Element {
+export default function ApplyPage({ client = apiClient }: ApplyPageProps = {}) {
   const { unitId } = useParams<{ unitId: string }>();
   const [unit, setUnit] = useState<UnitDetailShape | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);

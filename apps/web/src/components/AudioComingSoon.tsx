@@ -8,7 +8,7 @@
 // pairing surfaces the message to assistive tech without
 // interrupting the practice flow.
 
-export default function AudioComingSoon(): JSX.Element {
+export default function AudioComingSoon() {
   return (
     <div
       role="status"

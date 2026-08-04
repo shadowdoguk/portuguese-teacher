@@ -10,7 +10,7 @@ export interface ShadowPageProps {
   readonly client?: ApiClient;
 }
 
-export default function ShadowPage({ client = apiClient }: ShadowPageProps = {}): JSX.Element {
+export default function ShadowPage({ client = apiClient }: ShadowPageProps = {}) {
   const { unitId } = useParams<{ unitId: string }>();
   const [items, setItems] = useState<PracticeItem[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);

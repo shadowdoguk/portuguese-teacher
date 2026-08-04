@@ -48,7 +48,6 @@ function cryptoCorrelationId(): string {
   // Lazy import to keep this middleware pure at module load.
   // Correlation IDs are also generated at the route layer; this is
   // the fallback path when the upstream header is absent.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { randomUUID } = require('node:crypto') as typeof import('node:crypto');
   return randomUUID();
 }

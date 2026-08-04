@@ -34,7 +34,7 @@ interface UnitDetailShape {
   scenarios?: ReadonlyArray<Scenario>;
 }
 
-export default function CommunicatePage({ client = apiClient }: CommunicatePageProps = {}): JSX.Element {
+export default function CommunicatePage({ client = apiClient }: CommunicatePageProps = {}) {
   const { unitId } = useParams<{ unitId: string }>();
   const [unit, setUnit] = useState<UnitDetailShape | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);

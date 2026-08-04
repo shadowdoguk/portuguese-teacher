@@ -13,7 +13,7 @@ export interface CollectionsPageProps {
   readonly client?: ApiClient;
 }
 
-export default function CollectionsPage({ client = apiClient }: CollectionsPageProps = {}): JSX.Element {
+export default function CollectionsPage({ client = apiClient }: CollectionsPageProps = {}) {
   const [items, setItems] = useState<Collection[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [name, setName] = useState('');

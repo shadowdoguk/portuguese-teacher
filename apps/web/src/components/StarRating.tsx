@@ -20,7 +20,7 @@ export interface StarRatingProps {
   readonly label?: string;
 }
 
-export function StarRating({ value, onChange, label = 'Rating' }: StarRatingProps): JSX.Element {
+export function StarRating({ value, onChange, label = 'Rating' }: StarRatingProps) {
   const [hovered, setHovered] = useState<number | null>(null);
   return (
     <div

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiClient, ApiError } from '../api/client';
 import { loginResponseSchema, type LoginResponse } from '@pt/contracts';
 
-export default function LoginPage(): JSX.Element {
+export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('learner@example.com');
   const [password, setPassword] = useState('');

@@ -6,7 +6,7 @@ export interface FilterPageProps {
   readonly client?: ApiClient;
 }
 
-export default function FilterPage({ client = apiClient }: FilterPageProps = {}): JSX.Element {
+export default function FilterPage({ client = apiClient }: FilterPageProps = {}) {
   const [q, setQ] = useState('');
   const [matchAll, setMatchAll] = useState(false);
   const [items, setItems] = useState<PracticeItem[] | null>(null);

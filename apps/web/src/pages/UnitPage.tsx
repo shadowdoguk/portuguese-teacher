@@ -36,7 +36,7 @@ const STAGE_PATH: Readonly<Record<Stage, string>> = Object.freeze({
   communicate: 'communicate',
 });
 
-export default function UnitPage({ client = apiClient }: UnitPageProps = {}): JSX.Element {
+export default function UnitPage({ client = apiClient }: UnitPageProps = {}) {
   const { unitId } = useParams<{ unitId: string }>();
   const [completedStages, setCompletedStages] = useState<ReadonlyArray<Stage>>([]);
   const [loadError, setLoadError] = useState<string | null>(null);

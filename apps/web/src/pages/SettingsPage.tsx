@@ -12,7 +12,7 @@ export interface SettingsPageProps {
   readonly client?: ApiClient;
 }
 
-export default function SettingsPage({ client = apiClient }: SettingsPageProps = {}): JSX.Element {
+export default function SettingsPage({ client = apiClient }: SettingsPageProps = {}) {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -97,7 +97,7 @@ export default function SettingsPage({ client = apiClient }: SettingsPageProps =
             onChange={(e) =>
               setSettings({
                 ...settings,
-                audioSpeed: Number.parseFloat(e.target.value),
+                audioSpeed: Number.parseFloat(e.target.value) as Settings['audioSpeed'],
               })
             }
           />
@@ -124,7 +124,7 @@ export default function SettingsPage({ client = apiClient }: SettingsPageProps =
             onChange={(e) =>
               setSettings({
                 ...settings,
-                pauseMs: Number.parseInt(e.target.value, 10),
+                pauseMs: Number.parseInt(e.target.value, 10) as Settings['pauseMs'],
               })
             }
           >

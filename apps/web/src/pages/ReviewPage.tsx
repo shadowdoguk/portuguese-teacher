@@ -7,7 +7,7 @@ export interface ReviewPageProps {
   readonly client?: ApiClient;
 }
 
-export default function ReviewPage({ client = apiClient }: ReviewPageProps = {}): JSX.Element {
+export default function ReviewPage({ client = apiClient }: ReviewPageProps = {}) {
   const [data, setData] = useState<ReviewQueueResponse | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [rateError, setRateError] = useState<string | null>(null);

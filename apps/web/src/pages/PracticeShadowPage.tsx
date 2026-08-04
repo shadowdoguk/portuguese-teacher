@@ -14,7 +14,7 @@ import {
  * idempotency. Phase B adds filter expressions and a second mode
  * (Active Recall).
  */
-export default function PracticeShadowPage(): JSX.Element {
+export default function PracticeShadowPage() {
   const [items, setItems] = useState<PracticeItem[]>([]);
   const [index, setIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);

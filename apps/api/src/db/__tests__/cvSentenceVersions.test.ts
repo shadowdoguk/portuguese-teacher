@@ -23,42 +23,48 @@ const migrationSql = readFileSync(
 describe('cv_sentence_versions table (amendment Task A2)', () => {
   it('declares the table with composite PK (cv_id, sentence_id)', () => {
     expect(migrationSql).toMatch(
-      /CREATE TABLE cv_sentence_versions\s*\([^)]*cv_id[^)]*sentence_id[^)]*PRIMARY KEY\s*\(\s*cv_id\s*,\s*sentence_id\s*\)/,
+      /CREATE TABLE cv_sentence_versions\s*\([\s\S]*?cv_id[\s\S]*?sentence_id[\s\S]*?PRIMARY KEY\s*\(\s*cv_id\s*,\s*sentence_id\s*\)/,
     );
   });
 
   it('carries text_pt, text_en, audio_id columns', () => {
-    expect(migrationSql).toMatch(/cv_sentence_versions[^)]*text_pt\s+text\s+NOT NULL/);
-    expect(migrationSql).toMatch(/cv_sentence_versions[^)]*text_en\s+text\s+NOT NULL/);
-    expect(migrationSql).toMatch(/cv_sentence_versions[^)]*audio_id\s+text/);
+    expect(migrationSql).toMatch(/cv_sentence_versions[\s\S]*?text_pt\s+text\s+NOT NULL/);
+    expect(migrationSql).toMatch(/cv_sentence_versions[\s\S]*?text_en\s+text\s+NOT NULL/);
+    expect(migrationSql).toMatch(/cv_sentence_versions[\s\S]*?audio_id\s+text/);
   });
 
   it('audio_id is nullable (Pre-Phase C Audio)', () => {
-    // Either: `audio_id text NULL` or `audio_id text` without NOT NULL.
-    // We assert at least one of those shapes matches.
-    expect(migrationSql).toMatch(/cv_sentence_versions[^)]*audio_id\s+text(?:\s+NULL)?(?![^)]*NOT NULL)/);
+    // Migration declares `audio_id text NULL` (followed by REFERENCES).
+    // Assert that shape is present inside the cv_sentence_versions block.
+    expect(migrationSql).toMatch(
+      /cv_sentence_versions[\s\S]*?audio_id\s+text\s+NULL[\s\S]*?REFERENCES\s+audio_assets/,
+    );
   });
 
   it('text_reviewed_at and audio_reviewed_at are nullable timestamptz', () => {
-    expect(migrationSql).toMatch(/cv_sentence_versions[^)]*text_reviewed_at\s+timestamptz(?:\s+NULL)?(?![^)]*NOT NULL)/);
-    expect(migrationSql).toMatch(/cv_sentence_versions[^)]*audio_reviewed_at\s+timestamptz(?:\s+NULL)?(?![^)]*NOT NULL)/);
+    expect(migrationSql).toMatch(
+      /cv_sentence_versions[\s\S]*?text_reviewed_at\s+timestamptz\s+NULL/,
+    );
+    expect(migrationSql).toMatch(
+      /cv_sentence_versions[\s\S]*?audio_reviewed_at\s+timestamptz\s+NULL/,
+    );
   });
 
   it('FK cv_id REFERENCES curriculum_versions(id) ON DELETE CASCADE', () => {
     expect(migrationSql).toMatch(
-      /cv_sentence_versions[^)]*cv_id\s+text\s+NOT NULL\s+REFERENCES\s+curriculum_versions\s*\(\s*id\s*\)\s+ON DELETE CASCADE/,
+      /cv_sentence_versions[\s\S]*?cv_id\s+text\s+NOT NULL\s+REFERENCES\s+curriculum_versions\s*\(\s*id\s*\)\s+ON DELETE CASCADE/,
     );
   });
 
   it('FK sentence_id REFERENCES sentences(sentence_id) ON DELETE CASCADE', () => {
     expect(migrationSql).toMatch(
-      /cv_sentence_versions[^)]*sentence_id\s+text\s+NOT NULL\s+REFERENCES\s+sentences\s*\(\s*sentence_id\s*\)\s+ON DELETE CASCADE/,
+      /cv_sentence_versions[\s\S]*?sentence_id\s+text\s+NOT NULL\s+REFERENCES\s+sentences\s*\(\s*sentence_id\s*\)\s+ON DELETE CASCADE/,
     );
   });
 
   it('FK audio_id REFERENCES audio_assets(audio_id) ON DELETE SET NULL', () => {
     expect(migrationSql).toMatch(
-      /cv_sentence_versions[^)]*audio_id\s+text\s+NULL\s+REFERENCES\s+audio_assets\s*\(\s*audio_id\s*\)\s+ON DELETE SET NULL/,
+      /cv_sentence_versions[\s\S]*?audio_id\s+text\s+NULL\s+REFERENCES\s+audio_assets\s*\(\s*audio_id\s*\)\s+ON DELETE SET NULL/,
     );
   });
 

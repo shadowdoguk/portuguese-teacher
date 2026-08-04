@@ -11,7 +11,7 @@ export interface CollectionDetailPageProps {
   readonly client?: ApiClient;
 }
 
-export default function CollectionDetailPage({ client = apiClient }: CollectionDetailPageProps = {}): JSX.Element {
+export default function CollectionDetailPage({ client = apiClient }: CollectionDetailPageProps = {}) {
   const { id } = useParams<{ id: string }>();
   const [detail, setDetail] = useState<CollectionDetail | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);

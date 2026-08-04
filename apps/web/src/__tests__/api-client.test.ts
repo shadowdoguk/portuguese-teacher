@@ -64,7 +64,9 @@ describe('ApiClient', () => {
   it('2xx with empty body resolves to null', async () => {
     const client = new ApiClient({
       baseUrl: BASE,
-      fetchImpl: fakeFetch(() => new Response('', { status: 204 })),
+      // 204 No Content responses must not have a body per HTTP spec;
+      // jsdom's Response constructor rejects non-null bodies for 204.
+      fetchImpl: fakeFetch(() => new Response(null, { status: 204 })),
     });
     const out = await client.post<null>('/api/practice/events', {});
     expect(out).toBeNull();

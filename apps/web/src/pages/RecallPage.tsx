@@ -8,7 +8,7 @@ export interface RecallPageProps {
   readonly client?: ApiClient;
 }
 
-export default function RecallPage({ client = apiClient }: RecallPageProps = {}): JSX.Element {
+export default function RecallPage({ client = apiClient }: RecallPageProps = {}) {
   const { unitId } = useParams<{ unitId: string }>();
   const [items, setItems] = useState<PracticeItem[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);

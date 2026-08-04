@@ -25,14 +25,16 @@ const migrationSql = readFileSync(
 
 describe('migration 0000_init.sql — auth tables (ADR-0002)', () => {
   it('declares auth_users with email uniqueness', () => {
+    // user_id is the inline PRIMARY KEY; email follows.
     expect(migrationSql).toMatch(
-      /CREATE TABLE auth_users\s*\([^)]*email\s+text\s+NOT NULL\s+UNIQUE[^)]*PRIMARY KEY\s*\(\s*user_id\s*\)/,
+      /CREATE TABLE auth_users\s*\([\s\S]*?email\s+text\s+NOT NULL\s+UNIQUE/,
     );
   });
 
   it('declares auth_sessions with FK to auth_users', () => {
+    // session_id is the inline PRIMARY KEY; user_id references auth_users.
     expect(migrationSql).toMatch(
-      /CREATE TABLE auth_sessions\s*\([^)]*user_id\s+text\s+NOT NULL\s+REFERENCES\s+auth_users\s*\(\s*user_id\s*\)\s+ON DELETE CASCADE[^)]*PRIMARY KEY\s*\(\s*session_id\s*\)/,
+      /CREATE TABLE auth_sessions\s*\([\s\S]*?user_id\s+text\s+NOT NULL\s+REFERENCES\s+auth_users\s*\(\s*user_id\s*\)\s+ON DELETE CASCADE/,
     );
   });
 
@@ -54,37 +56,37 @@ describe('migration 0000_init.sql — content_status enum (amendment A2)', () =>
   });
 
   it('uses content_status on units, islands, sentences, conversation_scenarios', () => {
-    expect(migrationSql).toMatch(/units[^)]*status\s+content_status/);
-    expect(migrationSql).toMatch(/islands[^)]*status\s+content_status/);
-    expect(migrationSql).toMatch(/sentences[^)]*status\s+content_status/);
-    expect(migrationSql).toMatch(/conversation_scenarios[^)]*status\s+content_status/);
+    expect(migrationSql).toMatch(/units[\s\S]*?status\s+content_status/);
+    expect(migrationSql).toMatch(/islands[\s\S]*?status\s+content_status/);
+    expect(migrationSql).toMatch(/sentences[\s\S]*?status\s+content_status/);
+    expect(migrationSql).toMatch(/conversation_scenarios[\s\S]*?status\s+content_status/);
   });
 });
 
 describe('migration 0000_init.sql — cv_sentence_versions (amendment A2)', () => {
   it('declares the table with composite PK', () => {
     expect(migrationSql).toMatch(
-      /CREATE TABLE cv_sentence_versions\s*\([^)]*cv_id[^)]*sentence_id[^)]*PRIMARY KEY\s*\(\s*cv_id\s*,\s*sentence_id\s*\)/,
+      /CREATE TABLE cv_sentence_versions\s*\([\s\S]*?cv_id[\s\S]*?sentence_id[\s\S]*?PRIMARY KEY\s*\(\s*cv_id\s*,\s*sentence_id\s*\)/,
     );
   });
 
   it('declares text_pt, text_en, audio_id columns', () => {
-    expect(migrationSql).toMatch(/cv_sentence_versions[^)]*text_pt\s+text\s+NOT NULL/);
-    expect(migrationSql).toMatch(/cv_sentence_versions[^)]*text_en\s+text\s+NOT NULL/);
-    expect(migrationSql).toMatch(/cv_sentence_versions[^)]*audio_id\s+text/);
+    expect(migrationSql).toMatch(/cv_sentence_versions[\s\S]*?text_pt\s+text\s+NOT NULL/);
+    expect(migrationSql).toMatch(/cv_sentence_versions[\s\S]*?text_en\s+text\s+NOT NULL/);
+    expect(migrationSql).toMatch(/cv_sentence_versions[\s\S]*?audio_id\s+text/);
   });
 });
 
 describe('migration 0000_init.sql — practice_ratings CHECK', () => {
   it('declares the rating CHECK constraint', () => {
     expect(migrationSql).toMatch(
-      /CREATE TABLE practice_ratings\s*\([^)]*CHECK\s*\(\s*rating\s+BETWEEN\s+1\s+AND\s+5\s*\)/,
+      /CREATE TABLE practice_ratings\s*\([\s\S]*?CHECK\s*\(\s*rating\s+BETWEEN\s+1\s+AND\s+5\s*\)/,
     );
   });
 
   it('declares the mode CHECK constraint', () => {
     expect(migrationSql).toMatch(
-      /CREATE TABLE practice_ratings\s*\([^)]*CHECK\s*\(\s*mode\s+IN\s*\(\s*'shadow'\s*,\s*'recall'\s*\)\s*\)/,
+      /CREATE TABLE practice_ratings\s*\([\s\S]*?CHECK\s*\(\s*mode\s+IN\s*\(\s*'shadow'\s*,\s*'recall'\s*\)\s*\)/,
     );
   });
 
@@ -100,8 +102,9 @@ describe('migration 0000_init.sql — practice_ratings CHECK', () => {
 
 describe('migration 0000_init.sql — audio_assets', () => {
   it('declares audio_assets with content_hash UNIQUE', () => {
+    // audio_id is the inline PRIMARY KEY; content_hash follows.
     expect(migrationSql).toMatch(
-      /CREATE TABLE audio_assets\s*\([^)]*content_hash\s+text\s+NOT NULL\s+UNIQUE[^)]*PRIMARY KEY\s*\(\s*audio_id\s*\)/,
+      /CREATE TABLE audio_assets\s*\([\s\S]*?content_hash\s+text\s+NOT NULL\s+UNIQUE/,
     );
   });
 });
@@ -117,7 +120,7 @@ describe('migration 0000_init.sql — curriculum_versions', () => {
 describe('migration 0000_init.sql — user_settings (Phase B Task 4)', () => {
   it('declares user_settings with PK + FK to auth_users', () => {
     expect(migrationSql).toMatch(
-      /CREATE TABLE user_settings\s*\([^)]*user_id\s+text\s+PRIMARY KEY\s+REFERENCES\s+auth_users\s*\(\s*user_id\s*\)\s+ON DELETE CASCADE/,
+      /CREATE TABLE user_settings\s*\([\s\S]*?user_id\s+text\s+PRIMARY KEY\s+REFERENCES\s+auth_users\s*\(\s*user_id\s*\)\s+ON DELETE CASCADE/,
     );
   });
 
@@ -134,7 +137,7 @@ describe('migration 0000_init.sql — user_settings (Phase B Task 4)', () => {
 describe('migration 0000_init.sql — collections (Phase B Task 5)', () => {
   it('declares collections with PK + FK to auth_users', () => {
     expect(migrationSql).toMatch(
-      /CREATE TABLE collections\s*\([^)]*id\s+text\s+PRIMARY KEY[^)]*user_id\s+text\s+NOT NULL\s+REFERENCES\s+auth_users\s*\(\s*user_id\s*\)\s+ON DELETE CASCADE/,
+      /CREATE TABLE collections\s*\([\s\S]*?id\s+text\s+PRIMARY KEY[\s\S]*?user_id\s+text\s+NOT NULL\s+REFERENCES\s+auth_users\s*\(\s*user_id\s*\)\s+ON DELETE CASCADE/,
     );
   });
 
@@ -144,16 +147,16 @@ describe('migration 0000_init.sql — collections (Phase B Task 5)', () => {
 
   it('declares collection_items with composite PK', () => {
     expect(migrationSql).toMatch(
-      /CREATE TABLE collection_items\s*\([^)]*collection_id[^)]*sentence_id[^)]*PRIMARY KEY\s*\(\s*collection_id\s*,\s*sentence_id\s*\)/,
+      /CREATE TABLE collection_items\s*\([\s\S]*?collection_id[\s\S]*?sentence_id[\s\S]*?PRIMARY KEY\s*\(\s*collection_id\s*,\s*sentence_id\s*\)/,
     );
   });
 
   it('declares collection_items FKs to collections and sentences', () => {
     expect(migrationSql).toMatch(
-      /collection_items[^)]*collection_id\s+text\s+NOT NULL\s+REFERENCES\s+collections\s*\(\s*id\s*\)\s+ON DELETE CASCADE/,
+      /collection_items[\s\S]*?collection_id\s+text\s+NOT NULL\s+REFERENCES\s+collections\s*\(\s*id\s*\)\s+ON DELETE CASCADE/,
     );
     expect(migrationSql).toMatch(
-      /collection_items[^)]*sentence_id\s+text\s+NOT NULL\s+REFERENCES\s+sentences\s*\(\s*sentence_id\s*\)\s+ON DELETE CASCADE/,
+      /collection_items[\s\S]*?sentence_id\s+text\s+NOT NULL\s+REFERENCES\s+sentences\s*\(\s*sentence_id\s*\)\s+ON DELETE CASCADE/,
     );
   });
 
@@ -167,10 +170,10 @@ describe('migration 0000_init.sql — collections (Phase B Task 5)', () => {
 describe('migration 0000_init.sql — unit_progress (Phase B Task 8)', () => {
   it('declares unit_progress with composite PK + FKs to auth_users and units', () => {
     expect(migrationSql).toMatch(
-      /CREATE TABLE unit_progress\s*\([^)]*user_id\s+text\s+NOT NULL\s+REFERENCES\s+auth_users\s*\(\s*user_id\s*\)\s+ON DELETE CASCADE[^)]*unit_id\s+text\s+NOT NULL\s+REFERENCES\s+units\s*\(\s*unit_id\s*\)\s+ON DELETE CASCADE/,
+      /CREATE TABLE unit_progress\s*\([\s\S]*?user_id\s+text\s+NOT NULL\s+REFERENCES\s+auth_users\s*\(\s*user_id\s*\)\s+ON DELETE CASCADE[\s\S]*?unit_id\s+text\s+NOT NULL\s+REFERENCES\s+units\s*\(\s*unit_id\s*\)\s+ON DELETE CASCADE/,
     );
     expect(migrationSql).toMatch(
-      /CREATE TABLE unit_progress\s*\([^)]*PRIMARY KEY\s*\(\s*user_id\s*,\s*unit_id\s*,\s*stage\s*\)/,
+      /CREATE TABLE unit_progress\s*\([\s\S]*?PRIMARY KEY\s*\(\s*user_id\s*,\s*unit_id\s*,\s*stage\s*\)/,
     );
   });
 

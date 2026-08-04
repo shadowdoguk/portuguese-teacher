@@ -22,7 +22,7 @@ export interface MicRecorderProps {
   readonly label?: string;
 }
 
-export function MicRecorder({ onStop, label = 'Microphone' }: MicRecorderProps): JSX.Element {
+export function MicRecorder({ onStop, label = 'Microphone' }: MicRecorderProps) {
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const urlRef = useRef<string | null>(null);
@@ -107,7 +107,6 @@ export function MicRecorder({ onStop, label = 'Microphone' }: MicRecorderProps):
         </button>
       ) : (
         <>
-          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
           <audio controls src={urlRef.current ?? undefined} />
           <button type="button" onClick={discard}>
             Discard
